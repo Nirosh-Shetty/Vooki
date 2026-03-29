@@ -51,6 +51,7 @@ const setAuthTokenCookie = (res: Response, user: Pick<IUser, "_id" | "role">) =>
   const token = generateToken(user._id.toString(), user.role);
   res.cookie("auth_token", token, {
     httpOnly: true,
+domain: process.env.COOKIE_DOMAIN ,
     secure: process.env.COOKIE_SECURE === "true",
     maxAge: AUTH_COOKIE_MAXAGE,
     sameSite: (process.env.COOKIE_SAMESITE || "lax") as "lax" | "strict" | "none",

@@ -60,8 +60,9 @@ authRouter.get(
 
     res.cookie("auth_token", token, {
       httpOnly: true,
+domain: process.env.COOKIE_DOMAIN ,
       secure: process.env.COOKIE_SECURE === "true",
-      maxAge: 5 * 24 * 60 * 60 * 1000, // 5 days in milliseconds
+      maxAge: Number(process.env.JWT_AUTH_TOKEN_MAXAGE) || 5 * 24 * 60 * 60 * 1000, // 5 days in milliseconds
       sameSite: (process.env.COOKIE_SAMESITE || "lax") as "lax" | "strict" | "none",
     });
     res.redirect(`${process.env.FRONTEND_URL}/${user.role}/dashboard`);
@@ -98,8 +99,9 @@ authRouter.get(
 
     res.cookie("auth_token", token, {
       httpOnly: true,
+domain: process.env.COOKIE_DOMAIN ,
       secure: process.env.COOKIE_SECURE === "true",
-      maxAge: 5 * 24 * 60 * 60 * 1000, // 5 days
+      maxAge: Number(process.env.JWT_AUTH_TOKEN_MAXAGE) || 5 * 24 * 60 * 60 * 1000, // Match Google
       sameSite: (process.env.COOKIE_SAMESITE || "lax") as "lax" | "strict" | "none", // Match Google
     });
 

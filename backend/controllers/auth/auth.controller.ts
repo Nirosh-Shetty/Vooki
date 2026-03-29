@@ -221,6 +221,7 @@ export const signIn = async (req: Request, res: Response): Promise<any> => {
 
     res.cookie("auth_token", token, {
       httpOnly: true,
+domain: process.env.COOKIE_DOMAIN ,
       secure: process.env.COOKIE_SECURE === "true",
       maxAge:
         Number(process.env.JWT_AUTH_TOKEN_MAXAGE) || 5 * 24 * 60 * 60 * 1000,
@@ -377,8 +378,10 @@ export const verifyOtp = async (req: Request, res: Response): Promise<any> => {
     const token = generateToken(user._id.toString(), user.role);
     res.cookie("auth_token", token, {
       httpOnly: true,
+domain: process.env.COOKIE_DOMAIN ,
       secure: process.env.COOKIE_SECURE === "true",
-      maxAge: 5 * 24 * 60 * 60 * 1000, // 5 days
+      maxAge: 
+        Number(process.env.JWT_AUTH_TOKEN_MAXAGE) || 5 * 24 * 60 * 60 * 1000,
       sameSite: (process.env.COOKIE_SAMESITE || "lax") as "lax" | "strict" | "none",
     });
     return res.status(201).json({ message: "Verified Successfully" });
@@ -398,6 +401,7 @@ export const completeSocialAuth = async (
     if (!fromProvider) {
       res.clearCookie("sessionId", {
         httpOnly: true,
+domain: process.env.COOKIE_DOMAIN ,
         secure: process.env.COOKIE_SECURE === "true",
         sameSite: (process.env.COOKIE_SAMESITE || "lax") as "lax" | "strict" | "none",
       });
@@ -409,6 +413,7 @@ export const completeSocialAuth = async (
     if (!role) {
       res.clearCookie("sessionId", {
         httpOnly: true,
+domain: process.env.COOKIE_DOMAIN ,
         secure: process.env.COOKIE_SECURE === "true",
         sameSite: (process.env.COOKIE_SAMESITE || "lax") as "lax" | "strict" | "none",
       });
@@ -497,13 +502,15 @@ export const completeSocialAuth = async (
     // Clear the session cookie and set auth_token cookie
     res.clearCookie("sessionId", {
       httpOnly: true,
+domain: process.env.COOKIE_DOMAIN ,
       secure: process.env.COOKIE_SECURE === "true",
       sameSite: (process.env.COOKIE_SAMESITE || "lax") as "lax" | "strict" | "none",
     });
     res.cookie("auth_token", token, {
       httpOnly: true,
+domain: process.env.COOKIE_DOMAIN ,
       secure: process.env.COOKIE_SECURE === "true",
-      maxAge: 5 * 24 * 60 * 60 * 1000, // 5 days in milliseconds
+      maxAge: Number(process.env.JWT_AUTH_TOKEN_MAXAGE) || 5 * 24 * 60 * 60 * 1000, // 5 days in milliseconds
       sameSite: (process.env.COOKIE_SAMESITE || "lax") as "lax" | "strict" | "none",
     });
     res.status(201).json({ message: "Signup successful" });
@@ -517,6 +524,7 @@ export const signout = (req: Request, res: Response): any => {
   try {
     res.clearCookie("auth_token", {
       httpOnly: true,
+domain: process.env.COOKIE_DOMAIN ,
       secure: process.env.COOKIE_SECURE === "true",
       sameSite: (process.env.COOKIE_SAMESITE || "lax") as "lax" | "strict" | "none",
       path: "/",

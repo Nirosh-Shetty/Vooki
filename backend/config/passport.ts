@@ -59,7 +59,8 @@ passport.use(
             const sessionId = await sessionStore.set(basicProfile, 5 * 60);
             (req.res as ExpressResponse).cookie("sessionId", sessionId, {
               httpOnly: true,
-              secure: process.env.NODE_ENV === "production",
+domain: process.env.COOKIE_DOMAIN ,
+              secure: process.env.COOKIE_SECURE === "true",
               maxAge: 10 * 60 * 1000,
             });
             return (req.res as ExpressResponse).redirect(
@@ -203,8 +204,8 @@ passport.use(
             const sessionId = await sessionStore.set(basicProfile, 5 * 60);
             (req.res as ExpressResponse).cookie("sessionId", sessionId, {
               httpOnly: true,
-              secure: process.env.NODE_ENV === "production",
-              maxAge: 10 * 60 * 1000,
+domain: process.env.COOKIE_DOMAIN ,
+              secure: process.env.COOKIE_SECURE === "true",
             });
             return (req.res as ExpressResponse).redirect(
               `${process.env.FRONTEND_URL}/signup/oauth-role-required?fromProvider=facebook`
