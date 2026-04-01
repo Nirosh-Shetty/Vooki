@@ -244,11 +244,12 @@ export default function DiscoverPage() {
     })
   }, [creators, search, activeNiche])
 
-  const inviteStatusByInfluencer = useMemo(() => {
+  const inviteStatusByCampaignInfluencer = useMemo(() => {
     const map = new Map<string, SentInvite["status"]>()
     for (const invite of sentInvites) {
-      if (!map.has(invite.influencerId)) {
-        map.set(invite.influencerId, invite.status)
+      const key = `${invite.campaignId}:${invite.influencerId}`
+      if (!map.has(key)) {
+        map.set(key, invite.status)
       }
     }
     return map
@@ -432,7 +433,9 @@ export default function DiscoverPage() {
 
           {filteredCreators.map((creator) => {
             const saved = shortlist.includes(creator.id)
-            const inviteStatus = inviteStatusByInfluencer.get(creator.id)
+            const inviteStatus = selectedCampaignId
+              ? inviteStatusByCampaignInfluencer.get(`${selectedCampaignId}:${creator.id}`)
+              : undefined
             return (
               <Card key={creator.id} className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
                 <CardContent className="space-y-4 p-5">

@@ -123,7 +123,7 @@ export default function CampaignDetailPage() {
   const [payBusyId, setPayBusyId] = useState<string | null>(null)
   const [statusDrafts, setStatusDrafts] = useState<Record<string, PromotionStatus>>({})
   const [createBusy, setCreateBusy] = useState(false)
-  const [influencerId, setInfluencerId] = useState("")
+  const [selectedCreatorId, setSelectedCreatorId] = useState("")
   const [product, setProduct] = useState("")
   const [campaignGoal, setCampaignGoal] = useState<CampaignGoal>("awareness")
   const [deliverablePlatform, setDeliverablePlatform] = useState("instagram")
@@ -219,6 +219,34 @@ export default function CampaignDetailPage() {
     }
   }, [invites, promotions])
 
+  const eligibleCreators = useMemo(() => {
+    const existingPromotionInfluencerIds = new Set(promotions.map((promotion) => promotion.influencerId))
+    const latestInviteByInfluencer = new Map<string, CampaignInvite>()
+
+    for (const invite of invites) {
+      const existing = latestInviteByInfluencer.get(invite.influencerId)
+      if (!existing || new Date(invite.createdAt).getTime() > new Date(existing.createdAt).getTime()) {
+        latestInviteByInfluencer.set(invite.influencerId, invite)
+      }
+    }
+
+    const accepted = [] as CampaignInvite[]
+    const otherInvited = [] as CampaignInvite[]
+
+    for (const invite of latestInviteByInfluencer.values()) {
+      if (existingPromotionInfluencerIds.has(invite.influencerId)) continue
+      if (invite.status === "accepted") accepted.push(invite)
+      else otherInvited.push(invite)
+    }
+
+    return [...accepted, ...otherInvited]
+  }, [invites, promotions])
+
+  const linkedInviteCount = useMemo(
+    () => invites.filter((invite) => Boolean(invite.promotionId || invite.promotionStatus)).length,
+    [invites]
+  )
+
   const updatePromotionStatus = async (promotionId: string) => {
     const nextStatus = statusDrafts[promotionId]
     if (!nextStatus) return
@@ -266,6 +294,10 @@ export default function CampaignDetailPage() {
 
   const createPromotion = async () => {
     if (!campaignId || !campaign) return
+    if (!selectedCreatorId) {
+      setActionMessage("Select a campaign creator before creating a promotion.")
+      return
+    }
 
     setCreateBusy(true)
     setActionMessage(null)
@@ -276,7 +308,7 @@ export default function CampaignDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           campaignId,
-          influencerId: influencerId.trim(),
+          influencerId: selectedCreatorId,
           campaignTitle: campaign.name,
           product: product.trim(),
           campaignGoal,
@@ -299,7 +331,7 @@ export default function CampaignDetailPage() {
       if (!response.ok) throw new Error(data?.message || "Failed to create promotion")
 
       setActionMessage("Promotion created successfully.")
-      setInfluencerId("")
+      setSelectedCreatorId("")
       setProduct("")
       setDeliverablePlatform("instagram")
       setDeliverableFormat("reel")
@@ -473,14 +505,26 @@ export default function CampaignDetailPage() {
               <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
                 <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Create Promotion</p>
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Use this for manual collaboration setup when you are not starting from discover invites.
+                  Use this for manual collaboration setup when you want to create a campaign-scoped promotion from existing outreach.
                 </p>
+                {linkedInviteCount > 0 ? (
+                  <p className="mt-2 text-xs text-cyan-700 dark:text-cyan-300">
+                    Accepted invites that already show a linked collaboration are intentionally excluded here to avoid duplicate promotions.
+                  </p>
+                ) : null}
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  <Input
-                    placeholder="Influencer User ID"
-                    value={influencerId}
-                    onChange={(event) => setInfluencerId(event.target.value)}
-                  />
+                  <select
+                    value={selectedCreatorId}
+                    onChange={(event) => setSelectedCreatorId(event.target.value)}
+                    className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  >
+                    <option value="">Select campaign creator</option>
+                    {eligibleCreators.map((invite) => (
+                      <option key={invite.id} value={invite.influencerId}>
+                        {invite.influencerName || invite.influencerHandle || "Influencer"} - {invite.status}
+                      </option>
+                    ))}
+                  </select>
                   <Input placeholder="Product/Service" value={product} onChange={(event) => setProduct(event.target.value)} />
                   <select
                     value={campaignGoal}
@@ -505,11 +549,18 @@ export default function CampaignDetailPage() {
                 <Button
                   className="mt-3 bg-slate-900 text-white hover:bg-slate-800 dark:bg-cyan-600 dark:hover:bg-cyan-700"
                   onClick={createPromotion}
-                  disabled={createBusy}
+                  disabled={createBusy || eligibleCreators.length === 0}
                 >
                   {createBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   Create Promotion
                 </Button>
+                {eligibleCreators.length === 0 ? (
+                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                    {linkedInviteCount > 0
+                      ? "No manual creator slots are available because the current accepted invite(s) already have linked collaborations."
+                      : "No campaign-scoped creators are available for manual promotion creation yet."}
+                  </p>
+                ) : null}
               </div>
 
               {promotions.map((promotion) => (

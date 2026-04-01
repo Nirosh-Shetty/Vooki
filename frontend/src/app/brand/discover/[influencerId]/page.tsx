@@ -41,6 +41,7 @@ type PublicProfile = {
 
 type BrandInviteItem = {
   influencerId: string
+  campaignId: string
   status: "pending" | "accepted" | "rejected" | "expired"
 }
 
@@ -178,7 +179,7 @@ export default function DiscoverProfilePage() {
   }, [influencerId])
 
   useEffect(() => {
-    if (!influencerId || isPreviewProfile) {
+    if (!influencerId || isPreviewProfile || !selectedCampaignId) {
       setInviteStatus(null)
       return
     }
@@ -199,7 +200,11 @@ export default function DiscoverProfilePage() {
 
         const data: BrandInviteListResponse = await response.json()
         const items = Array.isArray(data?.items) ? data.items : []
-        const currentInvite = items.find((item) => String(item?.influencerId) === String(influencerId))
+        const currentInvite = items.find(
+          (item) =>
+            String(item?.influencerId) === String(influencerId) &&
+            String(item?.campaignId) === String(selectedCampaignId)
+        )
         setInviteStatus(currentInvite?.status || null)
       } catch {
         setInviteStatus(null)
@@ -208,7 +213,7 @@ export default function DiscoverProfilePage() {
 
     loadInviteStatus()
     return () => controller.abort()
-  }, [influencerId, isPreviewProfile])
+  }, [influencerId, isPreviewProfile, selectedCampaignId])
 
   useEffect(() => {
     const controller = new AbortController()
