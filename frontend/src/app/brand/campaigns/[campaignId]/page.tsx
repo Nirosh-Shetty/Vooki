@@ -207,7 +207,7 @@ export default function CampaignDetailPage() {
     const pendingInvites = invites.filter((invite) => invite.status === "pending").length
     const acceptedInvites = invites.filter((invite) => invite.status === "accepted").length
     const livePromotions = promotions.filter((promotion) =>
-      ["accepted", "content_in_progress", "posted", "metrics_submitted", "payment_pending"].includes(promotion.status)
+      ["negotiating", "accepted", "content_in_progress", "posted", "metrics_submitted", "payment_pending"].includes(promotion.status)
     ).length
     const completedPromotions = promotions.filter((promotion) => promotion.status === "completed").length
 
@@ -473,7 +473,7 @@ export default function CampaignDetailPage() {
                           </Badge>
                           {invite.promotionStatus ? (
                             <Badge className={`border-0 text-[10px] capitalize ${promotionPillClass[invite.promotionStatus]}`}>
-                              collab {invite.promotionStatus.replaceAll("_", " ")}
+                              deal {invite.promotionStatus.replaceAll("_", " ")}
                             </Badge>
                           ) : null}
                         </div>
@@ -483,6 +483,16 @@ export default function CampaignDetailPage() {
                         <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
                           {invite.note || "Invite sent from discover."}
                         </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Button asChild size="sm" variant="outline" className="h-8 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
+                            <Link href={`/brand/messages?otherUserId=${invite.influencerId}&campaignId=${invite.campaignId}&campaignTitle=${encodeURIComponent(invite.campaignLabel || campaign?.name || "Campaign")}${invite.promotionId ? `&promotionId=${invite.promotionId}` : ""}`}>Open chat</Link>
+                          </Button>
+                          {invite.promotionId ? (
+                            <Button asChild size="sm" className="h-8 bg-slate-900 text-white hover:bg-slate-800 dark:bg-cyan-600 dark:hover:bg-cyan-700">
+                              <Link href={`/brand/promotions/${invite.promotionId}`}>Open collaboration</Link>
+                            </Button>
+                          ) : null}
+                        </div>
                       </div>
                       <div className="text-xs text-slate-500 dark:text-slate-400">
                         Sent {formatDate(invite.createdAt)}
@@ -496,71 +506,20 @@ export default function CampaignDetailPage() {
 
           <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
             <CardHeader>
-              <CardTitle className="text-slate-900 dark:text-slate-100">Promotions</CardTitle>
+              <CardTitle className="text-slate-900 dark:text-slate-100">Collaborations</CardTitle>
               <CardDescription className="text-slate-600 dark:text-slate-400">
-                Manage workflow status and payment completion for this campaign.
+                Move from outreach to agreement, delivery, and payment for this campaign.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Create Promotion</p>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Use this for manual collaboration setup when you want to create a campaign-scoped promotion from existing outreach.
+              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/80 p-4 text-sm dark:border-slate-700 dark:bg-slate-900/60">
+                <p className="font-medium text-slate-900 dark:text-slate-100">Discover is the entry point</p>
+                <p className="mt-1 text-slate-600 dark:text-slate-300">
+                  We removed the manual collaboration creator from this page. The cleaner path is: invite from Discover, accept, discuss in chat, then continue execution here.
                 </p>
-                {linkedInviteCount > 0 ? (
-                  <p className="mt-2 text-xs text-cyan-700 dark:text-cyan-300">
-                    Accepted invites that already show a linked collaboration are intentionally excluded here to avoid duplicate promotions.
-                  </p>
-                ) : null}
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  <select
-                    value={selectedCreatorId}
-                    onChange={(event) => setSelectedCreatorId(event.target.value)}
-                    className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                  >
-                    <option value="">Select campaign creator</option>
-                    {eligibleCreators.map((invite) => (
-                      <option key={invite.id} value={invite.influencerId}>
-                        {invite.influencerName || invite.influencerHandle || "Influencer"} - {invite.status}
-                      </option>
-                    ))}
-                  </select>
-                  <Input placeholder="Product/Service" value={product} onChange={(event) => setProduct(event.target.value)} />
-                  <select
-                    value={campaignGoal}
-                    onChange={(event) => setCampaignGoal(event.target.value as CampaignGoal)}
-                    className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                  >
-                    <option value="awareness">Awareness</option>
-                    <option value="sales">Sales</option>
-                    <option value="launch">Launch</option>
-                    <option value="other">Other</option>
-                  </select>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Input value={deliverablePlatform} onChange={(event) => setDeliverablePlatform(event.target.value)} placeholder="Platform" />
-                    <Input value={deliverableFormat} onChange={(event) => setDeliverableFormat(event.target.value)} placeholder="Format" />
-                    <Input type="number" min={1} value={deliverableQuantity} onChange={(event) => setDeliverableQuantity(event.target.value)} placeholder="Qty" />
-                  </div>
-                  <Input type="date" value={draftDueAt} onChange={(event) => setDraftDueAt(event.target.value)} />
-                  <Input type="date" value={postAt} onChange={(event) => setPostAt(event.target.value)} />
-                  <Input type="number" min={0} value={paymentAmount} onChange={(event) => setPaymentAmount(event.target.value)} placeholder="Payment amount" />
-                  <Input type="date" value={paymentDueAt} onChange={(event) => setPaymentDueAt(event.target.value)} />
-                </div>
-                <Button
-                  className="mt-3 bg-slate-900 text-white hover:bg-slate-800 dark:bg-cyan-600 dark:hover:bg-cyan-700"
-                  onClick={createPromotion}
-                  disabled={createBusy || eligibleCreators.length === 0}
-                >
-                  {createBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  Create Promotion
+                <Button asChild className="mt-3 bg-slate-900 text-white hover:bg-slate-800 dark:bg-cyan-600 dark:hover:bg-cyan-700">
+                  <Link href="/brand/discover">Go to Discover</Link>
                 </Button>
-                {eligibleCreators.length === 0 ? (
-                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                    {linkedInviteCount > 0
-                      ? "No manual creator slots are available because the current accepted invite(s) already have linked collaborations."
-                      : "No campaign-scoped creators are available for manual promotion creation yet."}
-                  </p>
-                ) : null}
               </div>
 
               {promotions.map((promotion) => (
@@ -570,7 +529,7 @@ export default function CampaignDetailPage() {
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{promotion.campaignTitle || "Promotion"}</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{promotion.campaignTitle || "Collaboration"}</p>
                       <div className="mt-1 flex flex-wrap items-center gap-2">
                         <Badge className={`border-0 text-[10px] capitalize ${promotionPillClass[promotion.status]}`}>
                           {promotion.status.replaceAll("_", " ")}
@@ -603,7 +562,15 @@ export default function CampaignDetailPage() {
                         variant="outline"
                         className="h-8 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                       >
-                        <Link href={`/brand/promotions/${promotion.id}`}>Open</Link>
+                        <Link href={`/brand/messages?otherUserId=${promotion.influencerId}&campaignId=${promotion.campaignId}&promotionId=${promotion.id}&campaignTitle=${encodeURIComponent(promotion.campaignTitle || campaign?.name || "Campaign")}`}>Open chat</Link>
+                      </Button>
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="h-8 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                      >
+                        <Link href={`/brand/promotions/${promotion.id}`}>Open collaboration</Link>
                       </Button>
                       <Button
                         size="sm"
@@ -642,7 +609,7 @@ export default function CampaignDetailPage() {
               ))}
 
               {promotions.length === 0 ? (
-                <p className="text-sm text-slate-600 dark:text-slate-300">No promotions in this campaign yet.</p>
+                <p className="text-sm text-slate-600 dark:text-slate-300">No collaborations in this campaign yet.</p>
               ) : null}
             </CardContent>
           </Card>

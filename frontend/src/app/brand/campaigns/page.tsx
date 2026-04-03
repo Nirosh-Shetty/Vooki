@@ -679,17 +679,19 @@ export default function CampaignsPage() {
                   Launch from template
                 </Link>
               </Button>
-              <Button variant="outline" className="w-full justify-start border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
-                <Users className="mr-2 h-4 w-4" />
-                Attach creators from discover
+              <Button asChild variant="outline" className="w-full justify-start border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
+                <Link href="/brand/discover">
+                  <Users className="mr-2 h-4 w-4" />
+                  Invite creators from discover
+                </Link>
               </Button>
             </CardContent>
           </Card>
 
           <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
             <CardHeader>
-              <CardTitle className="text-base text-slate-900 dark:text-slate-100">Live Promotions</CardTitle>
-              <CardDescription className="text-slate-600 dark:text-slate-400">Recent collaboration deals across campaigns.</CardDescription>
+              <CardTitle className="text-base text-slate-900 dark:text-slate-100">Live Collaborations</CardTitle>
+              <CardDescription className="text-slate-600 dark:text-slate-400">Recent collaborations moving across your campaign pipeline.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
               {promotions.slice(0, 5).map((promotion) => (
@@ -697,7 +699,7 @@ export default function CampaignsPage() {
                   key={promotion.id}
                   className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900"
                 >
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{promotion.campaignTitle || "Promotion"}</p>
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{promotion.campaignTitle || "Collaboration"}</p>
                   <div className="mt-2 flex items-center justify-between gap-2">
                     <Badge className={`border-0 text-[10px] capitalize ${promotionPillClass[promotion.status]}`}>
                       {promotion.status.replaceAll("_", " ")}
@@ -707,7 +709,7 @@ export default function CampaignsPage() {
                 </div>
               ))}
               {promotions.length === 0 ? (
-                <p className="text-xs text-slate-500 dark:text-slate-400">No promotions created yet.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">No collaborations created yet.</p>
               ) : null}
             </CardContent>
           </Card>

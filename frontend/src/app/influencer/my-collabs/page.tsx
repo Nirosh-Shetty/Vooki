@@ -30,6 +30,8 @@ type PromotionStatus =
 
 type Promotion = {
   id: string
+  brandId?: string
+  campaignId?: string
   campaignTitle: string
   status: PromotionStatus
   paymentStatus: "pending" | "paid"
@@ -182,8 +184,10 @@ export default function MyCollaborations() {
             <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">My Collaborations</h1>
             <p className="mt-1 text-sm text-slate-600">Live collaboration statuses tied to your campaigns.</p>
           </div>
-          <Button className="w-full bg-slate-900 text-white hover:bg-slate-800 sm:w-auto">
-            <MessageSquare className="mr-2 h-4 w-4" /> New proposal
+          <Button asChild className="w-full bg-slate-900 text-white hover:bg-slate-800 sm:w-auto">
+            <Link href="/influencer/messages">
+              <MessageSquare className="mr-2 h-4 w-4" /> Open messages
+            </Link>
           </Button>
         </CardContent>
       </Card>
@@ -296,11 +300,17 @@ export default function MyCollaborations() {
                 <Button asChild size="sm" className="bg-slate-900 text-white hover:bg-slate-800">
                   <Link href={`/influencer/my-collabs/${promotion.id}`}>View details</Link>
                 </Button>
-                <Button variant="outline" size="sm" className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50">
-                  <MessageSquare className="mr-2 h-4 w-4" /> Message brand
-                </Button>
-                <Button variant="outline" size="sm" className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50">
-                  <Upload className="mr-2 h-4 w-4" /> Upload asset
+                {promotion.brandId ? (
+                  <Button asChild variant="outline" size="sm" className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50">
+                    <Link href={`/influencer/messages?otherUserId=${promotion.brandId}${promotion.campaignId ? `&campaignId=${promotion.campaignId}` : ""}&promotionId=${promotion.id}&campaignTitle=${encodeURIComponent(promotion.campaignTitle || "Collaboration")}`}>
+                      <MessageSquare className="mr-2 h-4 w-4" /> Open brand chat
+                    </Link>
+                  </Button>
+                ) : null}
+                <Button asChild variant="outline" size="sm" className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50">
+                  <Link href={`/influencer/my-collabs/${promotion.id}`}>
+                    <Upload className="mr-2 h-4 w-4" /> Continue workflow
+                  </Link>
                 </Button>
               </div>
             </CardContent>
