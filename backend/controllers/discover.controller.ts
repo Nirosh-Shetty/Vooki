@@ -4,6 +4,7 @@ import DiscoverShortlistModel from "../models/DiscoverShortlist";
 import DiscoverInviteModel from "../models/DiscoverInvite";
 import CampaignModel from "../models/Campaign";
 import PromotionModel from "../models/Promotion";
+import ConversationModel from "../models/Conversation";
 import { getRequestUser } from "../utils/requestUser";
 
 const parseNumber = (value: unknown): number | undefined => {
@@ -50,8 +51,43 @@ const buildPromotionSeedFromCampaign = (campaign: any) => {
       views: 0,
       engagement: 0,
     },
-    status: "accepted" as const,
+    // Accepting an invite opens a collaboration workspace, but the commercial
+    // agreement should still be negotiated in chat before execution starts.
+    status: "negotiating" as const,
   };
+};
+
+const ensureConversationForInvite = async (invite: any, campaign: any, promotion: any) => {
+  const participants = [String(invite.brandId), String(invite.influencerId)].sort();
+  const existingConversation = await ConversationModel.findOne({
+    participants,
+    promotionId: String(promotion?._id || ""),
+  });
+
+  if (existingConversation) return existingConversation;
+
+  const existingCampaignConversation = await ConversationModel.findOne({
+    participants,
+    campaignId: String(campaign?._id || invite.campaignId || ""),
+    promotionId: "",
+  });
+
+  if (existingCampaignConversation) {
+    existingCampaignConversation.threadType = "collaboration";
+    existingCampaignConversation.promotionId = String(promotion?._id || "");
+    existingCampaignConversation.campaignTitle = String(campaign?.name || invite.campaignLabel || "");
+    await existingCampaignConversation.save();
+    return existingCampaignConversation;
+  }
+
+  return ConversationModel.create({
+    participants,
+    status: "active",
+    threadType: "collaboration",
+    campaignId: String(campaign?._id || invite.campaignId || ""),
+    promotionId: String(promotion?._id || ""),
+    campaignTitle: String(campaign?.name || invite.campaignLabel || ""),
+  });
 };
 
 const findOrCreatePromotionForAcceptedInvite = async (invite: any, campaign: any) => {
@@ -612,6 +648,7 @@ export const respondToDiscoverInvite = async (
       const promotionResult = await findOrCreatePromotionForAcceptedInvite(invite, campaign);
       promotion = promotionResult.promotion;
       collaborationCreated = promotionResult.created;
+      await ensureConversationForInvite(invite, campaign, promotion);
 
       if (collaborationCreated) {
         await CampaignModel.updateOne(
@@ -625,7 +662,7 @@ export const respondToDiscoverInvite = async (
       message:
         action === "accepted"
           ? collaborationCreated
-            ? "Invite accepted and collaboration created"
+            ? "Invite accepted and collaboration opened"
             : "Invite accepted and linked to existing collaboration"
           : "Invite rejected",
       invite: {
