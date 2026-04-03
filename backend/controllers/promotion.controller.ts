@@ -340,6 +340,11 @@ export const updatePromotionTerms = async (
     if (!promotion || !canAccessPromotion(promotion, requester)) {
       return res.status(404).json({ message: "Promotion not found" });
     }
+    if (requester.role !== "brand") {
+      return res.status(403).json({
+        message: "Only brands can revise agreement terms. Use chat to request changes.",
+      });
+    }
     if (!editableStatuses.has(promotion.status)) {
       return res.status(409).json({ message: "Terms can only be edited during request/negotiation phase" });
     }

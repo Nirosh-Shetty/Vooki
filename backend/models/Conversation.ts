@@ -5,6 +5,10 @@ export interface IConversation extends Document {
   lastMessage?: string;   // Cached last message text
   lastMessageId?: string; // Reference to last message document
   lastMessageAt?: Date;   // Timestamp of last message
+  threadType: "direct" | "campaign" | "collaboration";
+  campaignId?: string;
+  promotionId?: string;
+  campaignTitle?: string;
   status: "active" | "archived" | "closed";
   updatedAt: Date;
   createdAt: Date;
@@ -33,6 +37,31 @@ const ConversationSchema = new Schema<IConversation>(
       default: null,
     },
 
+    threadType: {
+      type: String,
+      enum: ["direct", "campaign", "collaboration"],
+      default: "direct",
+      index: true,
+    },
+
+    campaignId: {
+      type: String,
+      default: "",
+      index: true,
+    },
+
+    promotionId: {
+      type: String,
+      default: "",
+      index: true,
+    },
+
+    campaignTitle: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
     status: {
       type: String,
       enum: ["active", "archived", "closed"],
@@ -47,6 +76,8 @@ const ConversationSchema = new Schema<IConversation>(
 ConversationSchema.index({ participants: 1 });
 // Index for filtering active conversations
 ConversationSchema.index({ participants: 1, status: 1 });
+ConversationSchema.index({ participants: 1, promotionId: 1 });
+ConversationSchema.index({ participants: 1, campaignId: 1, promotionId: 1 });
 // Index for sorting by last message
 ConversationSchema.index({ lastMessageAt: -1 });
 

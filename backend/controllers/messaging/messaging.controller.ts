@@ -3,6 +3,50 @@ import Conversation from "../../models/Conversation";
 import Message from "../../models/Message";
 import UserModel from "../../models/Users";
 
+const getConversationThreadType = (options: { promotionId?: string; campaignId?: string }) => {
+  if (options.promotionId) return "collaboration" as const;
+  if (options.campaignId) return "campaign" as const;
+  return "direct" as const;
+};
+
+const findConversationByContext = async (
+  userId: string,
+  otherUserId: string,
+  options: { promotionId?: string; campaignId?: string }
+) => {
+  const participants = [userId, otherUserId].sort();
+  const emptyPromotionFilter = [
+    { promotionId: "" },
+    { promotionId: null },
+    { promotionId: { $exists: false } },
+  ];
+  const emptyCampaignFilter = [
+    { campaignId: "" },
+    { campaignId: null },
+    { campaignId: { $exists: false } },
+  ];
+
+  if (options.promotionId) {
+    return Conversation.findOne({
+      participants,
+      promotionId: String(options.promotionId),
+    });
+  }
+
+  if (options.campaignId) {
+    return Conversation.findOne({
+      participants,
+      campaignId: String(options.campaignId),
+      $or: emptyPromotionFilter,
+    });
+  }
+
+  return Conversation.findOne({
+    participants,
+    $and: [{ $or: emptyCampaignFilter }, { $or: emptyPromotionFilter }],
+  });
+};
+
 // Get all conversations for a user with pagination
 export const getConversations = async (
   req: Request,
@@ -51,6 +95,10 @@ export const getConversations = async (
           participants: conv.participants,
           lastMessage: conv.lastMessage || "",
           lastMessageAt: conv.lastMessageAt,
+          threadType: conv.threadType || "direct",
+          campaignId: conv.campaignId || "",
+          promotionId: conv.promotionId || "",
+          campaignTitle: conv.campaignTitle || "",
           status: conv.status,
           unreadCount,
           otherUser,
@@ -119,7 +167,9 @@ export const getMessages = async (
           id: (msg._id as any).toString(),
           sender,
           senderId: msg.senderId,
+          messageType: msg.messageType || "text",
           text: msg.text,
+          offerData: msg.offerData || null,
           mediaUrl: msg.mediaUrl,
           mediaType: msg.mediaType,
           read: msg.read,
@@ -155,22 +205,32 @@ export const getOrCreateConversation = async (
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const { otherUserId } = req.body;
+    const { otherUserId, campaignId, promotionId, campaignTitle } = req.body;
     if (!otherUserId) {
       return res.status(400).json({ message: "otherUserId is required" });
     }
 
     const participants = [userId, otherUserId].sort();
-
-    let conversation = await Conversation.findOne({
-      participants,
+    let conversation = await findConversationByContext(userId, otherUserId, {
+      campaignId: campaignId ? String(campaignId) : undefined,
+      promotionId: promotionId ? String(promotionId) : undefined,
     });
 
     if (!conversation) {
       conversation = new Conversation({
         participants,
         status: "active",
+        threadType: getConversationThreadType({
+          campaignId: campaignId ? String(campaignId) : undefined,
+          promotionId: promotionId ? String(promotionId) : undefined,
+        }),
+        campaignId: campaignId ? String(campaignId) : "",
+        promotionId: promotionId ? String(promotionId) : "",
+        campaignTitle: String(campaignTitle || "").trim(),
       });
+      await conversation.save();
+    } else if (campaignTitle && !conversation.campaignTitle) {
+      conversation.campaignTitle = String(campaignTitle).trim();
       await conversation.save();
     }
 
@@ -193,6 +253,10 @@ export const getOrCreateConversation = async (
         participants: conversation.participants,
         lastMessage: conversation.lastMessage || "",
         lastMessageAt: conversation.lastMessageAt,
+        threadType: conversation.threadType || "direct",
+        campaignId: conversation.campaignId || "",
+        promotionId: conversation.promotionId || "",
+        campaignTitle: conversation.campaignTitle || "",
         status: conversation.status,
         unreadCount,
         otherUser,

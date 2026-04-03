@@ -1,7 +1,59 @@
 import Message from "../models/Message";
 import Conversation from "../models/Conversation";
 import UserModel from "../models/Users";
-import { AuthenticatedSocket } from "./auth.socket";
+
+type OfferMessageData = {
+  campaignTitle?: string;
+  deliverableSummary?: string;
+  paymentAmount?: number;
+  advanceAmount?: number;
+  draftDueAt?: string | Date | null;
+  postAt?: string | Date | null;
+  hashtags?: string[];
+  discountCode?: string;
+  note?: string;
+};
+
+const normalizeOfferData = (offerData?: OfferMessageData | null) => {
+  if (!offerData) return undefined;
+
+  const toDateValue = (value?: string | Date | null) => {
+    if (!value) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
+
+  return {
+    campaignTitle: String(offerData.campaignTitle || "").trim(),
+    deliverableSummary: String(offerData.deliverableSummary || "").trim(),
+    paymentAmount:
+      typeof offerData.paymentAmount === "number" && Number.isFinite(offerData.paymentAmount)
+        ? offerData.paymentAmount
+        : 0,
+    advanceAmount:
+      typeof offerData.advanceAmount === "number" && Number.isFinite(offerData.advanceAmount)
+        ? offerData.advanceAmount
+        : 0,
+    draftDueAt: toDateValue(offerData.draftDueAt),
+    postAt: toDateValue(offerData.postAt),
+    hashtags: Array.isArray(offerData.hashtags)
+      ? offerData.hashtags.map((tag) => String(tag || "").trim()).filter(Boolean)
+      : [],
+    discountCode: String(offerData.discountCode || "").trim(),
+    note: String(offerData.note || "").trim(),
+  };
+};
+
+const buildStructuredMessagePreview = (
+  messageType: "text" | "offer" | "counter_offer" | "system",
+  offerData?: ReturnType<typeof normalizeOfferData>
+) => {
+  const title = offerData?.campaignTitle ? ` for ${offerData.campaignTitle}` : "";
+  if (messageType === "offer") return `Shared an offer${title}`;
+  if (messageType === "counter_offer") return `Requested changes${title}`;
+  if (messageType === "system") return offerData?.note || "Shared a collaboration update";
+  return "";
+};
 
 export const handleMessaging = (
   io: any,
@@ -64,16 +116,34 @@ export const handleMessaging = (
       data: {
         conversationId: string;
         text?: string;
+        messageType?: "text" | "offer" | "counter_offer" | "system";
+        offerData?: OfferMessageData;
         mediaUrl?: string;
         mediaType?: "image" | "video" | "file";
       },
       callback?: (arg0: any) => void
     ) => {
       try {
-        const { conversationId, text, mediaUrl, mediaType } = data;
-        console.log("📥 Backend received send-message:", { conversationId, text, userId });
+        const {
+          conversationId,
+          text,
+          messageType = "text",
+          offerData,
+          mediaUrl,
+          mediaType,
+        } = data;
+        console.log("Backend received send-message:", {
+          conversationId,
+          text,
+          messageType,
+          userId,
+        });
 
-        if (!text && !mediaUrl) {
+        const normalizedOfferData = normalizeOfferData(offerData);
+        const normalizedText = String(text || "").trim();
+        const structuredPreview = buildStructuredMessagePreview(messageType, normalizedOfferData);
+
+        if (!normalizedText && !mediaUrl && !normalizedOfferData) {
           return callback?.({
             success: false,
             message: "Message text or media is required",
@@ -93,7 +163,9 @@ export const handleMessaging = (
         const message = new Message({
           conversationId,
           senderId: userId,
-          text: text || null,
+          messageType,
+          text: normalizedText || structuredPreview || null,
+          offerData: normalizedOfferData || undefined,
           mediaUrl: mediaUrl || null,
           mediaType: mediaType || null,
           read: false,
@@ -101,8 +173,8 @@ export const handleMessaging = (
 
         await message.save();
 
-        // Update conversation's last message
-        conversation.lastMessage = text || `[${mediaType}]`;
+        // Update conversation's last message preview for the list UI.
+        conversation.lastMessage = message.text || (mediaType ? `[${mediaType}]` : "New message");
         conversation.lastMessageId = (message._id as any).toString();
         conversation.lastMessageAt = new Date();
         await conversation.save();
@@ -119,6 +191,8 @@ export const handleMessaging = (
           sender,
           senderId: userId,
           text: message.text,
+          messageType: message.messageType || "text",
+          offerData: message.offerData || null,
           mediaUrl: message.mediaUrl,
           mediaType: message.mediaType,
           read: false,
@@ -128,7 +202,7 @@ export const handleMessaging = (
 
         // Broadcast to conversation room
         const roomName = `conversation:${conversationId}`;
-        console.log("📤 Broadcasting to room:", roomName, "with message:", messageData.text);
+        console.log("Broadcasting to room:", roomName, "with message:", messageData.text);
         io.to(roomName).emit("message-received", messageData);
 
         callback?.({

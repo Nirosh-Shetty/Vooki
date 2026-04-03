@@ -3,7 +3,19 @@ import { Schema, model, Document } from "mongoose";
 export interface IMessage extends Document {
   conversationId: string;
   senderId: string;
+  messageType: "text" | "offer" | "counter_offer" | "system";
   text?: string;
+  offerData?: {
+    campaignTitle?: string;
+    deliverableSummary?: string;
+    paymentAmount?: number;
+    advanceAmount?: number;
+    draftDueAt?: Date;
+    postAt?: Date;
+    hashtags?: string[];
+    discountCode?: string;
+    note?: string;
+  };
   mediaUrl?: string;
   mediaType?: "image" | "video" | "file";
   read: boolean;
@@ -25,9 +37,28 @@ const MessageSchema = new Schema<IMessage>(
       required: true,
     },
 
+    messageType: {
+      type: String,
+      enum: ["text", "offer", "counter_offer", "system"],
+      default: "text",
+      index: true,
+    },
+
     text: {
       type: String,
       trim: true,
+    },
+
+    offerData: {
+      campaignTitle: { type: String, trim: true, default: "" },
+      deliverableSummary: { type: String, trim: true, default: "" },
+      paymentAmount: { type: Number, default: 0 },
+      advanceAmount: { type: Number, default: 0 },
+      draftDueAt: { type: Date, default: null },
+      postAt: { type: Date, default: null },
+      hashtags: { type: [String], default: [] },
+      discountCode: { type: String, trim: true, default: "" },
+      note: { type: String, trim: true, default: "" },
     },
 
     mediaUrl: {
