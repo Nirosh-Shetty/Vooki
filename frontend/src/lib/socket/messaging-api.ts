@@ -8,6 +8,10 @@ interface ConversationData {
   participants: string[];
   lastMessage: string;
   lastMessageAt?: string;
+  threadType?: "direct" | "campaign" | "collaboration";
+  campaignId?: string;
+  promotionId?: string;
+  campaignTitle?: string;
   status: "active" | "archived" | "closed";
   unreadCount: number;
   otherUser?: {
@@ -26,7 +30,19 @@ interface MessageData {
     profilePicture: string;
   };
   senderId: string;
+  messageType?: "text" | "offer" | "counter_offer" | "system";
   text?: string;
+  offerData?: {
+    campaignTitle?: string;
+    deliverableSummary?: string;
+    paymentAmount?: number;
+    advanceAmount?: number;
+    draftDueAt?: string;
+    postAt?: string;
+    hashtags?: string[];
+    discountCode?: string;
+    note?: string;
+  } | null;
   mediaUrl?: string;
   mediaType?: "image" | "video" | "file";
   read: boolean;
@@ -90,11 +106,19 @@ class MessagingAPI {
   }
 
   // Get or create conversation with another user
-  async getOrCreateConversation(otherUserId: string) {
+  async getOrCreateConversation(
+    otherUserId: string,
+    options?: { campaignId?: string; promotionId?: string; campaignTitle?: string }
+  ) {
     try {
       const response = await this.api.post<{ conversation: ConversationData }>(
         "/conversations",
-        { otherUserId }
+        {
+          otherUserId,
+          campaignId: options?.campaignId,
+          promotionId: options?.promotionId,
+          campaignTitle: options?.campaignTitle,
+        }
       );
       return response.data;
     } catch (error) {
