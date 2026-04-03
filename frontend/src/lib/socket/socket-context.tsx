@@ -25,6 +25,12 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
   console.log("🎯 SocketProvider mounting...");
 
   useEffect(() => {
+    // Only initialize socket on client side, not during build or SSR
+    if (typeof window === 'undefined') {
+      setIsLoading(false);
+      return;
+    }
+
     console.log("⏱️  SocketProvider useEffect running");
     
     const initializeSocket = async () => {
