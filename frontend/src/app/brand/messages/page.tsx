@@ -2,6 +2,8 @@
 
 import { MessagesHubProvider } from "@/components/messaging/messages-hub-provider"
 
+export const dynamic = 'force-dynamic';
+
 export default function BrandMessagesPage() {
   return (
     <MessagesHubProvider
