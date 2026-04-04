@@ -5,6 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useSocket } from "./socket-context";
 
 export interface OfferData {
+  campaignId?: string;
+  promotionId?: string;
   campaignTitle?: string;
   deliverableSummary?: string;
   paymentAmount?: number;
@@ -46,12 +48,12 @@ export interface Conversation {
   participants: string[];
   lastMessage: string;
   lastMessageAt?: Date;
-  threadType?: "direct" | "campaign" | "collaboration";
+  status: "active" | "archived" | "closed";
+  unreadCount: number;
+  threadType: "direct" | "campaign" | "collaboration";
   campaignId?: string;
   promotionId?: string;
   campaignTitle?: string;
-  status: "active" | "archived" | "closed";
-  unreadCount: number;
   otherUser?: {
     name: string;
     username: string;
@@ -66,12 +68,6 @@ export const useMessaging = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  console.log("useMessaging hook called - socket state:", {
-    socketExists: !!socket,
-    isConnected,
-    socketId: socket?.id,
-  });
-
   const joinConversation = useCallback(
     (conversationId: string) => {
       if (!socket || !isConnected) {
@@ -85,7 +81,6 @@ export const useMessaging = () => {
         { conversationId },
         (response: any) => {
           if (response.success) {
-            console.log("Joined conversation:", conversationId);
             setIsLoading(false);
           } else {
             setError(response.message);
@@ -111,27 +106,16 @@ export const useMessaging = () => {
       text?: string,
       options?: SendMessageOptions
     ) => {
-      console.log("useMessaging.sendMessage called:", {
-        conversationId,
-        text,
-        messageType: options?.messageType || "text",
-        socket: !!socket,
-        isConnected,
-      });
-
       if (!socket) {
-        console.error("Socket is null");
         setError("Socket not initialized");
         return Promise.reject(new Error("Socket not initialized"));
       }
 
       if (!isConnected) {
-        console.error("Socket not connected", { isConnected });
         setError("Socket not connected");
         return Promise.reject(new Error("Socket not connected"));
       }
 
-      console.log("Socket connected, emitting send-message event");
       return new Promise((resolve, reject) => {
         socket.emit(
           "send-message",
@@ -144,13 +128,10 @@ export const useMessaging = () => {
             offerData: options?.offerData,
           },
           (response: any) => {
-            console.log("send-message callback response:", response);
             if (!response.success) {
-              console.error("Message send failed:", response.message);
               setError(response.message);
               reject(new Error(response.message || "Message send failed"));
             } else {
-              console.log("Message sent successfully");
               resolve(response.message);
             }
           }
@@ -180,9 +161,9 @@ export const useMessaging = () => {
   useEffect(() => {
     if (!socket) return;
 
-    socket.on("error", (error: any) => {
-      console.error("Socket error:", error);
-      setError(error.message);
+    socket.on("error", (socketError: any) => {
+      console.error("Socket error:", socketError);
+      setError(socketError.message);
     });
 
     return () => {

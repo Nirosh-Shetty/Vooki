@@ -8,10 +8,6 @@ interface ConversationData {
   participants: string[];
   lastMessage: string;
   lastMessageAt?: string;
-  threadType?: "direct" | "campaign" | "collaboration";
-  campaignId?: string;
-  promotionId?: string;
-  campaignTitle?: string;
   status: "active" | "archived" | "closed";
   unreadCount: number;
   otherUser?: {
@@ -33,6 +29,8 @@ interface MessageData {
   messageType?: "text" | "offer" | "counter_offer" | "system";
   text?: string;
   offerData?: {
+    campaignId?: string;
+    promotionId?: string;
     campaignTitle?: string;
     deliverableSummary?: string;
     paymentAmount?: number;
@@ -65,7 +63,6 @@ class MessagingAPI {
     });
   }
 
-  // Get all conversations
   async getConversations(
     page: number = 1,
     limit: number = 20,
@@ -85,7 +82,6 @@ class MessagingAPI {
     }
   }
 
-  // Get messages from conversation
   async getMessages(
     conversationId: string,
     page: number = 1,
@@ -105,20 +101,11 @@ class MessagingAPI {
     }
   }
 
-  // Get or create conversation with another user
-  async getOrCreateConversation(
-    otherUserId: string,
-    options?: { campaignId?: string; promotionId?: string; campaignTitle?: string }
-  ) {
+  async getOrCreateConversation(otherUserId: string, options?: { campaignId?: string; promotionId?: string; campaignTitle?: string }) {
     try {
       const response = await this.api.post<{ conversation: ConversationData }>(
         "/conversations",
-        {
-          otherUserId,
-          campaignId: options?.campaignId,
-          promotionId: options?.promotionId,
-          campaignTitle: options?.campaignTitle,
-        }
+        { otherUserId, ...options }
       );
       return response.data;
     } catch (error) {
@@ -127,7 +114,6 @@ class MessagingAPI {
     }
   }
 
-  // Mark messages as read (REST endpoint)
   async markAsRead(conversationId: string) {
     try {
       const response = await this.api.post("/mark-as-read", {
@@ -140,7 +126,6 @@ class MessagingAPI {
     }
   }
 
-  // Search conversations and messages
   async search(query: string, type: "all" | "messages" | "users" = "all") {
     try {
       const response = await this.api.get<SearchResult>("/search", {
@@ -153,7 +138,6 @@ class MessagingAPI {
     }
   }
 
-  // Archive conversation
   async archiveConversation(conversationId: string) {
     try {
       const response = await this.api.post("/conversations/archive", {
