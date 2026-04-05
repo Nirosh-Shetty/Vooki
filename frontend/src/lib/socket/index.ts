@@ -1,5 +1,11 @@
 export { SocketProvider, useSocket } from "./socket-context";
-export { useMessaging, type Message, type Conversation } from "./use-messaging";
+export {
+  useMessaging,
+  type Message,
+  type Conversation,
+  type OfferData,
+  type SendMessageOptions,
+} from "./use-messaging";
 export { messagingAPI } from "./messaging-api";
 export { useConversations } from "./use-conversations";
 export { useConversationMessages } from "./use-conversation-messages";
