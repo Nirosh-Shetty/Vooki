@@ -8,6 +8,7 @@ export interface IPayment extends Document {
   influencerId: string;
   campaignId: string;
   earningId: string;
+  promotionId?: string;
   amount: number;
   status: PaymentStatus;
   paymentMethod: PaymentMethod;
@@ -43,6 +44,11 @@ const PaymentSchema = new Schema<IPayment>(
       required: true,
       unique: true,
       index: true,
+    },
+    promotionId: {
+      type: String,
+      index: true,
+      sparse: true,
     },
     amount: {
       type: Number,
@@ -87,6 +93,7 @@ const PaymentSchema = new Schema<IPayment>(
 PaymentSchema.index({ brandId: 1, status: 1 });
 PaymentSchema.index({ influencerId: 1, status: 1 });
 PaymentSchema.index({ campaignId: 1 });
+PaymentSchema.index({ promotionId: 1 }, { sparse: true });
 PaymentSchema.index({ createdAt: -1 });
 
 export const Payment = model<IPayment>("Payment", PaymentSchema);

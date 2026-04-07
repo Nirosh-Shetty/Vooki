@@ -7,11 +7,9 @@ import { ArrowLeft, CheckCircle2, DollarSign, Loader2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 
 type CampaignStatus = "draft" | "active" | "paused" | "completed" | "archived"
 type CampaignPriority = "low" | "medium" | "high"
-type CampaignGoal = "awareness" | "sales" | "launch" | "other"
 type PromotionStatus =
   | "requested"
   | "negotiating"
@@ -21,6 +19,12 @@ type PromotionStatus =
   | "metrics_submitted"
   | "payment_pending"
   | "completed"
+
+type Deliverable = {
+  platform: string
+  format: string
+  quantity: number
+}
 
 type Campaign = {
   id: string
@@ -45,6 +49,7 @@ type Promotion = {
   campaignId: string
   campaignTitle: string
   influencerId: string
+  deliverables: Deliverable[]
   status: PromotionStatus
   paymentStatus: "pending" | "paid"
   paymentAmount: number
@@ -83,6 +88,18 @@ const formatMoney = (value: number) =>
 const formatDate = (value: string) =>
   new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })
 
+const formatLabel = (value: string) =>
+  value
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+
+const formatDeliverables = (deliverables: Deliverable[]) => {
+  if (!deliverables?.length) return "Deliverables to be confirmed"
+  return deliverables
+    .map((deliverable) => `${deliverable.quantity} x ${formatLabel(deliverable.platform)} ${formatLabel(deliverable.format)}`)
+    .join(", ")
+}
+
 const statusPillClass: Record<CampaignStatus, string> = {
   draft: "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200",
   active: "bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300",
@@ -109,6 +126,25 @@ const invitePillClass: Record<InviteStatus, string> = {
   expired: "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200",
 }
 
+const campaignStatusTransitions: Record<CampaignStatus, CampaignStatus[]> = {
+  draft: ["active", "archived"],
+  active: ["paused", "completed", "archived"],
+  paused: ["active", "completed", "archived"],
+  completed: ["archived"],
+  archived: [],
+}
+
+const promotionStatusTransitions: Record<PromotionStatus, PromotionStatus[]> = {
+  requested: ["negotiating"],
+  negotiating: ["requested"],
+  accepted: ["content_in_progress"],
+  content_in_progress: [],
+  posted: [],
+  metrics_submitted: ["payment_pending"],
+  payment_pending: ["completed"],
+  completed: [],
+}
+
 export default function CampaignDetailPage() {
   const params = useParams<{ campaignId: string }>()
   const campaignId = params?.campaignId
@@ -119,20 +155,11 @@ export default function CampaignDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
+  const [campaignStatusDraft, setCampaignStatusDraft] = useState<CampaignStatus | "">("")
+  const [campaignStatusBusy, setCampaignStatusBusy] = useState(false)
   const [statusBusyId, setStatusBusyId] = useState<string | null>(null)
   const [payBusyId, setPayBusyId] = useState<string | null>(null)
   const [statusDrafts, setStatusDrafts] = useState<Record<string, PromotionStatus>>({})
-  const [createBusy, setCreateBusy] = useState(false)
-  const [selectedCreatorId, setSelectedCreatorId] = useState("")
-  const [product, setProduct] = useState("")
-  const [campaignGoal, setCampaignGoal] = useState<CampaignGoal>("awareness")
-  const [deliverablePlatform, setDeliverablePlatform] = useState("instagram")
-  const [deliverableFormat, setDeliverableFormat] = useState("reel")
-  const [deliverableQuantity, setDeliverableQuantity] = useState("1")
-  const [draftDueAt, setDraftDueAt] = useState("")
-  const [postAt, setPostAt] = useState("")
-  const [paymentAmount, setPaymentAmount] = useState("")
-  const [paymentDueAt, setPaymentDueAt] = useState("")
 
   const loadData = useCallback(async (signal?: AbortSignal) => {
     if (!campaignId) return
@@ -159,6 +186,7 @@ export default function CampaignDetailPage() {
 
       const campaignData: CampaignResponse = await campaignRes.json()
       setCampaign(campaignData?.campaign || null)
+      setCampaignStatusDraft(campaignData?.campaign?.status || "")
 
       if (invitesRes.ok) {
         const invitesData: InviteListResponse = await invitesRes.json()
@@ -191,18 +219,6 @@ export default function CampaignDetailPage() {
     return () => controller.abort()
   }, [loadData])
 
-  const canAdvanceStatus = useMemo(
-    () =>
-      new Set<PromotionStatus>([
-        "negotiating",
-        "requested",
-        "content_in_progress",
-        "payment_pending",
-        "completed",
-      ]),
-    []
-  )
-
   const workspaceStats = useMemo(() => {
     const pendingInvites = invites.filter((invite) => invite.status === "pending").length
     const acceptedInvites = invites.filter((invite) => invite.status === "accepted").length
@@ -219,33 +235,27 @@ export default function CampaignDetailPage() {
     }
   }, [invites, promotions])
 
-  const eligibleCreators = useMemo(() => {
-    const existingPromotionInfluencerIds = new Set(promotions.map((promotion) => promotion.influencerId))
-    const latestInviteByInfluencer = new Map<string, CampaignInvite>()
-
-    for (const invite of invites) {
-      const existing = latestInviteByInfluencer.get(invite.influencerId)
-      if (!existing || new Date(invite.createdAt).getTime() > new Date(existing.createdAt).getTime()) {
-        latestInviteByInfluencer.set(invite.influencerId, invite)
-      }
+  const updateCampaignStatus = async () => {
+    if (!campaign || !campaignStatusDraft || campaignStatusDraft === campaign.status) return
+    setCampaignStatusBusy(true)
+    setActionMessage(null)
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/campaigns/${campaign.id}/status`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: campaignStatusDraft }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data?.message || "Failed to update campaign status")
+      setActionMessage(data?.message || "Campaign status updated.")
+      await loadData()
+    } catch (err: unknown) {
+      setActionMessage(err instanceof Error ? err.message : "Could not update campaign status.")
+    } finally {
+      setCampaignStatusBusy(false)
     }
-
-    const accepted = [] as CampaignInvite[]
-    const otherInvited = [] as CampaignInvite[]
-
-    for (const invite of latestInviteByInfluencer.values()) {
-      if (existingPromotionInfluencerIds.has(invite.influencerId)) continue
-      if (invite.status === "accepted") accepted.push(invite)
-      else otherInvited.push(invite)
-    }
-
-    return [...accepted, ...otherInvited]
-  }, [invites, promotions])
-
-  const linkedInviteCount = useMemo(
-    () => invites.filter((invite) => Boolean(invite.promotionId || invite.promotionStatus)).length,
-    [invites]
-  )
+  }
 
   const updatePromotionStatus = async (promotionId: string) => {
     const nextStatus = statusDrafts[promotionId]
@@ -292,63 +302,6 @@ export default function CampaignDetailPage() {
     }
   }
 
-  const createPromotion = async () => {
-    if (!campaignId || !campaign) return
-    if (!selectedCreatorId) {
-      setActionMessage("Select a campaign creator before creating a promotion.")
-      return
-    }
-
-    setCreateBusy(true)
-    setActionMessage(null)
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/promotions`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          campaignId,
-          influencerId: selectedCreatorId,
-          campaignTitle: campaign.name,
-          product: product.trim(),
-          campaignGoal,
-          deliverables: [
-            {
-              platform: deliverablePlatform.trim(),
-              format: deliverableFormat.trim(),
-              quantity: Number(deliverableQuantity),
-            },
-          ],
-          draftDueAt,
-          postAt,
-          paymentAmount: Number(paymentAmount),
-          paymentDueAt,
-          requiresDraftApproval: true,
-        }),
-      })
-
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(data?.message || "Failed to create promotion")
-
-      setActionMessage("Promotion created successfully.")
-      setSelectedCreatorId("")
-      setProduct("")
-      setDeliverablePlatform("instagram")
-      setDeliverableFormat("reel")
-      setDeliverableQuantity("1")
-      setDraftDueAt("")
-      setPostAt("")
-      setPaymentAmount("")
-      setPaymentDueAt("")
-
-      await loadData()
-    } catch (err: unknown) {
-      setActionMessage(err instanceof Error ? err.message : "Could not create promotion.")
-    } finally {
-      setCreateBusy(false)
-    }
-  }
-
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <Button asChild variant="outline" className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
@@ -380,14 +333,38 @@ export default function CampaignDetailPage() {
         <>
           <Card className="border-white/60 bg-white/85 shadow-xl shadow-cyan-100/40 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85">
             <CardHeader>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <CardTitle className="text-2xl text-slate-900 dark:text-slate-100">{campaign.name}</CardTitle>
                   <CardDescription className="mt-1 text-slate-600 dark:text-slate-400">{campaign.objective}</CardDescription>
                 </div>
-                <div className="flex gap-2">
-                  <Badge className={`border-0 capitalize ${statusPillClass[campaign.status]}`}>{campaign.status}</Badge>
-                  <Badge className="border-0 bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200 capitalize">{campaign.priority}</Badge>
+                <div className="flex flex-col gap-3 sm:items-end">
+                  <div className="flex gap-2">
+                    <Badge className={`border-0 capitalize ${statusPillClass[campaign.status]}`}>{campaign.status}</Badge>
+                    <Badge className="border-0 bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200 capitalize">{campaign.priority}</Badge>
+                  </div>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <select
+                      value={campaignStatusDraft || campaign.status}
+                      onChange={(event) => setCampaignStatusDraft(event.target.value as CampaignStatus)}
+                      className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    >
+                      {[campaign.status, ...campaignStatusTransitions[campaign.status]].map((status) => (
+                        <option key={status} value={status}>
+                          {formatLabel(status)}
+                        </option>
+                      ))}
+                    </select>
+                    <Button
+                      size="sm"
+                      onClick={updateCampaignStatus}
+                      disabled={campaignStatusBusy || !campaignStatusDraft || campaignStatusDraft === campaign.status}
+                      className="h-9 bg-slate-900 text-white hover:bg-slate-800 dark:bg-cyan-600 dark:hover:bg-cyan-700"
+                    >
+                      {campaignStatusBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      Update campaign
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -485,7 +462,7 @@ export default function CampaignDetailPage() {
                         </p>
                         <div className="mt-3 flex flex-wrap gap-2">
                           <Button asChild size="sm" variant="outline" className="h-8 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
-                            <Link href={`/brand/messages?otherUserId=${invite.influencerId}&campaignId=${invite.campaignId}&campaignTitle=${encodeURIComponent(invite.campaignLabel || campaign?.name || "Campaign")}${invite.promotionId ? `&promotionId=${invite.promotionId}` : ""}`}>Open chat</Link>
+                            <Link href={`/brand/messages?otherUserId=${invite.influencerId}`}>Open chat</Link>
                           </Button>
                           {invite.promotionId ? (
                             <Button asChild size="sm" className="h-8 bg-slate-900 text-white hover:bg-slate-800 dark:bg-cyan-600 dark:hover:bg-cyan-700">
@@ -530,6 +507,7 @@ export default function CampaignDetailPage() {
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{promotion.campaignTitle || "Collaboration"}</p>
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{formatDeliverables(promotion.deliverables)}</p>
                       <div className="mt-1 flex flex-wrap items-center gap-2">
                         <Badge className={`border-0 text-[10px] capitalize ${promotionPillClass[promotion.status]}`}>
                           {promotion.status.replaceAll("_", " ")}
@@ -540,7 +518,7 @@ export default function CampaignDetailPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <Input
+                      <select
                         value={statusDrafts[promotion.id] || promotion.status}
                         onChange={(event) =>
                           setStatusDrafts((prev) => ({
@@ -548,21 +526,21 @@ export default function CampaignDetailPage() {
                             [promotion.id]: event.target.value as PromotionStatus,
                           }))
                         }
-                        list={`promotion-status-${promotion.id}`}
-                        className="h-8 w-[180px] text-xs"
-                      />
-                      <datalist id={`promotion-status-${promotion.id}`}>
-                        {Array.from(canAdvanceStatus).map((status) => (
-                          <option key={status} value={status} />
+                        className="h-8 rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                      >
+                        {[promotion.status, ...promotionStatusTransitions[promotion.status]].map((status) => (
+                          <option key={status} value={status}>
+                            {formatLabel(status)}
+                          </option>
                         ))}
-                      </datalist>
+                      </select>
                       <Button
                         asChild
                         size="sm"
                         variant="outline"
                         className="h-8 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                       >
-                        <Link href={`/brand/messages?otherUserId=${promotion.influencerId}&campaignId=${promotion.campaignId}&promotionId=${promotion.id}&campaignTitle=${encodeURIComponent(promotion.campaignTitle || campaign?.name || "Campaign")}`}>Open chat</Link>
+                        <Link href={`/brand/messages?otherUserId=${promotion.influencerId}`}>Open chat</Link>
                       </Button>
                       <Button
                         asChild
@@ -575,10 +553,11 @@ export default function CampaignDetailPage() {
                       <Button
                         size="sm"
                         onClick={() => updatePromotionStatus(promotion.id)}
-                        disabled={statusBusyId === promotion.id}
+                        disabled={statusBusyId === promotion.id || (statusDrafts[promotion.id] || promotion.status) === promotion.status}
                         className="h-8 bg-slate-900 text-white hover:bg-slate-800 dark:bg-cyan-600 dark:hover:bg-cyan-700"
                       >
-                        {statusBusyId === promotion.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Update status"}
+                        {statusBusyId === promotion.id ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
+                        Update status
                       </Button>
                       <Button
                         size="sm"

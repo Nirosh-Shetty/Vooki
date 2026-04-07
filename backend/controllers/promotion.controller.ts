@@ -3,6 +3,11 @@ import { isValidObjectId } from "mongoose";
 import CampaignModel from "../models/Campaign";
 import PromotionModel, { PromotionStatus } from "../models/Promotion";
 import UserModel from "../models/Users";
+import { getRequestUser } from "../utils/requestUser";
+import {
+  syncPromotionFinancialRecords,
+  validatePromotionPaymentTerms,
+} from "../utils/promotionPayments";
 
 const parseNumber = (value: unknown): number | undefined => {
   if (value === undefined || value === null || value === "") return undefined;
@@ -451,6 +456,12 @@ export const updatePromotionTerms = async (
     Object.assign(promotion, updates);
     await promotion.save();
 
+    try {
+      await syncPromotionFinancialRecords(promotion);
+    } catch (error) {
+      console.error("Error syncing promotion financial records after terms update:", error);
+    }
+
     return res.status(200).json({
       message: "Promotion terms updated",
       promotion: formatPromotion(promotion),
@@ -519,6 +530,13 @@ export const updatePromotionStatus = async (
       });
     }
 
+    if (nextStatus === "payment_pending") {
+      const validationError = validatePromotionPaymentTerms(promotion);
+      if (validationError) {
+        return res.status(409).json({ message: validationError });
+      }
+    }
+
     const acceptingNow =
       current !== "accepted" &&
       nextStatus === "accepted" &&
@@ -532,6 +550,10 @@ export const updatePromotionStatus = async (
         { _id: promotion.campaignId, brandId: promotion.brandId },
         { $inc: { acceptedCreators: 1 } }
       );
+    }
+
+    if (nextStatus === "payment_pending") {
+      await syncPromotionFinancialRecords(promotion, { ensurePendingRecords: true });
     }
 
     return res.status(200).json({
@@ -728,6 +750,16 @@ export const markPromotionPaid = async (
     if (!promotion || !canAccessPromotion(promotion, requester)) {
       return res.status(404).json({ message: "Promotion not found" });
     }
+    if (!["metrics_submitted", "payment_pending", "completed"].includes(promotion.status)) {
+      return res.status(409).json({
+        message: "Payment can only be recorded after performance is submitted.",
+      });
+    }
+
+    const validationError = validatePromotionPaymentTerms(promotion);
+    if (validationError) {
+      return res.status(409).json({ message: validationError });
+    }
 
     promotion.paymentStatus = "paid";
     if (
@@ -739,6 +771,7 @@ export const markPromotionPaid = async (
       promotion.status = "payment_pending";
     }
     await promotion.save();
+    await syncPromotionFinancialRecords(promotion, { ensurePendingRecords: true, markAsPaid: true });
 
     return res.status(200).json({
       message: "Payment status updated",
@@ -749,4 +782,3 @@ export const markPromotionPaid = async (
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-import { getRequestUser } from "../utils/requestUser";

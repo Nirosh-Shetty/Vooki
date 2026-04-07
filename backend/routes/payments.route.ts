@@ -2,6 +2,9 @@ import { Router } from "express";
 import {
   getBrandPayments,
   getBrandPaymentsSummary,
+  getMyBrandPayments,
+  getMyBrandPaymentsSummary,
+  getMyPaymentMethodBreakdown,
   getPaymentById,
   createPayment,
   updatePaymentStatus,
@@ -9,8 +12,15 @@ import {
   processPendingPayments,
   getPaymentMethodBreakdown,
 } from "../controllers/payments.controller";
+import { authMiddleware } from "../middleware/auth";
 
 const router = Router();
+
+router.use(authMiddleware);
+
+router.get("/me", getMyBrandPayments);
+router.get("/me/summary", getMyBrandPaymentsSummary);
+router.get("/me/breakdown", getMyPaymentMethodBreakdown);
 
 // Get brand payments
 router.get("/brand/:brandId", getBrandPayments);

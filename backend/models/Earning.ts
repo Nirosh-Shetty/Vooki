@@ -7,6 +7,7 @@ export interface IEarning extends Document {
   influencerId: string;
   campaignId: string;
   brandId: string;
+  promotionId?: string;
   amount: number;
   status: EarningStatus;
   paymentMethod: PaymentMethod;
@@ -35,6 +36,11 @@ const EarningSchema = new Schema<IEarning>(
       type: String,
       required: true,
       index: true,
+    },
+    promotionId: {
+      type: String,
+      index: true,
+      sparse: true,
     },
     amount: {
       type: Number,
@@ -77,6 +83,7 @@ const EarningSchema = new Schema<IEarning>(
 EarningSchema.index({ influencerId: 1, status: 1 });
 EarningSchema.index({ brandId: 1, status: 1 });
 EarningSchema.index({ campaignId: 1 });
+EarningSchema.index({ promotionId: 1 }, { unique: true, sparse: true });
 EarningSchema.index({ createdAt: -1 });
 
 export const Earning = model<IEarning>("Earning", EarningSchema);

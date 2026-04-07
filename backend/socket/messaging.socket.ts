@@ -3,6 +3,8 @@ import Conversation from "../models/Conversation";
 import UserModel from "../models/Users";
 
 type OfferMessageData = {
+  campaignId?: string;
+  promotionId?: string;
   campaignTitle?: string;
   deliverableSummary?: string;
   paymentAmount?: number;
@@ -24,6 +26,8 @@ const normalizeOfferData = (offerData?: OfferMessageData | null) => {
   };
 
   return {
+    campaignId: String(offerData.campaignId || "").trim(),
+    promotionId: String(offerData.promotionId || "").trim(),
     campaignTitle: String(offerData.campaignTitle || "").trim(),
     deliverableSummary: String(offerData.deliverableSummary || "").trim(),
     paymentAmount:

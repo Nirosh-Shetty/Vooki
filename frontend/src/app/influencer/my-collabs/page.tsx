@@ -302,7 +302,7 @@ export default function MyCollaborations() {
                 </Button>
                 {promotion.brandId ? (
                   <Button asChild variant="outline" size="sm" className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50">
-                    <Link href={`/influencer/messages?otherUserId=${promotion.brandId}${promotion.campaignId ? `&campaignId=${promotion.campaignId}` : ""}&promotionId=${promotion.id}&campaignTitle=${encodeURIComponent(promotion.campaignTitle || "Collaboration")}`}>
+                    <Link href={`/influencer/messages?otherUserId=${promotion.brandId}`}>
                       <MessageSquare className="mr-2 h-4 w-4" /> Open brand chat
                     </Link>
                   </Button>

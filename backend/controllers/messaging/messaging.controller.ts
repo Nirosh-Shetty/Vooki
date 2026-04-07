@@ -2,50 +2,11 @@ import { Request, Response } from "express";
 import Conversation from "../../models/Conversation";
 import Message from "../../models/Message";
 import UserModel from "../../models/Users";
-
-const getConversationThreadType = (options: { promotionId?: string; campaignId?: string }) => {
-  if (options.promotionId) return "collaboration" as const;
-  if (options.campaignId) return "campaign" as const;
-  return "direct" as const;
-};
-
-const findConversationByContext = async (
-  userId: string,
-  otherUserId: string,
-  options: { promotionId?: string; campaignId?: string }
-) => {
-  const participants = [userId, otherUserId].sort();
-  const emptyPromotionFilter = [
-    { promotionId: "" },
-    { promotionId: null },
-    { promotionId: { $exists: false } },
-  ];
-  const emptyCampaignFilter = [
-    { campaignId: "" },
-    { campaignId: null },
-    { campaignId: { $exists: false } },
-  ];
-
-  if (options.promotionId) {
-    return Conversation.findOne({
-      participants,
-      promotionId: String(options.promotionId),
-    });
-  }
-
-  if (options.campaignId) {
-    return Conversation.findOne({
-      participants,
-      campaignId: String(options.campaignId),
-      $or: emptyPromotionFilter,
-    });
-  }
-
-  return Conversation.findOne({
-    participants,
-    $and: [{ $or: emptyCampaignFilter }, { $or: emptyPromotionFilter }],
-  });
-};
+import { getRequestUserId } from "../../utils/requestUser";
+import {
+  findOrCreateDirectConversation,
+  reconcileDirectConversationsForUser,
+} from "../../utils/directConversation";
 
 // Get all conversations for a user with pagination
 export const getConversations = async (
@@ -61,6 +22,8 @@ export const getConversations = async (
     const { page = 1, limit = 20, status = "active" } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
+    await reconcileDirectConversationsForUser(userId);
+
     const conversations = await Conversation.find({
       participants: userId,
       status,
@@ -70,7 +33,6 @@ export const getConversations = async (
       .limit(Number(limit))
       .lean();
 
-    // Enrich with other participant details
     const enrichedConversations = await Promise.all(
       conversations.map(async (conv: any) => {
         const otherParticipantId = conv.participants.find(
@@ -83,7 +45,6 @@ export const getConversations = async (
           role: 1,
         }).lean();
 
-        // Count unread messages for current user
         const unreadCount = await Message.countDocuments({
           conversationId: conv._id,
           senderId: { $ne: userId },
@@ -95,10 +56,6 @@ export const getConversations = async (
           participants: conv.participants,
           lastMessage: conv.lastMessage || "",
           lastMessageAt: conv.lastMessageAt,
-          threadType: conv.threadType || "direct",
-          campaignId: conv.campaignId || "",
-          promotionId: conv.promotionId || "",
-          campaignTitle: conv.campaignTitle || "",
           status: conv.status,
           unreadCount,
           otherUser,
@@ -136,7 +93,6 @@ export const getMessages = async (
     const { page = 1, limit = 20 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    // Verify user is participant
     const conversation = await Conversation.findById(conversationId).lean();
     if (!conversation || !conversation.participants.includes(userId)) {
       return res.status(403).json({ message: "Forbidden" });
@@ -151,10 +107,8 @@ export const getMessages = async (
       .limit(Number(limit))
       .lean();
 
-    // Reverse to get chronological order
     const orderedMessages = messages.reverse();
 
-    // Get sender details for each message
     const enrichedMessages = await Promise.all(
       orderedMessages.map(async (msg: any) => {
         const sender = await UserModel.findById(msg.senderId, {
@@ -205,32 +159,14 @@ export const getOrCreateConversation = async (
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const { otherUserId, campaignId, promotionId, campaignTitle } = req.body;
+    const { otherUserId } = req.body;
     if (!otherUserId) {
       return res.status(400).json({ message: "otherUserId is required" });
     }
 
-    const participants = [userId, otherUserId].sort();
-    let conversation = await findConversationByContext(userId, otherUserId, {
-      campaignId: campaignId ? String(campaignId) : undefined,
-      promotionId: promotionId ? String(promotionId) : undefined,
-    });
-
-    if (!conversation) {
-      conversation = new Conversation({
-        participants,
-        status: "active",
-        threadType: getConversationThreadType({
-          campaignId: campaignId ? String(campaignId) : undefined,
-          promotionId: promotionId ? String(promotionId) : undefined,
-        }),
-        campaignId: campaignId ? String(campaignId) : "",
-        promotionId: promotionId ? String(promotionId) : "",
-        campaignTitle: String(campaignTitle || "").trim(),
-      });
-      await conversation.save();
-    } else if (campaignTitle && !conversation.campaignTitle) {
-      conversation.campaignTitle = String(campaignTitle).trim();
+    const conversation = await findOrCreateDirectConversation(userId, String(otherUserId));
+    if (conversation.status !== "active") {
+      conversation.status = "active";
       await conversation.save();
     }
 
@@ -253,10 +189,6 @@ export const getOrCreateConversation = async (
         participants: conversation.participants,
         lastMessage: conversation.lastMessage || "",
         lastMessageAt: conversation.lastMessageAt,
-        threadType: conversation.threadType || "direct",
-        campaignId: conversation.campaignId || "",
-        promotionId: conversation.promotionId || "",
-        campaignTitle: conversation.campaignTitle || "",
         status: conversation.status,
         unreadCount,
         otherUser,
@@ -284,7 +216,6 @@ export const markMessagesAsRead = async (
       return res.status(400).json({ message: "conversationId is required" });
     }
 
-    // Verify user is participant
     const conversation = await Conversation.findById(conversationId);
     if (!conversation || !conversation.participants.includes(userId)) {
       return res.status(403).json({ message: "Forbidden" });
@@ -328,7 +259,6 @@ export const searchMessaging = async (
     const searchQuery = String(query);
     const results: any = {};
 
-    // Search in messages
     if (type === "all" || type === "messages") {
       const messages = await Message.find({
         $text: { $search: searchQuery },
@@ -337,7 +267,6 @@ export const searchMessaging = async (
         .limit(10)
         .lean();
 
-      // Filter to only conversations where user is participant
       const filteredMessages = await Promise.all(
         messages.map(async (msg) => {
           const conv = await Conversation.findById(msg.conversationId).lean();
@@ -351,7 +280,6 @@ export const searchMessaging = async (
       results.messages = filteredMessages.filter((m) => m !== null);
     }
 
-    // Search in user names (for starting conversations)
     if (type === "all" || type === "users") {
       const users = await UserModel.find(
         {
@@ -411,4 +339,3 @@ export const archiveConversation = async (
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-import { getRequestUserId } from "../../utils/requestUser";
