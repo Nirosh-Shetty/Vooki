@@ -1,119 +1,169 @@
-"use client"
+"use client";
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ProtectedRoute } from "@/components/protected-route"
-import { useAuth } from "@/hooks/useAuth"
+import Link from "next/link";
 import {
   ArrowRight,
-  Calendar,
-  Camera,
-  CheckCircle2,
-  CircleDashed,
+  Clock3,
   Compass,
-  Eye,
   Heart,
   MessageCircle,
-  Plus,
-  Send,
+  MessageSquare,
   Sparkles,
-  TrendingUp,
-} from "lucide-react"
+  Wallet,
+} from "lucide-react";
 
-const campaignOverview = [
-  {
-    name: "Nimbus Skincare",
-    progress: 82,
-    due: "Feb 19",
-    status: "On track",
-    amount: "$3,400",
-  },
-  {
-    name: "AeroFit Studio",
-    progress: 64,
-    due: "Feb 24",
-    status: "Needs draft",
-    amount: "$2,150",
-  },
-  {
-    name: "Northbeam Audio",
-    progress: 95,
-    due: "Feb 17",
-    status: "Ready to submit",
-    amount: "$1,800",
-  },
-]
+import { ProtectedRoute } from "@/components/protected-route";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
 
-const todayFocus = [
+const overviewStats = [
   {
-    title: "Submit final reel cut",
-    detail: "Nimbus Skincare",
-    priority: "High",
-    icon: CheckCircle2,
+    label: "Active collaborations",
+    value: "6",
+    note: "3 need attention this week",
+    tone: "bg-[color:var(--vooki-accent-soft)] text-[color:var(--vooki-accent-strong)]",
   },
   {
-    title: "Approve story storyboard",
-    detail: "AeroFit Studio",
-    priority: "Medium",
-    icon: CircleDashed,
+    label: "Expected payout",
+    value: "$9.8K",
+    note: "Across current live deals",
+    tone: "bg-[color:var(--vooki-violet-soft)] text-[color:var(--vooki-violet)]",
   },
   {
-    title: "Reply to brand feedback",
-    detail: "Northbeam Audio",
-    priority: "High",
-    icon: Send,
+    label: "Reply time",
+    value: "2.1h",
+    note: "Faster than last month",
+    tone: "bg-[color:var(--vooki-blue-soft)] text-[color:var(--vooki-blue)]",
   },
-]
+];
 
-const recentCollabs = [
+const todayRhythm = [
+  {
+    title: "Reply to feedback on the Nimbus reel",
+    detail: "The brand is waiting on the final caption direction.",
+    time: "Next best time: this morning",
+    tone: "bg-[color:var(--vooki-accent-soft)] text-[color:var(--vooki-accent-strong)]",
+  },
+  {
+    title: "Lock the story sequence for AeroFit",
+    detail: "You already have the concept, this just needs sign-off.",
+    time: "Estimated 20 minutes",
+    tone: "bg-[color:var(--vooki-violet-soft)] text-[color:var(--vooki-violet)]",
+  },
+  {
+    title: "Send the weekly metrics snapshot",
+    detail: "Northbeam wants a quick read on reach, saves, and replies.",
+    time: "Due by tonight",
+    tone: "bg-[color:var(--vooki-blue-soft)] text-[color:var(--vooki-blue)]",
+  },
+];
+
+const activeCollaborations = [
   {
     brand: "Nimbus Skincare",
     campaign: "Glow Reset Weekend",
-    date: "2 days ago",
-    result: "1.2M impressions",
-  },
-  {
-    brand: "Northbeam Audio",
-    campaign: "Desk Setup Series",
-    date: "5 days ago",
-    result: "8.1% engagement",
+    stage: "Draft review",
+    deliverable: "Instagram reel + 2 story frames",
+    due: "Due tomorrow",
+    payout: "$3,400",
+    progress: 82,
+    tone: "bg-[color:var(--vooki-accent-soft)] text-[color:var(--vooki-accent-strong)]",
   },
   {
     brand: "AeroFit Studio",
     campaign: "Morning Mobility",
-    date: "1 week ago",
-    result: "34K saves",
+    stage: "Storyboards pending",
+    deliverable: "TikTok post + usage rights review",
+    due: "Due in 3 days",
+    payout: "$2,150",
+    progress: 64,
+    tone: "bg-[color:var(--vooki-violet-soft)] text-[color:var(--vooki-violet)]",
   },
-]
+  {
+    brand: "Northbeam Audio",
+    campaign: "Desk Setup Series",
+    stage: "Ready to submit",
+    deliverable: "YouTube short with caption handoff",
+    due: "Final check today",
+    payout: "$1,800",
+    progress: 95,
+    tone: "bg-[color:var(--vooki-blue-soft)] text-[color:var(--vooki-blue)]",
+  },
+];
 
-const platformMetrics = [
+const audiencePulse = [
   {
     platform: "Instagram",
-    followers: "72.4K",
-    growth: "+4.6%",
-    engagement: "7.9%",
+    audience: "72.4K",
+    signal: "+4.6% this month",
+    note: "Reels about routines and skincare are pulling the strongest saves.",
+    tone: "bg-[color:var(--vooki-accent-soft)] text-[color:var(--vooki-accent-strong)]",
   },
   {
     platform: "TikTok",
-    followers: "118K",
-    growth: "+6.2%",
-    engagement: "9.3%",
+    audience: "118K",
+    signal: "+6.2% this month",
+    note: "Short, casual voiceovers are getting the best completion rate.",
+    tone: "bg-[color:var(--vooki-violet-soft)] text-[color:var(--vooki-violet)]",
   },
   {
     platform: "YouTube",
-    followers: "41.8K",
-    growth: "+2.4%",
-    engagement: "5.8%",
+    audience: "41.8K",
+    signal: "+2.4% this month",
+    note: "Desk setup and creator workflow clips are still performing steadily.",
+    tone: "bg-[color:var(--vooki-blue-soft)] text-[color:var(--vooki-blue)]",
   },
-]
+];
+
+const recentWins = [
+  {
+    title: "Glow Reset Weekend",
+    meta: "Nimbus Skincare - 2 days ago",
+    result: "1.2M impressions",
+  },
+  {
+    title: "Desk Setup Series",
+    meta: "Northbeam Audio - 5 days ago",
+    result: "8.1% engagement",
+  },
+  {
+    title: "Morning Mobility",
+    meta: "AeroFit Studio - 1 week ago",
+    result: "34K saves",
+  },
+];
+
+const quickLinks = [
+  {
+    title: "Review invites",
+    description: "Check new opportunities and respond while interest is warm.",
+    href: "/influencer/invites",
+  },
+  {
+    title: "Open collaborations",
+    description: "See current deal stages, delivery notes, and what needs attention.",
+    href: "/influencer/my-collabs",
+  },
+  {
+    title: "Check messages",
+    description: "Stay close to brand conversations without losing the campaign context.",
+    href: "/influencer/messages",
+  },
+  {
+    title: "View earnings",
+    description: "Keep payout visibility simple and know what is coming next.",
+    href: "/influencer/earnings",
+  },
+];
 
 export default function InfluencerDashboard() {
   return (
     <ProtectedRoute requiredRole="influencer">
       <InfluencerDashboardContent />
     </ProtectedRoute>
-  )
+  );
 }
 
 function InfluencerDashboardContent() {
@@ -122,204 +172,425 @@ function InfluencerDashboardContent() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:space-y-8 lg:px-8">
-      <Card className="border-white/60 bg-white/85 shadow-xl shadow-cyan-100/40 backdrop-blur-sm">
-        <CardContent className="flex flex-col gap-6 p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-3">
-            <Badge className="w-fit border-0 bg-cyan-100 text-cyan-900 hover:bg-cyan-100">
-              <Sparkles className="mr-1 h-3.5 w-3.5" /> Creator Dashboard
-            </Badge>
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">Hi {firstName}, your week looks strong.</h1>
-              <p className="mt-1 text-sm text-slate-600 sm:text-base">
-                You are ahead on deliverables and your engagement trend is climbing.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button className="bg-slate-900 text-white hover:bg-slate-800">
-                <Plus className="mr-2 h-4 w-4" /> New pitch
-              </Button>
-              <Button variant="outline" className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50">
-                <Calendar className="mr-2 h-4 w-4" /> Plan content
-              </Button>
-            </div>
-          </div>
+      <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+        <Card className="overflow-hidden rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
+          <CardContent className="p-6 sm:p-8">
+            <div
+              className="rounded-[28px] border border-[color:var(--vooki-app-border)] p-6 sm:p-7"
+              style={{
+                background:
+                  "linear-gradient(135deg, color-mix(in srgb, var(--vooki-accent-soft) 100%, transparent), color-mix(in srgb, var(--vooki-violet-soft) 100%, transparent) 58%, color-mix(in srgb, var(--vooki-blue-soft) 100%, transparent))",
+              }}
+            >
+              <Badge className="w-fit border-0 bg-[color:var(--vooki-app-inverse-surface)] text-[color:var(--vooki-app-inverse-text)] hover:bg-[color:var(--vooki-app-inverse-surface)]">
+                <Sparkles className="mr-1 h-3.5 w-3.5 text-[color:var(--vooki-accent-strong)]" />
+                Creator dashboard
+              </Badge>
 
-          <div className="grid w-full max-w-md grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-slate-200/80 bg-white p-4">
-              <p className="text-xs text-slate-500">This Month</p>
-              <p className="mt-1 text-xl font-semibold text-slate-900">$9,840</p>
-              <p className="mt-1 flex items-center text-xs text-emerald-600">
-                <TrendingUp className="mr-1 h-3.5 w-3.5" /> +18.4%
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-200/80 bg-white p-4">
-              <p className="text-xs text-slate-500">Active Deals</p>
-              <p className="mt-1 text-xl font-semibold text-slate-900">6</p>
-              <p className="mt-1 text-xs text-slate-600">3 close this week</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200/80 bg-white p-4">
-              <p className="text-xs text-slate-500">Avg Engagement</p>
-              <p className="mt-1 text-xl font-semibold text-slate-900">8.6%</p>
-              <p className="mt-1 text-xs text-emerald-600">Above category avg</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200/80 bg-white p-4">
-              <p className="text-xs text-slate-500">Response Time</p>
-              <p className="mt-1 text-xl font-semibold text-slate-900">2.1h</p>
-              <p className="mt-1 text-xs text-slate-600">Top 12% creators</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="border-white/70 bg-white/90 shadow-lg shadow-slate-200/60 lg:col-span-2">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-slate-900">Campaign Momentum</CardTitle>
-            <CardDescription className="text-slate-600">Track where each collaboration stands right now.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {campaignOverview.map((campaign) => (
-              <div key={campaign.name} className="rounded-2xl border border-slate-200 bg-white p-4">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <h3 className="font-medium text-slate-900">{campaign.name}</h3>
-                    <p className="text-sm text-slate-500">Due {campaign.due}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-slate-900">{campaign.amount}</p>
-                    <Badge variant="secondary" className="mt-1 bg-slate-100 text-slate-700 hover:bg-slate-100">
-                      {campaign.status}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="mt-3 h-2 rounded-full bg-slate-100">
-                  <div className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500" style={{ width: `${campaign.progress}%` }} />
-                </div>
-                <p className="mt-2 text-xs text-slate-500">{campaign.progress}% complete</p>
+              <div className="mt-5 max-w-2xl space-y-3">
+                <h1 className="text-3xl font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)] sm:text-4xl">
+                  Hi {firstName}, your creator week feels focused and in motion.
+                </h1>
+                <p className="text-base leading-7 text-[color:var(--vooki-app-text-soft)] sm:text-lg">
+                  Keep the important work visible, protect your creative energy, and move through
+                  brand deals without the dashboard feeling heavy.
+                </p>
               </div>
-            ))}
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Button
+                  asChild
+                  className="rounded-full border border-[color:var(--vooki-accent-border)] bg-[color:var(--vooki-accent)] px-5 text-[color:var(--vooki-accent-text)] shadow-[var(--vooki-shadow-accent)] hover:bg-[color:var(--vooki-accent-strong)]"
+                >
+                  <Link href="/influencer/my-collabs">
+                    Open collaborations
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="rounded-full border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] px-5 text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-hover)]"
+                >
+                  <Link href="/influencer/invites">
+                    Review invites
+                    <Compass className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              {overviewStats.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="rounded-[24px] border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4 shadow-[var(--vooki-shadow-app-soft)]"
+                >
+                  <div
+                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${stat.tone}`}
+                  >
+                    {stat.label}
+                  </div>
+                  <p className="mt-4 text-2xl font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)]">
+                    {stat.value}
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-[color:var(--vooki-app-text-soft)]">
+                    {stat.note}
+                  </p>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="border-white/70 bg-white/90 shadow-lg shadow-slate-200/60">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-slate-900">Focus Today</CardTitle>
-            <CardDescription className="text-slate-600">A short list to keep you moving.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {todayFocus.map((task) => {
-              const Icon = task.icon
-              return (
-                <div key={task.title} className="rounded-2xl border border-slate-200 bg-white p-3">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 rounded-xl bg-amber-100 p-2 text-amber-700">
-                      <Icon className="h-4 w-4" />
+        <div className="grid gap-6">
+          <Card className="rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[color:var(--vooki-accent-soft)] text-[color:var(--vooki-accent-strong)]">
+                  <Clock3 className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-[color:var(--vooki-app-text-strong)]">
+                    This week&apos;s rhythm
+                  </p>
+                  <p className="text-sm text-[color:var(--vooki-app-text-soft)]">
+                    2 approvals, 1 metrics handoff, 3 active brand threads.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-3">
+                <div className="rounded-[24px] border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--vooki-app-text-muted)]">
+                    Closest deadline
+                  </p>
+                  <p className="mt-2 text-lg font-semibold text-[color:var(--vooki-app-text-strong)]">
+                    Nimbus reel draft tomorrow
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-[color:var(--vooki-app-text-soft)]">
+                    A quick response today will probably keep the whole collaboration moving
+                    smoothly.
+                  </p>
+                </div>
+                <div className="rounded-[24px] border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--vooki-app-text-muted)]">
+                    Energy saver
+                  </p>
+                  <p className="mt-2 text-lg font-semibold text-[color:var(--vooki-app-text-strong)]">
+                    Your messages are grouped well
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-[color:var(--vooki-app-text-soft)]">
+                    You can clear today&apos;s collaboration replies in one short session instead of
+                    bouncing between tabs.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[color:var(--vooki-violet-soft)] text-[color:var(--vooki-violet)]">
+                  <MessageSquare className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-[color:var(--vooki-app-text-strong)]">
+                    Brand conversations
+                  </p>
+                  <p className="text-sm text-[color:var(--vooki-app-text-soft)]">
+                    Keep negotiation, delivery, and follow-ups close.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-[24px] border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4">
+                  <p className="text-xs text-[color:var(--vooki-app-text-muted)]">
+                    Unread brand replies
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-[color:var(--vooki-app-text-strong)]">
+                    4
+                  </p>
+                </div>
+                <div className="rounded-[24px] border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4">
+                  <p className="text-xs text-[color:var(--vooki-app-text-muted)]">
+                    Invites waiting
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-[color:var(--vooki-app-text-strong)]">
+                    2
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+        <Card className="rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
+          <CardContent className="p-6 sm:p-7">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm uppercase tracking-[0.24em] text-[color:var(--vooki-app-text-muted)]">
+                  Today&apos;s focus
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)]">
+                  Keep the day light, but intentional.
+                </h2>
+              </div>
+              <Badge className="border-0 bg-[color:var(--vooki-accent-soft)] text-[color:var(--vooki-accent-strong)] hover:bg-[color:var(--vooki-accent-soft)]">
+                3 priority loops
+              </Badge>
+            </div>
+
+            <div className="mt-6 space-y-3">
+              {todayRhythm.map((item) => (
+                <div
+                  key={item.title}
+                  className="rounded-[24px] border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4"
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <p className="text-base font-medium text-[color:var(--vooki-app-text-strong)]">
+                        {item.title}
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-[color:var(--vooki-app-text-soft)]">
+                        {item.detail}
+                      </p>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-slate-900">{task.title}</p>
-                      <p className="text-xs text-slate-500">{task.detail}</p>
-                    </div>
-                    <Badge
-                      className={
-                        task.priority === "High"
-                          ? "border-0 bg-rose-100 text-rose-700 hover:bg-rose-100"
-                          : "border-0 bg-amber-100 text-amber-700 hover:bg-amber-100"
-                      }
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${item.tone}`}
                     >
-                      {task.priority}
-                    </Badge>
+                      {item.time}
+                    </span>
                   </div>
                 </div>
-              )
-            })}
-            <Button variant="outline" className="mt-2 w-full border-slate-300 bg-white text-slate-700 hover:bg-slate-50">
-              Open full task board <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="border-white/70 bg-white/90 shadow-lg shadow-slate-200/60">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-slate-900">Recent Collaborations</CardTitle>
-            <CardDescription className="text-slate-600">Performance highlights from your latest campaigns.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {recentCollabs.map((item) => (
-              <div key={item.campaign} className="rounded-2xl border border-slate-200 bg-white p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="font-medium text-slate-900">{item.campaign}</p>
-                    <p className="text-sm text-slate-500">{item.brand}</p>
-                  </div>
-                  <span className="text-xs text-slate-500">{item.date}</span>
-                </div>
-                <p className="mt-2 text-sm text-emerald-700">{item.result}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card className="border-white/70 bg-white/90 shadow-lg shadow-slate-200/60">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-slate-900">Audience Snapshot</CardTitle>
-            <CardDescription className="text-slate-600">Cross-platform health and engagement signals.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {platformMetrics.map((metric) => (
-              <div key={metric.platform} className="rounded-2xl border border-slate-200 bg-white p-4">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium text-slate-900">{metric.platform}</p>
-                  <Badge className="border-0 bg-emerald-100 text-emerald-700 hover:bg-emerald-100">{metric.growth}</Badge>
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <p className="text-xs text-slate-500">Followers</p>
-                    <p className="font-semibold text-slate-900">{metric.followers}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500">Engagement</p>
-                    <p className="font-semibold text-slate-900">{metric.engagement}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            <div className="grid grid-cols-3 gap-2 rounded-2xl border border-slate-200 bg-white p-3 text-xs text-slate-600">
-              <div className="flex items-center gap-1.5">
-                <Eye className="h-3.5 w-3.5" /> Reach
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Heart className="h-3.5 w-3.5" /> Saves
-              </div>
-              <div className="flex items-center gap-1.5">
-                <MessageCircle className="h-3.5 w-3.5" /> Replies
-              </div>
+              ))}
             </div>
           </CardContent>
         </Card>
-      </div>
 
-      <Card className="border-white/70 bg-white/90 shadow-lg shadow-slate-200/60">
-        <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <Card className="rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
+          <CardContent className="p-6 sm:p-7">
+            <p className="text-sm uppercase tracking-[0.24em] text-[color:var(--vooki-app-text-muted)]">
+              Audience pulse
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)]">
+              Your audience is giving you clear signals.
+            </h2>
+
+            <div className="mt-6 space-y-3">
+              {audiencePulse.map((platform) => (
+                <div
+                  key={platform.platform}
+                  className="rounded-[24px] border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-base font-medium text-[color:var(--vooki-app-text-strong)]">
+                        {platform.platform}
+                      </p>
+                      <p className="mt-1 text-sm text-[color:var(--vooki-app-text-soft)]">
+                        {platform.audience} followers
+                      </p>
+                    </div>
+                    <Badge className={`border-0 hover:opacity-100 ${platform.tone}`}>
+                      {platform.signal}
+                    </Badge>
+                  </div>
+                  <p className="mt-3 text-sm leading-6 text-[color:var(--vooki-app-text-soft)]">
+                    {platform.note}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2 text-xs text-[color:var(--vooki-app-text-soft)]">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] px-3 py-2">
+                <Heart className="h-3.5 w-3.5 text-[color:var(--vooki-violet)]" /> Saves are
+                strongest on routine content
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] px-3 py-2">
+                <MessageCircle className="h-3.5 w-3.5 text-[color:var(--vooki-blue)]" /> Replies
+                rise when the tone stays casual
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+        <Card className="rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
+          <CardContent className="p-6 sm:p-7">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm uppercase tracking-[0.24em] text-[color:var(--vooki-app-text-muted)]">
+                  Active collaborations
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)]">
+                  See what is moving without opening six tabs.
+                </h2>
+              </div>
+              <Button
+                asChild
+                variant="ghost"
+                className="rounded-full border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-hover)]"
+              >
+                <Link href="/influencer/my-collabs">View all</Link>
+              </Button>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              {activeCollaborations.map((collab) => (
+                <div
+                  key={collab.campaign}
+                  className="rounded-[26px] border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4 sm:p-5"
+                >
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-base font-medium text-[color:var(--vooki-app-text-strong)]">
+                        {collab.campaign}
+                      </p>
+                      <p className="mt-1 text-sm text-[color:var(--vooki-app-text-soft)]">
+                        {collab.brand}
+                      </p>
+                      <p className="mt-3 text-sm leading-6 text-[color:var(--vooki-app-text-soft)]">
+                        {collab.deliverable}
+                      </p>
+                    </div>
+                    <div className="sm:text-right">
+                      <Badge className={`border-0 hover:opacity-100 ${collab.tone}`}>
+                        {collab.stage}
+                      </Badge>
+                      <p className="mt-3 text-lg font-semibold text-[color:var(--vooki-app-text-strong)]">
+                        {collab.payout}
+                      </p>
+                      <p className="text-sm text-[color:var(--vooki-app-text-soft)]">
+                        {collab.due}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 h-2 rounded-full bg-[color:var(--vooki-app-border)]">
+                    <div
+                      className="h-2 rounded-full bg-[color:var(--vooki-accent)]"
+                      style={{ width: `${collab.progress}%` }}
+                    />
+                  </div>
+                  <p className="mt-2 text-xs text-[color:var(--vooki-app-text-muted)]">
+                    {collab.progress}% complete
+                  </p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-6">
+          <Card className="rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
+            <CardContent className="p-6">
+              <p className="text-sm uppercase tracking-[0.24em] text-[color:var(--vooki-app-text-muted)]">
+                Recent wins
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)]">
+                Proof that the work is landing.
+              </h2>
+
+              <div className="mt-6 space-y-3">
+                {recentWins.map((win) => (
+                  <div
+                    key={win.title}
+                    className="rounded-[24px] border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4"
+                  >
+                    <p className="text-base font-medium text-[color:var(--vooki-app-text-strong)]">
+                      {win.title}
+                    </p>
+                    <p className="mt-1 text-sm text-[color:var(--vooki-app-text-soft)]">
+                      {win.meta}
+                    </p>
+                    <p className="mt-3 text-sm font-medium text-[color:var(--vooki-accent-text)]">
+                      {win.result}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
+            <CardContent className="p-6">
+              <p className="text-sm uppercase tracking-[0.24em] text-[color:var(--vooki-app-text-muted)]">
+                Quick actions
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)]">
+                Start with the workflow you actually need.
+              </h2>
+
+              <div className="mt-6 space-y-3">
+                {quickLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="block rounded-[24px] border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4 transition-colors hover:bg-[color:var(--vooki-app-surface-hover)]"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-base font-medium text-[color:var(--vooki-app-text-strong)]">
+                          {link.title}
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-[color:var(--vooki-app-text-soft)]">
+                          {link.description}
+                        </p>
+                      </div>
+                      <ArrowRight className="mt-1 h-4 w-4 flex-shrink-0 text-[color:var(--vooki-app-text-muted)]" />
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      <Card className="rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
+        <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div>
-            <p className="text-sm font-medium text-slate-900">Quick Actions</p>
-            <p className="text-xs text-slate-500">Jump into frequent workflows.</p>
+            <p className="text-sm uppercase tracking-[0.24em] text-[color:var(--vooki-app-text-muted)]">
+              A soft next step
+            </p>
+            <h2 className="mt-2 text-xl font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)]">
+              If you have 15 minutes, the best move is clearing your collaboration replies.
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[color:var(--vooki-app-text-soft)]">
+              It will unblock one draft, one payment conversation, and one brand decision.
+            </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50">
-              <Camera className="mr-2 h-4 w-4" /> New content
+
+          <div className="flex flex-wrap gap-3">
+            <Button
+              asChild
+              variant="ghost"
+              className="rounded-full border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-hover)]"
+            >
+              <Link href="/influencer/messages">
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Open messages
+              </Link>
             </Button>
-            <Button variant="outline" className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50">
-              <Compass className="mr-2 h-4 w-4" /> Discover brands
-            </Button>
-            <Button className="bg-cyan-600 text-white hover:bg-cyan-700">
-              View analytics <ArrowRight className="ml-2 h-4 w-4" />
+            <Button
+              asChild
+              className="rounded-full border border-[color:var(--vooki-accent-border)] bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] shadow-[var(--vooki-shadow-accent)] hover:bg-[color:var(--vooki-accent-strong)]"
+            >
+              <Link href="/influencer/earnings">
+                <Wallet className="mr-2 h-4 w-4" />
+                Check payouts
+              </Link>
             </Button>
           </div>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
