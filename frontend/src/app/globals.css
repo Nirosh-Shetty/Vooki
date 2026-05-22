@@ -321,3 +321,97 @@
     box-shadow: 0 40px 65px rgba(2, 6, 23, 0.7);
   }
 }
+
+:root {
+  --vooki-accent: #c7e27a;
+  --vooki-accent-strong: #d8ec97;
+  --vooki-accent-soft: rgba(199, 226, 122, 0.14);
+  --vooki-accent-border: rgba(216, 236, 151, 0.3);
+  --vooki-accent-text: #1f2514;
+
+  --vooki-violet: #d7caf0;
+  --vooki-violet-base: #b8a8e8;
+  --vooki-violet-soft: rgba(184, 168, 232, 0.14);
+
+  --vooki-blue: #bdd2ef;
+  --vooki-blue-base: #8da9d6;
+  --vooki-blue-soft: rgba(141, 169, 214, 0.12);
+  --vooki-warm: #f0bb7a;
+  --vooki-warm-soft: rgba(240, 187, 122, 0.16);
+
+  --vooki-shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.18);
+  --vooki-shadow-card: 0 24px 80px rgba(0, 0, 0, 0.24);
+  --vooki-shadow-float: 0 30px 80px rgba(0, 0, 0, 0.35);
+  --vooki-shadow-accent: 0 18px 42px rgba(199, 226, 122, 0.22);
+  --vooki-shadow-app: 0 22px 60px rgba(0, 0, 0, 0.12);
+  --vooki-shadow-app-soft: 0 12px 40px rgba(15, 17, 13, 0.04);
+
+  --vooki-home-bg: #11130f;
+  --vooki-home-bg-strong: #0f110d;
+  --vooki-home-nav: rgba(17, 19, 15, 0.8);
+  --vooki-home-surface: rgba(23, 25, 21, 0.85);
+  --vooki-home-surface-strong: #1b1d18;
+  --vooki-home-surface-muted: rgba(255, 255, 255, 0.03);
+  --vooki-home-surface-hover: rgba(255, 255, 255, 0.06);
+  --vooki-home-chip: rgba(255, 255, 255, 0.05);
+  --vooki-home-chip-hover: rgba(255, 255, 255, 0.08);
+  --vooki-home-border: rgba(255, 255, 255, 0.1);
+  --vooki-home-border-soft: rgba(255, 255, 255, 0.08);
+  --vooki-home-text: #f4f1e8;
+  --vooki-home-text-soft: #f0ede5;
+  --vooki-home-text-muted: #b4aea1;
+  --vooki-home-text-subtle: #a8a398;
+  --vooki-home-text-faint: #8f8a7f;
+  --vooki-home-text-dim: #9e988b;
+  --vooki-home-glow-green: rgba(185, 217, 108, 0.12);
+  --vooki-home-glow-violet: rgba(184, 168, 232, 0.12);
+  --vooki-home-glow-blue: rgba(141, 169, 214, 0.1);
+
+  --vooki-app-bg: #f7f2e8;
+  --vooki-app-surface: rgba(252, 250, 244, 0.85);
+  --vooki-app-surface-strong: rgba(255, 253, 248, 0.92);
+  --vooki-app-surface-card: rgba(255, 255, 255, 0.75);
+  --vooki-app-surface-hover: #f0ebdf;
+  --vooki-app-inverse-surface: #161914;
+  --vooki-app-inverse-text: #ffffff;
+  --vooki-app-border: #e9e2d5;
+  --vooki-app-border-strong: #ece5d8;
+  --vooki-app-text: #221d16;
+  --vooki-app-text-strong: #1d1913;
+  --vooki-app-text-soft: #5d564c;
+  --vooki-app-text-muted: #8b8477;
+  --vooki-app-text-subtle: #6f6a60;
+  --vooki-app-active-bg: #ecf5ca;
+  --vooki-app-active-border: #dceaa4;
+  --vooki-app-active-text: #1f2514;
+  --vooki-app-active-icon: #526230;
+  --vooki-app-overlay: rgba(17, 19, 15, 0.45);
+  --vooki-app-glow-green: rgba(217, 235, 180, 0.55);
+  --vooki-app-glow-violet: rgba(221, 210, 239, 0.6);
+  --vooki-app-glow-blue: rgba(212, 225, 243, 0.45);
+}
+
+.dark {
+  --vooki-app-bg: #11130f;
+  --vooki-app-surface: rgba(21, 23, 18, 0.88);
+  --vooki-app-surface-strong: rgba(23, 25, 21, 0.92);
+  --vooki-app-surface-card: rgba(255, 255, 255, 0.04);
+  --vooki-app-surface-hover: rgba(255, 255, 255, 0.04);
+  --vooki-app-inverse-surface: rgba(255, 255, 255, 0.05);
+  --vooki-app-inverse-text: #f4f1e8;
+  --vooki-app-border: rgba(255, 255, 255, 0.08);
+  --vooki-app-border-strong: rgba(255, 255, 255, 0.08);
+  --vooki-app-text: #f4f1e8;
+  --vooki-app-text-strong: #f4f1e8;
+  --vooki-app-text-soft: #c3bdb0;
+  --vooki-app-text-muted: #8f8a7f;
+  --vooki-app-text-subtle: #aba598;
+  --vooki-app-active-bg: rgba(199, 226, 122, 0.14);
+  --vooki-app-active-border: rgba(220, 234, 164, 0.2);
+  --vooki-app-active-text: #edf5d1;
+  --vooki-app-active-icon: #cfe48a;
+  --vooki-app-overlay: rgba(17, 19, 15, 0.45);
+  --vooki-app-glow-green: rgba(185, 217, 108, 0.1);
+  --vooki-app-glow-violet: rgba(184, 168, 232, 0.1);
+  --vooki-app-glow-blue: rgba(141, 169, 214, 0.1);
+}
