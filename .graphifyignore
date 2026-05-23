@@ -1,0 +1,35 @@
+# dependencies
+node_modules
+**/node_modules
+
+# next build
+.next
+**/.next
+
+# builds
+dist
+build
+coverage
+
+# caches
+.turbo
+.cache
+
+# logs
+*.log
+
+# env
+.env
+.env.*
+
+# git
+.git
+
+# uploads/generated
+uploads
+generated
+
+# lockfiles (optional)
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
