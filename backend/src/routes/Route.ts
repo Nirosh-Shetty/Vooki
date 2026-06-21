@@ -7,6 +7,7 @@ import paymentsRouter from "./payments.route";
 import profileRouter from "./profile.route";
 import promotionRouter from "./promotion.route";
 import socialRouter from "./social.route";
+import collaborationRouter from "./collaborationInvite.route";
 const router = express.Router();
 
 router.use("/auth", authRouter);
@@ -17,5 +18,6 @@ router.use("/payments", paymentsRouter);
 router.use("/profile", profileRouter);
 router.use("/promotions", promotionRouter);
 router.use("/social", socialRouter);
+router.use("/collaborations", collaborationRouter);
 
 export default router;

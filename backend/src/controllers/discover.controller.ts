@@ -320,93 +320,93 @@ export const removeFromDiscoverShortlist = async (
   }
 };
 
-export const createDiscoverInvites = async (
-  req: Request,
-  res: Response
-): Promise<any> => {
-  try {
-    const requester = getRequestUser(req);
-    if (!requester?.id) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+// export const createDiscoverInvites = async (
+//   req: Request,
+//   res: Response
+// ): Promise<any> => {
+//   try {
+//     const requester = getRequestUser(req);
+//     if (!requester?.id) {
+//       return res.status(401).json({ message: "Unauthorized" });
+//     }
 
-    if (requester.role !== "brand") {
-      return res.status(403).json({ message: "Only brand accounts can send invites" });
-    }
+//     if (requester.role !== "brand") {
+//       return res.status(403).json({ message: "Only brand accounts can send invites" });
+//     }
 
-    const { influencerIds, campaignId, campaignLabel = "", note = "" } = req.body;
-    if (!Array.isArray(influencerIds) || influencerIds.length === 0) {
-      return res.status(400).json({ message: "influencerIds array is required" });
-    }
-    if (!campaignId) {
-      return res.status(400).json({ message: "campaignId is required" });
-    }
+//     const { influencerIds, campaignId, campaignLabel = "", note = "" } = req.body;
+//     if (!Array.isArray(influencerIds) || influencerIds.length === 0) {
+//       return res.status(400).json({ message: "influencerIds array is required" });
+//     }
+//     if (!campaignId) {
+//       return res.status(400).json({ message: "campaignId is required" });
+//     }
 
-    const campaign = await CampaignModel.findOne({
-      _id: String(campaignId),
-      brandId: requester.id,
-    })
-      .select("_id name")
-      .lean();
+//     const campaign = await CampaignModel.findOne({
+//       _id: String(campaignId),
+//       brandId: requester.id,
+//     })
+//       .select("_id name")
+//       .lean();
 
-    if (!campaign) {
-      return res.status(404).json({ message: "Campaign not found" });
-    }
+//     if (!campaign) {
+//       return res.status(404).json({ message: "Campaign not found" });
+//     }
 
-    const uniqueIds = Array.from(new Set(influencerIds.map((value: any) => String(value))));
+//     const uniqueIds = Array.from(new Set(influencerIds.map((value: any) => String(value))));
 
-    const influencers = await UserModel.find({
-      _id: { $in: uniqueIds },
-      role: "influencer",
-    })
-      .select("_id")
-      .lean();
-    const validIds = new Set(influencers.map((item: any) => String(item._id)));
+//     const influencers = await UserModel.find({
+//       _id: { $in: uniqueIds },
+//       role: "influencer",
+//     })
+//       .select("_id")
+//       .lean();
+//     const validIds = new Set(influencers.map((item: any) => String(item._id)));
 
-    const created: string[] = [];
-    const skipped: string[] = [];
+//     const created: string[] = [];
+//     const skipped: string[] = [];
 
-    for (const influencerId of uniqueIds) {
-      if (!validIds.has(influencerId)) {
-        skipped.push(influencerId);
-        continue;
-      }
+//     for (const influencerId of uniqueIds) {
+//       if (!validIds.has(influencerId)) {
+//         skipped.push(influencerId);
+//         continue;
+//       }
 
-      const existingPending = await DiscoverInviteModel.findOne({
-        brandId: requester.id,
-        influencerId,
-        campaignId: String(campaign._id),
-        status: "pending",
-      })
-        .select("_id")
-        .lean();
+//       const existingPending = await DiscoverInviteModel.findOne({
+//         brandId: requester.id,
+//         influencerId,
+//         campaignId: String(campaign._id),
+//         status: "pending",
+//       })
+//         .select("_id")
+//         .lean();
 
-      if (existingPending) {
-        skipped.push(influencerId);
-        continue;
-      }
+//       if (existingPending) {
+//         skipped.push(influencerId);
+//         continue;
+//       }
 
-      const invite = await DiscoverInviteModel.create({
-        brandId: requester.id,
-        influencerId,
-        campaignId: String(campaign._id),
-        campaignLabel: String(campaignLabel || campaign.name || ""),
-        note: String(note || ""),
-        status: "pending",
-      });
-      created.push(String(invite.influencerId));
-    }
+//       const invite = await DiscoverInviteModel.create({
+//         brandId: requester.id,
+//         influencerId,
+//         campaignId: String(campaign._id),
+//         campaignLabel: String(campaignLabel || campaign.name || ""),
+//         note: String(note || ""),
+//         status: "pending",
+//       });
+//       created.push(String(invite.influencerId));
+//     }
 
-    return res.status(200).json({
-      message: "Invites processed",
-      created,
-      skipped,
-    });
-  } catch (error) {
-    console.error("Error creating discover invites:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
+//     return res.status(200).json({
+//       message: "Invites processed",
+//       created,
+//       skipped,
+//     });
+//   } catch (error) {
+//     console.error("Error creating discover invites:", error);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 
 export const getDiscoverInvites = async (
   req: Request,

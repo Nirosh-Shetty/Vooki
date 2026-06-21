@@ -189,7 +189,7 @@ export default function DiscoverProfilePage() {
     const loadInviteStatus = async () => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/discover/invites?status=all&limit=50`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/collaborations/invites?status=all&limit=50`,
           {
             credentials: "include",
             signal: controller.signal,
@@ -262,7 +262,7 @@ export default function DiscoverProfilePage() {
     setActionMessage(null)
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/discover/invites`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/collaborations/invites`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

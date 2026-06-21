@@ -1,0 +1,742 @@
+import { Request, Response } from "express";
+import DiscoverInviteModel, {
+  IDiscoverInvite,
+  ICounterOffer,
+} from "../models/DiscoverInvite";
+import CampaignModel from "../models/Campaign";
+import UserModel from "../models/Users";
+import { getRequestUser, getRequestUserId } from "../utils/requestUser";
+import { findOrCreateDirectConversation } from "../utils/directConversation";
+import PromotionModel from "../models/Promotion";
+import MessageModel from "../models/Message";
+import ConversationModel from "../models/Conversation";
+
+/** 
+ * BRAND: Create collaboration invite
+ * POST /api/collaborations/invites
+ */
+export const createCollaborationInvite = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const requester = getRequestUser(req);
+    if (!requester?.id || requester.role !== "brand") {
+      return res
+        .status(403)
+        .json({ message: "Only brands can create invites" });
+    }
+
+    const {
+      influencerId,
+      campaignId,
+      collaborationType,
+      deliverables,
+      timeline,
+      compensation,
+      brandMessage,
+    } = req.body;
+
+    // Validation
+    if (!influencerId || !campaignId) {
+      return res
+        .status(400)
+        .json({ message: "influencerId and campaignId are required" });
+    }
+
+    if (
+      !collaborationType ||
+      ![
+        "sponsored_post",
+        "affiliate",
+        "ambassador",
+        "ugc",
+        "event",
+        "long_term",
+      ].includes(collaborationType)
+    ) {
+      return res.status(400).json({ message: "Invalid collaborationType" });
+    }
+
+    // Verify campaign exists and belongs to brand
+    const campaign = await CampaignModel.findOne({
+      _id: String(campaignId),
+      brandId: requester.id,
+    });
+
+    if (!campaign) {
+      return res
+        .status(404)
+        .json({ message: "Campaign not found or not owned by this brand" });
+    }
+
+    // Verify influencer exists
+    const influencer = await UserModel.findOne({
+      _id: String(influencerId),
+      role: "influencer",
+    });
+
+    if (!influencer) {
+      return res.status(404).json({ message: "Influencer not found" });
+    }
+
+    // Check for existing pending invite
+    const existingInvite = await DiscoverInviteModel.findOne({
+      brandId: requester.id,
+      influencerId: String(influencerId),
+      campaignId: String(campaignId),
+      status: "pending",
+    });
+
+    if (existingInvite) {
+      return res
+        .status(409)
+        .json({ message: "Pending invite already exists for this campaign" });
+    }
+
+    // Validate compensation
+    if (!compensation || !compensation.type) {
+      return res
+        .status(400)
+        .json({ message: "Compensation type is required" });
+    }
+
+    if (compensation.type === "fixed" && !compensation.amount) {
+      return res
+        .status(400)
+        .json({ message: "Amount is required for fixed compensation" });
+    }
+
+    if (
+      compensation.type === "range" &&
+      (!compensation.minAmount || !compensation.maxAmount)
+    ) {
+      return res.status(400).json({
+        message: "Min and max amounts are required for range compensation",
+      });
+    }
+
+    // Validate deliverables
+    if (
+      !Array.isArray(deliverables) ||
+      deliverables.length === 0
+    ) {
+      return res
+        .status(400)
+        .json({ message: "At least one deliverable is required" });
+    }
+
+    // Validate timeline
+    if (!timeline || !timeline.responseDeadline) {
+      return res
+        .status(400)
+        .json({ message: "Timeline with responseDeadline is required" });
+    }
+
+    // Create invite
+    const newInvite = await DiscoverInviteModel.create({
+      brandId: requester.id,
+      influencerId: String(influencerId),
+      campaignId: String(campaignId),
+      campaignTitle: String(campaign.name),
+      collaborationType,
+      deliverables,
+      timeline,
+      compensation,
+      brandMessage: String(brandMessage || "").trim(),
+      status: "pending",
+    });
+
+    // Increment invitedCreators on campaign
+    await CampaignModel.updateOne(
+      { _id: String(campaignId) },
+      { $inc: { invitedCreators: 1 } }
+    );
+
+    // Fetch brand info for response
+    const brand = await UserModel.findById(requester.id).select(
+      "_id name profilePicture"
+    );
+
+    return res.status(201).json({
+      message: "Invite created successfully",
+      invite: {
+        _id: newInvite._id,
+        campaignTitle: newInvite.campaignTitle,
+        collaborationType: newInvite.collaborationType,
+        deliverables: newInvite.deliverables,
+        compensation: newInvite.compensation,
+        timeline: newInvite.timeline,
+        brandMessage: newInvite.brandMessage,
+        status: newInvite.status,
+        brand: {
+          id: brand?._id,
+          name: brand?.name,
+          profilePicture: brand?.profilePicture,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error creating collaboration invite:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * CREATOR: Get all invites sent to them
+ * GET /api/collaborations/invites/received
+ */
+export const getReceivedInvites = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const userId = getRequestUserId(req);
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const user = await UserModel.findById(userId);
+    if (user?.role !== "influencer") {
+      return res
+        .status(403)
+        .json({ message: "Only influencers can view received invites" });
+    }
+
+    const invites = await DiscoverInviteModel.find({
+      influencerId: userId,
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Fetch brand info for each invite
+    const invitesWithBrandInfo = await Promise.all(
+      invites.map(async (invite: any) => {
+        const brand = await UserModel.findById(invite.brandId).select(
+          "_id name profilePicture"
+        );
+
+        return {
+          ...invite,
+          brand: {
+            id: brand?._id,
+            name: brand?.name,
+            profilePicture: brand?.profilePicture,
+          },
+        };
+      })
+    );
+
+    return res.status(200).json({
+      invites: invitesWithBrandInfo,
+    });
+  } catch (error) {
+    console.error("Error fetching invites:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * CREATOR: Accept invite as-is
+ * POST /api/collaborations/invites/:id/accept
+ */
+export const acceptInvite = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const userId = getRequestUserId(req);
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { inviteId } = req.params;
+
+    const invite = await DiscoverInviteModel.findOne({
+      _id: String(inviteId),
+      influencerId: userId,
+    });
+
+    if (!invite) {
+      return res.status(404).json({ message: "Invite not found" });
+    }
+
+    if (invite.status !== "pending") {
+      return res.status(400).json({
+        message: `Cannot accept invite with status: ${invite.status}`,
+      });
+    }
+
+    // Create or find conversation
+    const conversation = await findOrCreateDirectConversation(
+      String(invite.brandId),
+      userId
+    );
+
+    // Create promotion from invite
+    const campaign = await CampaignModel.findById(invite.campaignId).lean();
+
+    const promotion = await PromotionModel.create({
+      sourceInviteId: String(invite._id),
+      campaignId: String(invite.campaignId),
+      brandId: String(invite.brandId),
+      influencerId: userId,
+      campaignTitle: invite.campaignTitle,
+      product: invite.campaignTitle,
+      campaignGoal: "awareness",
+      deliverables: invite.deliverables,
+      draftDueAt: invite.timeline.draftDueDate || new Date(),
+      postAt: invite.timeline.postingEndDate,
+      paymentAmount: invite.compensation.amount || 0,
+      advanceAmount: 0,
+      paymentDueAt: invite.timeline.postingEndDate,
+      paymentMethod: "direct",
+      status: "negotiating",
+    });
+
+    // Update invite
+    invite.status = "accepted";
+    invite.conversationId = String(conversation._id);
+    invite.promotionId = String(promotion._id);
+    await invite.save();
+
+    // Send system message in chat
+    await MessageModel.create({
+      conversationId: String(conversation._id),
+      senderId: userId,
+      messageType: "system",
+      text: `Accepted collaboration invite for ${invite.campaignTitle}`,
+    });
+
+    return res.status(200).json({
+      message: "Invite accepted",
+      promotion: {
+        _id: promotion._id,
+        status: promotion.status,
+      },
+      conversation: {
+        _id: conversation._id,
+      },
+    });
+  } catch (error) {
+    console.error("Error accepting invite:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * CREATOR: Counter invite with modified terms
+ * POST /api/collaborations/invites/:id/counter
+ */
+export const counterInvite = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const userId = getRequestUserId(req);
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { inviteId } = req.params;
+    const { deliverables, compensation, timeline, message } = req.body;
+
+    const invite = await DiscoverInviteModel.findOne({
+      _id: String(inviteId),
+      influencerId: userId,
+    });
+
+    if (!invite) {
+      return res.status(404).json({ message: "Invite not found" });
+    }
+
+    if (!["pending", "counter_offered"].includes(invite.status)) {
+      return res.status(400).json({
+        message: "Can only counter pending or previously countered invites",
+      });
+    }
+
+    // Create counter offer
+    const counterOffer: ICounterOffer = {
+      createdBy: "creator",
+      message: String(message || "").trim(),
+      deliverables: deliverables || invite.deliverables,
+      compensation: compensation || invite.compensation,
+      timeline: timeline || invite.timeline,
+    };
+
+    // Add to history and set as active
+    invite.counterOffers.push(counterOffer);
+    invite.activeCounterOffer = counterOffer;
+    invite.status = "counter_offered";
+    await invite.save();
+
+    // Create or find conversation
+    let conversation = invite.conversationId
+      ? await ConversationModel.findOne({
+          _id: invite.conversationId,
+        })
+      : null;
+
+    if (!conversation) {
+      const newConversation = await findOrCreateDirectConversation(
+        String(invite.brandId),
+        userId
+      );
+      invite.conversationId = String(newConversation._id);
+      await invite.save();
+      conversation = newConversation;
+    }
+
+    // Send counter offer message
+    await MessageModel.create({
+      conversationId: String(invite.conversationId),
+      senderId: userId,
+      messageType: "counter_offer",
+      text: message || undefined,
+      offerData: {
+        campaignId: String(invite.campaignId),
+        campaignTitle: invite.campaignTitle,
+        paymentAmount:
+          compensation?.amount ||
+          compensation?.minAmount ||
+          invite.compensation.amount ||
+          0,
+        note: message || "",
+      },
+    });
+
+    return res.status(200).json({
+      message: "Counter offer sent",
+      invite: {
+        _id: invite._id,
+        status: invite.status,
+        activeCounterOffer: invite.activeCounterOffer,
+      },
+      conversation: {
+        _id: invite.conversationId,
+      },
+    });
+  } catch (error) {
+    console.error("Error countering invite:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * CREATOR: Ask question about invite
+ * POST /api/collaborations/invites/:id/ask-question
+ */
+export const askQuestion = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const userId = getRequestUserId(req);
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { inviteId } = req.params;
+    const { question } = req.body;
+
+    if (!question || !String(question).trim()) {
+      return res.status(400).json({ message: "Question is required" });
+    }
+
+    const invite = await DiscoverInviteModel.findOne({
+      _id: String(inviteId),
+      influencerId: userId,
+    });
+
+    if (!invite) {
+      return res.status(404).json({ message: "Invite not found" });
+    }
+
+    // Create or find conversation
+    let conversation = invite.conversationId
+      ? await ConversationModel.findOne({
+          _id: invite.conversationId,
+        })
+      : null;
+
+    if (!conversation) {
+      const newConversation = await findOrCreateDirectConversation(
+        String(invite.brandId),
+        userId
+      );
+      invite.conversationId = String(newConversation._id);
+      await invite.save();
+      conversation = newConversation;
+    }
+
+    // Send question message
+    await MessageModel.create({
+      conversationId: String(invite.conversationId),
+      senderId: userId,
+      messageType: "text",
+      text: question,
+    });
+
+    return res.status(200).json({
+      message: "Question sent",
+      conversation: {
+        _id: invite.conversationId,
+      },
+    });
+  } catch (error) {
+    console.error("Error asking question:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * CREATOR: Decline invite
+ * POST /api/collaborations/invites/:id/decline
+ */
+export const declineInvite = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const userId = getRequestUserId(req);
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { inviteId } = req.params;
+    const { reason } = req.body;
+
+    const invite = await DiscoverInviteModel.findOne({
+      _id: String(inviteId),
+      influencerId: userId,
+    });
+
+    if (!invite) {
+      return res.status(404).json({ message: "Invite not found" });
+    }
+
+    if (!["pending", "counter_offered"].includes(invite.status)) {
+      return res
+        .status(400)
+        .json({ message: "Can only decline pending or countered invites" });
+    }
+
+    invite.status = "declined";
+    invite.declineReason = String(reason || "").trim();
+    await invite.save();
+
+    // Decrement invitedCreators on campaign
+    await CampaignModel.updateOne(
+      { _id: String(invite.campaignId) },
+      { $inc: { invitedCreators: -1 } }
+    );
+
+    return res.status(200).json({
+      message: "Invite declined",
+    });
+  } catch (error) {
+    console.error("Error declining invite:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * BRAND: Accept counter offer
+ * POST /api/collaborations/invites/:id/accept-counter
+ */
+export const acceptCounterOffer = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const requester = getRequestUser(req);
+    if (!requester?.id || requester.role !== "brand") {
+      return res.status(403).json({ message: "Only brands can accept counters" });
+    }
+
+    const { inviteId } = req.params;
+
+    const invite = await DiscoverInviteModel.findOne({
+      _id: String(inviteId),
+      brandId: requester.id,
+    });
+
+    if (!invite) {
+      return res.status(404).json({ message: "Invite not found" });
+    }
+
+    if (invite.status !== "counter_offered" || !invite.activeCounterOffer) {
+      return res
+        .status(400)
+        .json({ message: "No active counter offer to accept" });
+    }
+
+    // Create or find conversation
+    let conversation = invite.conversationId
+      ? await ConversationModel.findOne({
+          _id: invite.conversationId,
+        })
+      : null;
+
+    if (!conversation) {
+      const newConversation = await findOrCreateDirectConversation(
+        requester.id,
+        String(invite.influencerId)
+      );
+      invite.conversationId = String(newConversation._id);
+      conversation = newConversation;
+    }
+
+    // Create promotion with counter offer terms
+    const promotion = await PromotionModel.create({
+      sourceInviteId: String(invite._id),
+      campaignId: String(invite.campaignId),
+      brandId: requester.id,
+      influencerId: String(invite.influencerId),
+      campaignTitle: invite.campaignTitle,
+      product: invite.campaignTitle,
+      campaignGoal: "awareness",
+      deliverables: invite.activeCounterOffer.deliverables || invite.deliverables,
+      draftDueAt:
+        invite.activeCounterOffer.timeline?.draftDueDate ||
+        invite.timeline.draftDueDate ||
+        new Date(),
+      postAt:
+        invite.activeCounterOffer.timeline?.postingEndDate ||
+        invite.timeline.postingEndDate,
+      paymentAmount:
+        invite.activeCounterOffer.compensation?.amount ||
+        invite.activeCounterOffer.compensation?.minAmount ||
+        invite.compensation.amount ||
+        0,
+      advanceAmount: 0,
+      paymentDueAt:
+        invite.activeCounterOffer.timeline?.postingEndDate ||
+        invite.timeline.postingEndDate,
+      paymentMethod: "direct",
+      status: "negotiating",
+    });
+
+    // Update invite
+    invite.status = "accepted";
+    invite.promotionId = String(promotion._id);
+    await invite.save();
+
+    // Send system message
+    await MessageModel.create({
+      conversationId: String(invite.conversationId),
+      senderId: requester.id,
+      messageType: "system",
+      text: `Accepted counter offer for ${invite.campaignTitle}`,
+    });
+
+    return res.status(200).json({
+      message: "Counter offer accepted",
+      promotion: {
+        _id: promotion._id,
+        status: promotion.status,
+      },
+    });
+  } catch (error) {
+    console.error("Error accepting counter offer:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * BRAND: Counter the creator's counter
+ * POST /api/collaborations/invites/:id/brand-counter
+ */
+export const brandCounterOffer = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const requester = getRequestUser(req);
+    if (!requester?.id || requester.role !== "brand") {
+      return res.status(403).json({ message: "Only brands can send counters" });
+    }
+
+    const { inviteId } = req.params;
+    const { deliverables, compensation, timeline, message } = req.body;
+
+    const invite = await DiscoverInviteModel.findOne({
+      _id: String(inviteId),
+      brandId: requester.id,
+    });
+
+    if (!invite) {
+      return res.status(404).json({ message: "Invite not found" });
+    }
+
+    if (invite.status !== "counter_offered") {
+      return res
+        .status(400)
+        .json({
+          message: "Can only counter when creator has sent a counter offer",
+        });
+    }
+
+    // Create brand's counter offer
+    const counterOffer: ICounterOffer = {
+      createdBy: "brand",
+      message: String(message || "").trim(),
+      deliverables: deliverables || invite.deliverables,
+      compensation: compensation || invite.compensation,
+      timeline: timeline || invite.timeline,
+    };
+
+    // Add to history and set as active
+    invite.counterOffers.push(counterOffer);
+    invite.activeCounterOffer = counterOffer;
+    await invite.save();
+
+    // Create or find conversation
+    let conversation = invite.conversationId
+      ? await ConversationModel.findOne({
+          _id: invite.conversationId,
+        })
+      : null;
+
+    if (!conversation) {
+      const newConversation = await findOrCreateDirectConversation(
+        requester.id,
+        String(invite.influencerId)
+      );
+      invite.conversationId = String(newConversation._id);
+      await invite.save();
+      conversation = newConversation;
+    }
+
+    // Send counter offer message
+    await MessageModel.create({
+      conversationId: String(invite.conversationId),
+      senderId: requester.id,
+      messageType: "counter_offer",
+      text: message || undefined,
+      offerData: {
+        campaignId: String(invite.campaignId),
+        campaignTitle: invite.campaignTitle,
+        paymentAmount:
+          compensation?.amount ||
+          compensation?.minAmount ||
+          invite.compensation.amount ||
+          0,
+        note: message || "",
+      },
+    });
+
+    return res.status(200).json({
+      message: "Counter offer sent",
+      invite: {
+        _id: invite._id,
+        status: invite.status,
+        activeCounterOffer: invite.activeCounterOffer,
+      },
+    });
+  } catch (error) {
+    console.error("Error sending brand counter:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};

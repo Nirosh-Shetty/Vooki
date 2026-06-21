@@ -125,7 +125,7 @@ export default function DiscoverPage() {
 
   const fetchSentInvites = useCallback(async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/discover/invites?status=all&limit=50`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/collaborations/invites?status=all&limit=50`, {
         credentials: "include",
       })
       if (!response.ok) return
@@ -302,7 +302,7 @@ export default function DiscoverPage() {
     setActionMessage(null)
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/discover/invites`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/collaborations/invites`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

@@ -172,7 +172,7 @@ export default function CampaignDetailPage() {
           credentials: "include",
           signal,
         }),
-        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/discover/invites?campaignId=${campaignId}&status=all&limit=50`, {
+        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/collaborations/invites?campaignId=${campaignId}&status=all&limit=50`, {
           credentials: "include",
           signal,
         }),

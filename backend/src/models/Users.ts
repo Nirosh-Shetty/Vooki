@@ -58,7 +58,6 @@ const UserSchema = new Schema<IUser>(
       enum: ["local", "google", "facebook"],
       default: [],
     },
-
     role: {
       type: String,
       enum: ["influencer", "brand", "manager"],
