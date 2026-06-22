@@ -15,3 +15,51 @@ source files when (a) modifying/debugging specific code, (b) the graph lacks the
 (c) the graph is missing or stale.
 
 Type `/graphify` in Copilot Chat to build or update the graph.
+
+---
+
+# Repository Instructions for Copilot
+
+Use these guidelines for all code changes in this repository unless a more specific folder-level
+instruction file exists.
+
+## Behavior
+- Prefer clean, production-grade solutions over quick prototypes.
+- When unsure, ask for clarification rather than guessing.
+- Keep changes small and focused; avoid large refactors unless explicitly requested.
+- Reuse existing project patterns and helper utilities whenever possible.
+
+## Important conventions
+- Use TypeScript with explicit types/interfaces for public APIs, props, route handlers, and model
+  shapes.
+- Use `async/await` consistently; avoid callback style and mixed promise handling.
+- Validate external input and sanitize before use.
+- Avoid hardcoded secrets, credentials, or environment-specific values in source code.
+- Do not leave stray `console.log`, `debugger`, or dead code in committed files.
+
+## Backend-specific guidance
+- Use existing Express middleware patterns for auth, error handling, and request validation.
+- Return API responses using typed response shapes rather than raw objects wherever possible.
+- Centralize error responses and use HTTP status codes consistently.
+
+## Frontend-specific guidance
+- Use Next.js conventions in `src/app`, `src/components`, and page routes.
+- Favor composable, reusable components and keep UI logic separated from data-fetching concerns.
+- Ensure UI state is predictable and accessible.
+
+## Formatting and tooling
+- Follow repository linting and formatting rules from `eslint.config.mjs`, `prettier.config.js`, and
+  `tsconfig.json`.
+- Prefer existing code style over inventing new style rules.
+- Add helpful comments only when logic is non-obvious.
+
+## Examples of useful prompts
+- "Refactor `backend/controllers/profile.controller.ts` to replace any `any` types with explicit
+  interfaces and add centralized error handling." 
+- "Create a typed API response model and update `backend/routes/profile.route.ts` to use it." 
+- "Add input validation for this route and ensure the frontend form handles backend errors cleanly."
+
+## Notes for maintainers
+- Keep this file concise and actionable.
+- Use folder-specific `.github/copilot-instructions.md` files only when a subset of rules should
+  differ from the repo-wide defaults.
