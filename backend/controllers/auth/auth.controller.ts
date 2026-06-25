@@ -200,14 +200,14 @@ export const requestOtp = async (req: Request, res: Response): Promise<any> => {
   //TODO: rate limit otp request per hour/day
   try {
     const { email } = req.body;
-    if (!email) {
+    if (typeof email !== "string" || email.trim() === "") {
       return res.status(400).json({
         message: "Cannot find the email. Please signup again.",
         redirectTo: "/signup/basic-info",
       });
     }
     // Check if the user exists and is a temp account
-    const user = await UserModel.findOne({ email }).lean() as import("../../types/user").IUser | null;
+    const user = await UserModel.findOne({ email: { $eq: email } }).lean() as import("../../types/user").IUser | null;
     if (!user) {
       return res.status(400).json({
         message: "User not found. You need to signup again",
@@ -250,7 +250,7 @@ export const requestOtp = async (req: Request, res: Response): Promise<any> => {
     }
     // Save OTP to the user record
     await UserModel.updateOne(
-      { email },
+      { email: { $eq: email } },
       {
         $set: {
           otp,
