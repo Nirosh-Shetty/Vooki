@@ -19,11 +19,11 @@ import { WorkspaceShell, type WorkspaceNavItem } from "@/components/workspace/wo
 const sidebarItems: WorkspaceNavItem[] = [
   { label: "Dashboard", href: "/brand/dashboard", icon: Home },
   { label: "Campaigns", href: "/brand/campaigns", icon: Target },
+  { label: "Discover", href: "/brand/discover", icon: Search },
   { label: "Collaborations", href: "/brand/influencers", icon: Users, mobileLabel: "Collabs" },
   { label: "Analytics", href: "/brand/analytics", icon: BarChart3 },
   { label: "Messages", href: "/brand/messages", icon: MessageSquare },
   { label: "Payments", href: "/brand/payments", icon: Wallet },
-  { label: "Discover", href: "/brand/discover", icon: Search },
 ];
 
 const mobilePrimary: WorkspaceNavItem[] = [
@@ -37,11 +37,11 @@ const routeTitle: Record<string, string> = {
   "/brand/dashboard": "Dashboard",
   "/brand/campaigns": "Campaigns",
   "/brand/campaigns/new": "New Campaign",
+  "/brand/discover": "Discover",
   "/brand/influencers": "Collaborations",
   "/brand/analytics": "Analytics",
   "/brand/messages": "Messages",
   "/brand/payments": "Payments",
-  "/brand/discover": "Discover",
   "/brand/settings": "Settings",
 };
 

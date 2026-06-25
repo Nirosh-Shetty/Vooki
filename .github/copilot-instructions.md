@@ -28,6 +28,8 @@ instruction file exists.
 - When unsure, ask for clarification rather than guessing.
 - Keep changes small and focused; avoid large refactors unless explicitly requested.
 - Reuse existing project patterns and helper utilities whenever possible.
+- Use lesser token, more efficient solutions when they are clear and maintainable.
+- Avoid introducing new dependencies unless they are widely used, well-maintained, and necessary.
 
 ## Important conventions
 - Use TypeScript with explicit types/interfaces for public APIs, props, route handlers, and model

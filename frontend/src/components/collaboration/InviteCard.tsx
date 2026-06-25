@@ -63,6 +63,33 @@ export function InviteCard({ invite, brand, onAction }: InviteCardProps) {
   }
 
   const statusBadgeStyle = statusMap[invite.status as string] || "bg-gray-100 text-gray-800"
+  const compensation = invite.compensation || {}
+  const collaborationTypeText = invite.collaborationType
+    ? invite.collaborationType
+        .replace(/_/g, " ")
+        .charAt(0)
+        .toUpperCase() + invite.collaborationType.slice(1)
+    : ""
+  const totalDeliverables = Array.isArray(invite.deliverables)
+    ? invite.deliverables.reduce((sum: number, d: any) => sum + (d?.quantity || 0), 0)
+    : 0
+  const deliveryItems = Array.isArray(invite.deliverables) ? invite.deliverables : []
+  const responseDeadline = invite.timeline?.responseDeadline
+    ? new Date(invite.timeline.responseDeadline).toLocaleDateString()
+    : "TBD"
+  const postingEndDate = invite.timeline?.postingEndDate
+    ? new Date(invite.timeline.postingEndDate).toLocaleDateString()
+    : null
+  const draftDueDate = invite.timeline?.draftDueDate
+    ? new Date(invite.timeline.draftDueDate).toLocaleDateString()
+    : null
+  const compensationText = compensation.type === "fixed"
+    ? compensation.amount != null
+      ? `₹${compensation.amount.toLocaleString()}`
+      : "N/A"
+    : compensation.minAmount != null && compensation.maxAmount != null
+    ? `₹${compensation.minAmount.toLocaleString()} - ${compensation.maxAmount.toLocaleString()}`
+    : "N/A"
 
   return (
     <>
@@ -94,17 +121,8 @@ export function InviteCard({ invite, brand, onAction }: InviteCardProps) {
             </div>
 
             <div className="text-right">
-              <p className="font-semibold text-sm">
-                {invite.compensation.type === "fixed"
-                  ? `₹${invite.compensation.amount?.toLocaleString()}`
-                  : `₹${invite.compensation.minAmount?.toLocaleString()} - ${invite.compensation.maxAmount?.toLocaleString()}`}
-              </p>
-              <p className="text-xs text-gray-500">
-                {invite.collaborationType
-                  .replace(/_/g, " ")
-                  .charAt(0)
-                  .toUpperCase() + invite.collaborationType.slice(1)}
-              </p>
+              <p className="font-semibold text-sm">{compensationText}</p>
+              <p className="text-xs text-gray-500">{collaborationTypeText}</p>
             </div>
           </div>
         </CardHeader>
@@ -121,17 +139,11 @@ export function InviteCard({ invite, brand, onAction }: InviteCardProps) {
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div>
               <p className="text-gray-500 text-xs">Deliverables</p>
-              <p className="font-medium">
-                {invite.deliverables
-                  .reduce((sum: number, d: any) => sum + d.quantity, 0)}
-                {" items"}
-              </p>
+              <p className="font-medium">{totalDeliverables} items</p>
             </div>
             <div>
               <p className="text-gray-500 text-xs">Response Deadline</p>
-              <p className="font-medium">
-                {new Date(invite.timeline.responseDeadline).toLocaleDateString()}
-              </p>
+              <p className="font-medium">{responseDeadline}</p>
             </div>
           </div>
 
@@ -141,32 +153,26 @@ export function InviteCard({ invite, brand, onAction }: InviteCardProps) {
               <div>
                 <p className="text-xs text-gray-500 mb-1">Deliverables</p>
                 <div className="space-y-1">
-                  {invite.deliverables.map((d: any, i: number) => (
-                    <div key={i} className="text-sm text-gray-700">
-                      {d.quantity}x {d.format} ({d.platform})
-                      {d.description && (
-                        <span className="text-gray-500"> - {d.description}</span>
-                      )}
-                    </div>
-                  ))}
+                  {deliveryItems.length > 0 ? (
+                    deliveryItems.map((d: any, i: number) => (
+                      <div key={i} className="text-sm text-gray-700">
+                        {d.quantity}x {d.format} ({d.platform})
+                        {d.description && (
+                          <span className="text-gray-500"> - {d.description}</span>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-700">No deliverables specified</p>
+                  )}
                 </div>
               </div>
 
               <div>
                 <p className="text-xs text-gray-500 mb-1">Timeline</p>
                 <div className="text-sm text-gray-700 space-y-1">
-                  <p>
-                    Post by:{" "}
-                    {new Date(invite.timeline.postingEndDate).toLocaleDateString()}
-                  </p>
-                  {invite.timeline.draftDueDate && (
-                    <p>
-                      Draft due:{" "}
-                      {new Date(
-                        invite.timeline.draftDueDate
-                      ).toLocaleDateString()}
-                    </p>
-                  )}
+                  <p>Post by: {postingEndDate || "TBD"}</p>
+                  {draftDueDate && <p>Draft due: {draftDueDate}</p>}
                 </div>
               </div>
             </div>

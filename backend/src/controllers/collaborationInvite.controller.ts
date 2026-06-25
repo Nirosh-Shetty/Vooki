@@ -285,11 +285,11 @@ export const acceptInvite = async (
       product: invite.campaignTitle,
       campaignGoal: "awareness",
       deliverables: invite.deliverables,
-      draftDueAt: invite.timeline.draftDueDate || new Date(),
-      postAt: invite.timeline.postingEndDate,
-      paymentAmount: invite.compensation.amount || 0,
+      draftDueAt: invite.timeline?.draftDueDate || new Date(),
+      postAt: invite.timeline?.postingEndDate || new Date(),
+      paymentAmount: invite.compensation?.amount || 0,
       advanceAmount: 0,
-      paymentDueAt: invite.timeline.postingEndDate,
+      paymentDueAt: invite.timeline?.postingEndDate || new Date(),
       paymentMethod: "direct",
       status: "negotiating",
     });
@@ -400,7 +400,7 @@ export const counterInvite = async (
         paymentAmount:
           compensation?.amount ||
           compensation?.minAmount ||
-          invite.compensation.amount ||
+          invite.compensation?.amount ||
           0,
         note: message || "",
       },
@@ -597,31 +597,28 @@ export const acceptCounterOffer = async (
       campaignTitle: invite.campaignTitle,
       product: invite.campaignTitle,
       campaignGoal: "awareness",
-      deliverables: invite.activeCounterOffer.deliverables || invite.deliverables,
+      deliverables: invite.activeCounterOffer?.deliverables || invite.deliverables,
       draftDueAt:
-        invite.activeCounterOffer.timeline?.draftDueDate ||
-        invite.timeline.draftDueDate ||
+        invite.activeCounterOffer?.timeline?.draftDueDate ||
+        invite.timeline?.draftDueDate ||
         new Date(),
       postAt:
-        invite.activeCounterOffer.timeline?.postingEndDate ||
-        invite.timeline.postingEndDate,
+        invite.activeCounterOffer?.timeline?.postingEndDate ||
+        invite.timeline?.postingEndDate ||
+        new Date(),
       paymentAmount:
-        invite.activeCounterOffer.compensation?.amount ||
-        invite.activeCounterOffer.compensation?.minAmount ||
-        invite.compensation.amount ||
+        invite.activeCounterOffer?.compensation?.amount ||
+        invite.activeCounterOffer?.compensation?.minAmount ||
+        invite.compensation?.amount ||
         0,
       advanceAmount: 0,
       paymentDueAt:
-        invite.activeCounterOffer.timeline?.postingEndDate ||
-        invite.timeline.postingEndDate,
+        invite.activeCounterOffer?.timeline?.postingEndDate ||
+        invite.timeline?.postingEndDate ||
+        new Date(),
       paymentMethod: "direct",
       status: "negotiating",
     });
-
-    // Update invite
-    invite.status = "accepted";
-    invite.promotionId = String(promotion._id);
-    await invite.save();
 
     // Send system message
     await MessageModel.create({
@@ -721,7 +718,7 @@ export const brandCounterOffer = async (
         paymentAmount:
           compensation?.amount ||
           compensation?.minAmount ||
-          invite.compensation.amount ||
+          invite.compensation?.amount ||
           0,
         note: message || "",
       },

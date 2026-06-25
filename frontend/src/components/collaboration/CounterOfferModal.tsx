@@ -31,10 +31,17 @@ export function CounterOfferModal({
   const [tab, setTab] = useState("compensation")
   const [message, setMessage] = useState("")
   const [compensation, setCompensation] = useState(
-    currentTerms.compensation || {}
+    currentTerms.compensation || { type: "fixed", amount: 0 }
   )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const currentCompensation = currentTerms.compensation || {}
+  const currentCompensationText = currentCompensation.type === "fixed"
+    ? currentCompensation.amount ?? "N/A"
+    : currentCompensation.minAmount != null && currentCompensation.maxAmount != null
+    ? `${currentCompensation.minAmount} - ${currentCompensation.maxAmount}`
+    : "N/A"
 
   const handleSubmit = async () => {
     setError(null)
@@ -90,10 +97,7 @@ export function CounterOfferModal({
           <TabsContent value="compensation" className="space-y-4 mt-4">
             <div>
               <label className="block text-sm font-medium mb-2">
-                Current: ₹
-                {currentTerms.compensation.type === "fixed"
-                  ? currentTerms.compensation.amount
-                  : `${currentTerms.compensation.minAmount} - ${currentTerms.compensation.maxAmount}`}
+                Current: ₹{currentCompensationText}
               </label>
               <label className="flex items-center gap-2 mb-3 cursor-pointer">
                 <input

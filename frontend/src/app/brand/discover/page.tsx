@@ -302,7 +302,7 @@ export default function DiscoverPage() {
     setActionMessage(null)
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/collaborations/invites`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/discover/invites`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

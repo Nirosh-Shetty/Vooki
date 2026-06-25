@@ -46,13 +46,14 @@ export interface IDiscoverInvite extends Document {
   brandId: string;
   influencerId: string;
   campaignId: string;
-  campaignTitle: string;
+  campaignTitle?: string;
+  note?: string;
 
   // Collaboration Details
-  collaborationType: CollaborationType;
-  deliverables: IDeliverable[];
-  timeline: ITimeline;
-  compensation: ICompensation;
+  collaborationType?: CollaborationType;
+  deliverables?: IDeliverable[];
+  timeline?: ITimeline;
+  compensation?: ICompensation;
   brandMessage?: string;
 
   // Negotiation Tracking
@@ -130,9 +131,10 @@ const DiscoverInviteSchema = new Schema<IDiscoverInvite>(
     },
     campaignTitle: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
       maxlength: 140,
+      default: "",
     },
 
     // Collaboration Details
@@ -146,20 +148,24 @@ const DiscoverInviteSchema = new Schema<IDiscoverInvite>(
         "event",
         "long_term",
       ],
-      required: true,
+      required: false,
     },
     deliverables: {
       type: [DeliverableSchema],
-      required: true,
-      validate: (arr: any[]) => arr.length > 0,
+      required: false,
+      default: [],
+      validate: {
+        validator: (arr: any[]) => arr.length === 0 || arr.every((item) => item && item.platform && item.format && item.quantity > 0),
+        message: "Deliverables must be a non-empty array of valid deliverables when provided.",
+      },
     },
     timeline: {
       type: TimelineSchema,
-      required: true,
+      required: false,
     },
     compensation: {
       type: CompensationSchema,
-      required: true,
+      required: false,
     },
     brandMessage: {
       type: String,
