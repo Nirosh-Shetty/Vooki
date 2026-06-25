@@ -7,7 +7,6 @@ import { mailer } from "../../utils/mailer/index";
 import sessionStore from "../../utils/sessionStore";
 import { generateUsernameSuggestions } from "../../utils/generateUsernameSuggestions";
 import { uploadProfilePhotoToCloud } from "../../utils/uploadProfilePhotoToCloud";
-import { getRequestUserId } from "../../utils/requestUser";
 // import { apiResponse } from "../types/apiResponse";
 export const signUpBasicInfo = async (
   req: Request,
@@ -16,36 +15,8 @@ export const signUpBasicInfo = async (
   const { name, email, username, password, role } = req.body;
 
   try {
-    const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
-    const normalizedUsername =
-      typeof username === "string" ? username.trim().toLowerCase() : "";
-    const derivedName =
-      typeof name === "string" && name.trim()
-        ? name.trim()
-        : normalizedUsername || (normalizedEmail ? normalizedEmail.split("@")[0] : "");
-
-    const existingUser = normalizedEmail
-      ? await UserModel.findOne({ email: normalizedEmail })
-      : null;
-
-    if (!normalizedUsername) {
-      return res.status(400).json({
-        message: "Username is required",
-        errorIn: "username",
-      });
-    }
-
-    const usernameOwner = await UserModel.findOne({
-      username: normalizedUsername,
-    }).lean();
-
-    if (usernameOwner && usernameOwner.email !== normalizedEmail) {
-      return res.status(409).json({
-        message: "Username is taken",
-        errorIn: "username",
-        suggestions: await generateUsernameSuggestions(normalizedUsername),
-      });
-    }
+    //TODO: you need to check if the username is taken or not even though it's already checked in, but it can be bypassed by some tricks. try doing a util function called checkUsernameUnique and use it here and you aslo use it in the checkUSernameUnique controller. ALSo use status code 409 if the username is taken as i used the same status code in the frontend for this purpoose
+    const existingUser = await UserModel.findOne({ email });
 
     // ✅ Case 1: User is already verified
     if (
@@ -53,24 +24,9 @@ export const signUpBasicInfo = async (
       !existingUser.isTempAccount &&
       existingUser.isVerified
     ) {
-      const linkedProviders = existingUser.linkedAccounts?.filter(acc => acc !== "local") || [];
-      if (linkedProviders.length > 0 && !existingUser.password) {
-        // Account exists but was created with OAuth
-        const providerText = linkedProviders.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(" or ");
-        return res.status(400).json({
-          message: `An account with this email already exists and is connected to ${providerText}. Please sign in with ${providerText} or use a different email.`,
-          errorIn: "email",
-          linkedAccounts: linkedProviders,
-          redirectTo: "/signin",
-        });
-      } else if (existingUser.password) {
-        // Account exists with email/password
-        return res.status(400).json({
-          message: "An account with this email already exists. Please sign in instead.",
-          errorIn: "email",
-          redirectTo: "/signin",
-        });
-      }
+      return res
+        .status(400)
+        .json({ message: "User already exists", redirectTo: "/signin" });
     }
 
     // ✅ Case 2: Pending signup, reservation not expired
@@ -84,7 +40,7 @@ export const signUpBasicInfo = async (
       return res.status(201).json({
         message:
           "A signup is already in progress for this email. Please verify your email to continue.",
-        redirectTo: "/signup/verify",
+        redirectTo: "/signup/verify-otp",
       });
     }
 
@@ -92,7 +48,7 @@ export const signUpBasicInfo = async (
     if (existingUser) {
       await UserModel.deleteOne({ _id: existingUser._id });
     }
-    if (!derivedName || !normalizedEmail || !normalizedUsername || !password || !role) {
+    if (!name || !email || !username || !password || !role) {
       return res.status(400).json({
         message: "All fields are required",
         errorIn: "allFields",
@@ -102,19 +58,28 @@ export const signUpBasicInfo = async (
     // ✅ Now create a new temp user
     const hashedPass = await bcryptjs.hash(password, 10);
 
+
     await UserModel.create({
-      name: derivedName,
-      email: normalizedEmail,
-      username: normalizedUsername,
+      name,
+      email,
+      username,
       password: hashedPass,
       role,
-      linkedAccounts: ["local"],
+      avatar: undefined, // can be set later
       isVerified: false,
       isTempAccount: true,
       reservationExpiresAt: new Date(
         Date.now() +
-          (Number(process.env.USER_RESERVATION_EXPIRY_MS) || 60 * 60 * 1000)
+        (Number(process.env.USER_RESERVATION_EXPIRY_MS) || 60 * 60 * 1000)
       ),
+      oauthProviders: [],
+      isPremium: false,
+      jwtVersion: 0,
+      statsConnection: {},
+      // influencerProfile: {},
+      // brandProfile: {},
+      // managerProfile: {},
+      loginHistory: [],
     });
 
     return res.status(201).json({
@@ -141,26 +106,17 @@ export const signIn = async (req: Request, res: Response): Promise<any> => {
   }
 
   try {
-    const normalizedIdentifier =
-      typeof identifier === "string" ? identifier.trim() : "";
-    const identifierAsEmail = normalizedIdentifier.includes("@")
-      ? normalizedIdentifier.toLowerCase()
-      : normalizedIdentifier;
-    const identifierAsUsername = normalizedIdentifier.toLowerCase();
-
     // Check if identifier is email, username, or phone number
-    const orQuery: any[] = [
-      { email: identifierAsEmail },
-      { username: identifierAsUsername },
-    ];
+    const orQuery: any[] = [{ email: identifier }, { username: identifier }];
     // If identifier is a phone number, add it to the query
-    if (/^\d{10}$/.test(normalizedIdentifier)) {
-      orQuery.push({ phone: Number(normalizedIdentifier) });
+    if (/^\d{10}$/.test(identifier)) {
+      orQuery.push({ phone: Number(identifier) });
     }
+
 
     const user = await UserModel.findOne({
       $or: orQuery,
-    }).select("+password");
+    }).select("+password") as import("../../types/user").IUser | null;
 
     if (
       !user ||
@@ -182,17 +138,15 @@ export const signIn = async (req: Request, res: Response): Promise<any> => {
     ) {
       return res.status(401).json({
         message: "Account verification required",
-        redirectTo: "/signup/verify",
+        redirectTo: "/signup/verify-otp",
         errorIn: "identifier",
       });
     }
     if (!user.password) {
-      const linkedProviders = user.linkedAccounts?.filter(acc => acc !== "local") || [];
-      
       return res.status(400).json({
-        message: `This account doesn't have a password set. Please log in with ${linkedProviders.length > 0 ? linkedProviders.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(" or ") : "a social provider"} or use Forgot Password to set one.`,
+        message:
+          "This account was created with a social login. Please use Google or Facebook to sign in or reset the password",
         errorIn: "identifier",
-        linkedAccounts: linkedProviders,
       });
     }
     const isPasswordCorrect = await bcryptjs.compare(password, user.password);
@@ -213,19 +167,18 @@ export const signIn = async (req: Request, res: Response): Promise<any> => {
       time: new Date(),
     };
     // Update login history
-    user.loginHistory.push(loginEvent);
+    user?.loginHistory?.push(loginEvent);
 
     await user.save();
 
-    const token = generateToken(user._id.toString(), user.role);
+    const token = generateToken(user._id.toString(), user.role, user?.username);
 
     res.cookie("auth_token", token, {
       httpOnly: true,
-domain: process.env.COOKIE_DOMAIN ,
-      secure: process.env.COOKIE_SECURE === "true",
+      secure: process.env.NODE_ENV === "production",
       maxAge:
         Number(process.env.JWT_AUTH_TOKEN_MAXAGE) || 5 * 24 * 60 * 60 * 1000,
-      sameSite: (process.env.COOKIE_SAMESITE || "lax") as "lax" | "strict" | "none",
+      sameSite: "strict",
     });
 
     return res.json({
@@ -247,33 +200,24 @@ export const requestOtp = async (req: Request, res: Response): Promise<any> => {
   //TODO: rate limit otp request per hour/day
   try {
     const { email } = req.body;
-    // console.log(req.body, "sfnsdkjfnsdfjks");
     if (!email) {
       return res.status(400).json({
         message: "Cannot find the email. Please signup again.",
-        redirectTo: "/signup/welcome",
-      });
-    }
-    const normalizedEmail =
-      typeof email === "string" ? email.trim().toLowerCase() : "";
-    if (!normalizedEmail) {
-      return res.status(400).json({
-        message: "Cannot find the email. Please signup again.",
-        redirectTo: "/signup/welcome",
+        redirectTo: "/signup/basic-info",
       });
     }
     // Check if the user exists and is a temp account
-    const user = await UserModel.findOne({ email: normalizedEmail }).lean();
+    const user = await UserModel.findOne({ email }).lean() as import("../../types/user").IUser | null;
     if (!user) {
       return res.status(400).json({
         message: "User not found. You need to signup again",
-        redirectTo: "/signup/welcome",
+        redirectTo: "/signup/basic-info",
       });
     }
     if (user.isVerified && !user.isTempAccount) {
       return res.status(400).json({
         message: "User is already verified. You can  signin directly",
-        redirectTo: "/signin",
+        redirectTo: "/login",
       });
     }
     if (
@@ -283,7 +227,7 @@ export const requestOtp = async (req: Request, res: Response): Promise<any> => {
     ) {
       return res.status(400).json({
         message: "Reservation expired. You need to signup again",
-        redirectTo: "/signup/welcome",
+        redirectTo: "/signup/basic-info",
       });
     }
 
@@ -293,13 +237,11 @@ export const requestOtp = async (req: Request, res: Response): Promise<any> => {
     ) {
       return res.status(400).json({
         message: "OTP already sent",
-        // countdown:
-        //   60 - Math.floor((Date.now() - user.lastOtpSentAt.getTime()) / 1000),
         lastOtpSentAt: user.lastOtpSentAt,
       });
     }
     const otp = crypto.randomInt(100000, 1000000).toString(); // Generate a 6-digit OTP
-    const response = await mailer(normalizedEmail, user.username, otp, "otp");
+    const response = await mailer(email, user.username, otp, "otp");
     if (!response) {
       return res.status(500).json({ message: "Error sending OTP" });
     }
@@ -308,7 +250,7 @@ export const requestOtp = async (req: Request, res: Response): Promise<any> => {
     }
     // Save OTP to the user record
     await UserModel.updateOne(
-      { email: normalizedEmail },
+      { email },
       {
         $set: {
           otp,
@@ -329,12 +271,11 @@ export const verifyOtp = async (req: Request, res: Response): Promise<any> => {
   const { email, otp } = req.body;
 
   try {
-    const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
-    const user = await UserModel.findOne({ email: normalizedEmail });
+    const user = await UserModel.findOne({ email });
     if (!user)
       return res
         .status(400)
-        .json({ message: "User not found", redirectTo: "/signup/welcome" });
+        .json({ message: "User not found", redirectTo: "/signup/basic-info" });
 
     if (user.isVerified)
       return res
@@ -344,17 +285,13 @@ export const verifyOtp = async (req: Request, res: Response): Promise<any> => {
     if (user.reservationExpiresAt && user.reservationExpiresAt < new Date())
       return res.status(400).json({
         message: "Reservation expired",
-        redirectTo: "/signup/welcome",
+        redirectTo: "/signup/basic-info",
       });
 
-    const receivedOtp = typeof otp === "string" ? otp.trim() : "";
-    const devBypass =
-      process.env.NODE_ENV !== "production" &&
-      (receivedOtp === "111111" || receivedOtp === "123456");
-
-    if (!devBypass && (!user.otp || user.otp !== receivedOtp)) {
+    // if (user.otp !== otp)
+    //TODO: change this during production
+    if ("111111" !== otp)
       return res.status(400).json({ message: "Invalid OTP" });
-    }
 
     const ip =
       (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
@@ -369,20 +306,16 @@ export const verifyOtp = async (req: Request, res: Response): Promise<any> => {
     user.otp = undefined; // Clear OTP after verification
     user.isTempAccount = false; // Mark account as permanent
     user.reservationExpiresAt = undefined;
-    if (!user.linkedAccounts) user.linkedAccounts = [];
-    if (!user.linkedAccounts.includes("local")) user.linkedAccounts.push("local");
     user.loginHistory.push(loginEvent); // Store login event
 
     await user.save();
 
-    const token = generateToken(user._id.toString(), user.role);
+    const token = generateToken(user._id.toString(), user.role, user?.username);
     res.cookie("auth_token", token, {
       httpOnly: true,
-domain: process.env.COOKIE_DOMAIN ,
-      secure: process.env.COOKIE_SECURE === "true",
-      maxAge: 
-        Number(process.env.JWT_AUTH_TOKEN_MAXAGE) || 5 * 24 * 60 * 60 * 1000,
-      sameSite: (process.env.COOKIE_SAMESITE || "lax") as "lax" | "strict" | "none",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 5 * 24 * 60 * 60 * 1000, // 5 days
+      sameSite: "lax",
     });
     return res.status(201).json({ message: "Verified Successfully" });
   } catch (error) {
@@ -401,9 +334,8 @@ export const completeSocialAuth = async (
     if (!fromProvider) {
       res.clearCookie("sessionId", {
         httpOnly: true,
-domain: process.env.COOKIE_DOMAIN ,
-        secure: process.env.COOKIE_SECURE === "true",
-        sameSite: (process.env.COOKIE_SAMESITE || "lax") as "lax" | "strict" | "none",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
       });
       return res.status(400).json({
         message: "fromProvider is required",
@@ -413,9 +345,8 @@ domain: process.env.COOKIE_DOMAIN ,
     if (!role) {
       res.clearCookie("sessionId", {
         httpOnly: true,
-domain: process.env.COOKIE_DOMAIN ,
-        secure: process.env.COOKIE_SECURE === "true",
-        sameSite: (process.env.COOKIE_SAMESITE || "lax") as "lax" | "strict" | "none",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
       });
       return res.status(400).json({
         message: "Role is required",
@@ -437,8 +368,10 @@ domain: process.env.COOKIE_DOMAIN ,
       name,
       provider,
       profilePictureUrl = "",
-      googleId = null,
-      facebookId = null,
+      providerUserId = null,
+      accessToken = null,
+      refreshToken = null,
+      accessTokenExpires = null,
     } = sessionData;
     if (!email || !name || !provider) {
       return res.status(400).json({
@@ -465,53 +398,51 @@ domain: process.env.COOKIE_DOMAIN ,
       email.split("@")[0],
       1
     );
-    let uploadedPictureUrl = "";
+    let uploadedAvatarUrl = "";
     if (profilePictureUrl) {
       try {
-        uploadedPictureUrl = await uploadProfilePhotoToCloud(
+        uploadedAvatarUrl = await uploadProfilePhotoToCloud(
           profilePictureUrl,
           "profile-pictures"
         );
       } catch (uploadErr) {
-        console.error("Profile picture upload failed:", uploadErr);
-        uploadedPictureUrl = "";
+        console.error("Avatar upload failed:", uploadErr);
+        uploadedAvatarUrl = "";
       }
     }
+    const oauthProvider = {
+      provider,
+      providerUserId,
+      accessToken,
+      refreshToken,
+      accessTokenExpires,
+    };
     const newUser = new UserModel({
       name,
       email,
       username: usernameSuggested[0],
-      linkedAccounts: [provider],
-      // profilePicture: profile.photos?.[0].value,
-      // password: "GOOGLE_AUTH", // placeholder or null
+      avatar: uploadedAvatarUrl,
       role,
-      profilePicture: uploadedPictureUrl,
+      oauthProviders: [oauthProvider],
       isVerified: true,
       isTempAccount: false,
     });
-    if (provider === "google") {
-      newUser.googleId = googleId;
-    } else if (provider === "facebook") {
-      newUser.facebookId = facebookId;
-    }
 
     await newUser.save();
-    const token = generateToken(newUser._id.toString(), newUser.role);
+    const token = generateToken(newUser._id.toString(), newUser.role, newUser?.username);
     // Clear the session cookie
     await sessionStore.delete(sessionId);
     // Clear the session cookie and set auth_token cookie
     res.clearCookie("sessionId", {
       httpOnly: true,
-domain: process.env.COOKIE_DOMAIN ,
-      secure: process.env.COOKIE_SECURE === "true",
-      sameSite: (process.env.COOKIE_SAMESITE || "lax") as "lax" | "strict" | "none",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
     });
     res.cookie("auth_token", token, {
       httpOnly: true,
-domain: process.env.COOKIE_DOMAIN ,
-      secure: process.env.COOKIE_SECURE === "true",
-      maxAge: Number(process.env.JWT_AUTH_TOKEN_MAXAGE) || 5 * 24 * 60 * 60 * 1000, // 5 days in milliseconds
-      sameSite: (process.env.COOKIE_SAMESITE || "lax") as "lax" | "strict" | "none",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 5 * 24 * 60 * 60 * 1000, // 5 days in milliseconds
+      sameSite: "strict",
     });
     res.status(201).json({ message: "Signup successful" });
   } catch (error) {
@@ -524,108 +455,14 @@ export const signout = (req: Request, res: Response): any => {
   try {
     res.clearCookie("auth_token", {
       httpOnly: true,
-domain: process.env.COOKIE_DOMAIN ,
-      secure: process.env.COOKIE_SECURE === "true",
-      sameSite: (process.env.COOKIE_SAMESITE || "lax") as "lax" | "strict" | "none",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
       path: "/",
     });
     // console.log("signout successful");
     return res.status(200).json({ message: "Logged out" });
   } catch (error) {
     console.error("Error during signout:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-export const getOAuthSession = async (
-  req: Request,
-  res: Response
-): Promise<any> => {
-  try {
-    const sessionId = req.cookies.sessionId;
-    if (!sessionId) {
-      return res.status(400).json({
-        message: "No session found. Please try signing up again.",
-        redirectTo: "/signin",
-      });
-    }
-
-    const sessionData = await sessionStore.get(sessionId);
-    if (!sessionData) {
-      return res.status(400).json({
-        message: "Session expired. Please try signing up again.",
-        redirectTo: "/signin",
-      });
-    }
-
-    return res.status(200).json({
-      user: sessionData,
-    });
-  } catch (error) {
-    console.error("Error retrieving OAuth session:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-// Get socket token - returns the auth token from httpOnly cookie
-// This is needed because frontend cannot read httpOnly cookies, but can use this endpoint
-export const getSocketToken = async (
-  req: Request,
-  res: Response
-): Promise<any> => {
-  try {
-    const token = req.cookies.auth_token;
-    
-    if (!token) {
-      console.log("❌ No auth_token cookie found");
-      console.log("   Available cookies:", Object.keys(req.cookies));
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-
-    console.log("✅ Returning socket token to frontend");
-    // Return token (not httpOnly, so frontend can read it)
-    return res.status(200).json({
-      token,
-    });
-  } catch (error) {
-    console.error("Error getting socket token:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-// Get current user profile - used by Auth context to fetch logged in user data
-export const getCurrentUser = async (
-  req: Request,
-  res: Response
-): Promise<any> => {
-  try {
-    const userId = getRequestUserId(req);
-
-    if (!userId) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-
-    const user = await UserModel.findById(userId).select(
-      "id name email username role profilePicture brandName"
-    );
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    return res.status(200).json({
-      data: {
-        id: user._id.toString(),
-        name: user.name,
-        email: user.email,
-        username: user.username,
-        role: user.role,
-        profilePicture: user.profilePicture,
-        // brandName: user?.brandName,
-      },
-    });
-  } catch (error) {
-    console.error("Error fetching current user:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };

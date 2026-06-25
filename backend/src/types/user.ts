@@ -1,104 +1,93 @@
+
 import { Types, Document } from "mongoose";
 
-export interface SocialConnectionBase {
-  platform: string;
+export interface OAuthProvider {
+  provider: "google" | "facebook";
+  providerUserId: string;
   accessToken?: string;
   refreshToken?: string;
-  expiresAt?: Date;
-  lastSynced?: Date;
+  accessTokenExpires?: Date;
 }
 
-export interface YoutubeSocialConnection extends SocialConnectionBase {
-  platform: "youtube";
-  profile?: {
+export interface StatsConnection {
+  youtube?: {
     channelId?: string;
-    title?: string;
-    customUrl?: string;
-    avatarUrl?: string;
+    connected?: boolean;
+    lastSynced?: Date;
+    basicStats?: {
+      subscribers?: number;
+      views?: number;
+      videos?: number;
+    };
   };
-  metrics?: {
-    subscribers?: number;
-    totalViews?: number;
-    videoCount?: number;
-    commentCount?: number;
-    hiddenSubscriberCount?: boolean;
-  };
-}
-
-export interface InstagramSocialConnection extends SocialConnectionBase {
-  platform: "instagram";
-  profile?: {
-    instagramId?: string;
-    username?: string;
-    profilePicture?: string;
-    pageId?: string;
-    pageName?: string;
-  };
-  metrics?: {
-    followers?: number;
-    mediaCount?: number;
-    reach?: number;
-    impressions?: number;
+  instagram?: {
+    accountId?: string;
+    connected?: boolean;
+    lastSynced?: Date;
+    basicStats?: {
+      followers?: number;
+      engagementRate?: number;
+    };
   };
 }
-
-export interface GenericSocialConnection extends SocialConnectionBase {
-  profile?: Record<string, unknown>;
-  metrics?: Record<string, unknown>;
-}
-
-export type SocialConnection =
-  | YoutubeSocialConnection
-  | InstagramSocialConnection
-  | GenericSocialConnection;
 
 export interface LoginMetadata {
   ip: string;
-  userAgent?: string; // Optional because some requests may not send it
+  userAgent?: string;
   time: Date;
+}
+
+export interface InfluencerProfile {
+  bio?: string;
+  genre?: string[];
+  earningsSnapshot?: {
+    fromYoutube?: number;
+    fromInstagram?: number;
+    lastUpdated?: Date;
+  };
+  pricing?: {
+    reel?: number;
+    story?: number;
+    youtubeIntegration?: number;
+  };
+}
+
+export interface BrandProfile {
+  companyName?: string;
+  website?: string;
+  about?: string;
+  preferredCategories?: string[];
+  whitelist?: Types.ObjectId[];
+}
+
+export interface ManagerProfile {
+  agencyName?: string;
+  commissionRate?: number;
+  managedInfluencers?: Types.ObjectId[];
 }
 
 export interface IUser extends Document {
   _id: Types.ObjectId;
   name: string;
-  username: string;
   email: string;
-  phone: number;
+  username: string;
+  phone?: number;
   password: string;
+  avatar?: string;
   role: "influencer" | "brand" | "manager";
-  profilePicture?: string;
-  // isGoogleLinked?: boolean;
-  // isFacebookLinked?: boolean;
-  rating: number;
-  totalReviews: number;
-  linkedAccounts?: string[]; // ["google", "facebook", "local"]
-  // authProvider: "local" | "google" | "facebook";
-  googleId?: string;
-  facebookId?: string;
-  influencerDetails?: {
-    followers?: number;
-    niche?: string;
-    socialLinks?: Map<string, string> | Record<string, string>;
-    socialConnections?: Map<string, SocialConnection> | Record<string, SocialConnection>;
-    collaborations?: Types.ObjectId[];
-    summary?: string;
-    highlight?: string;
-    audience?: string;
-    engagement?: number;
-  };
-  brandDetails?: {
-    companyName?: string;
-    website?: string;
-    brandCategory?: string;
-    collaborations?: Types.ObjectId[];
-    summary?: string;
-    activeCampaigns?: number;
-    pointsOfContact?: number;
-  };
-  isVerified: boolean;
+  oauthProviders?: OAuthProvider[];
+  isPremium?: boolean;
+  jwtVersion?: number;
+  statsConnection?: StatsConnection;
+  influencerProfile?: InfluencerProfile;
+  brandProfile?: BrandProfile;
+  managerProfile?: ManagerProfile;
+  isVerified?: boolean;
   reservationExpiresAt?: Date;
   isTempAccount?: boolean;
   otp?: string;
   lastOtpSentAt?: Date;
   loginHistory: LoginMetadata[];
+  createdAt?: Date;
+  updatedAt?: Date;
 }
