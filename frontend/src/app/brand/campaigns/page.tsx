@@ -399,41 +399,37 @@ export default function CampaignsPage() {
             <div className="flex rounded-xl border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900">
               <button
                 onClick={() => setPriorityFilter("all")}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
-                  priorityFilter === "all"
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium ${priorityFilter === "all"
                     ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
                     : "text-slate-600 dark:text-slate-300"
-                }`}
+                  }`}
               >
                 All Priority
               </button>
               <button
                 onClick={() => setPriorityFilter("high")}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
-                  priorityFilter === "high"
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium ${priorityFilter === "high"
                     ? "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300"
                     : "text-slate-600 dark:text-slate-300"
-                }`}
+                  }`}
               >
                 High
               </button>
               <button
                 onClick={() => setPriorityFilter("medium")}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
-                  priorityFilter === "medium"
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium ${priorityFilter === "medium"
                     ? "bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300"
                     : "text-slate-600 dark:text-slate-300"
-                }`}
+                  }`}
               >
                 Medium
               </button>
               <button
                 onClick={() => setPriorityFilter("low")}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
-                  priorityFilter === "low"
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium ${priorityFilter === "low"
                     ? "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200"
                     : "text-slate-600 dark:text-slate-300"
-                }`}
+                  }`}
               >
                 Low
               </button>
@@ -456,11 +452,10 @@ export default function CampaignsPage() {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setStatusFilter("all")}
-              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                statusFilter === "all"
+              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${statusFilter === "all"
                   ? "border-cyan-300 bg-cyan-100 text-cyan-900 dark:border-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300"
                   : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-              }`}
+                }`}
             >
               All ({campaigns.length})
             </button>
@@ -468,11 +463,10 @@ export default function CampaignsPage() {
               <button
                 key={status}
                 onClick={() => setStatusFilter(status)}
-                className={`rounded-full border px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
-                  statusFilter === status
+                className={`rounded-full border px-3 py-1.5 text-xs font-medium capitalize transition-colors ${statusFilter === status
                     ? "border-cyan-300 bg-cyan-100 text-cyan-900 dark:border-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300"
                     : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-                }`}
+                  }`}
               >
                 {status} ({statusCount[status]})
               </button>
@@ -599,7 +593,7 @@ export default function CampaignsPage() {
           })}
         </div>
 
-        <div className="space-y-4">
+        {/* <div className="space-y-4">
           <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
             <CardHeader>
               <CardTitle className="text-base text-slate-900 dark:text-slate-100">Lifecycle</CardTitle>
@@ -713,7 +707,7 @@ export default function CampaignsPage() {
               ) : null}
             </CardContent>
           </Card>
-        </div>
+        </div> */}
       </div>
     </div>
   )

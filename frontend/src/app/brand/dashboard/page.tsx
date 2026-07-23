@@ -52,7 +52,7 @@ function BrandDashboardContent() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:space-y-8 lg:px-8">
-      <Card className="border-white/60 bg-white/85 shadow-xl shadow-cyan-100/40 backdrop-blur-sm">
+      {/* <Card className="border-white/60 bg-white/85 shadow-xl shadow-cyan-100/40 backdrop-blur-sm">
         <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div>
             <Badge className="border-0 bg-cyan-100 text-cyan-900 hover:bg-cyan-100">Brand Command Center</Badge>
@@ -63,7 +63,7 @@ function BrandDashboardContent() {
             <Plus className="mr-2 h-4 w-4" /> New campaign
           </Button>
         </CardContent>
-      </Card>
+      </Card> */}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
@@ -162,51 +162,6 @@ function BrandDashboardContent() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="border-slate-200 bg-white/90 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-slate-900">Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-3">
-            <Button variant="outline" className="justify-start border-slate-300 bg-white text-slate-700 hover:bg-slate-50">
-              <Target className="mr-2 h-4 w-4" /> Launch campaign
-            </Button>
-            <Button variant="outline" className="justify-start border-slate-300 bg-white text-slate-700 hover:bg-slate-50">
-              <Users className="mr-2 h-4 w-4" /> Find creators
-            </Button>
-            <Button variant="outline" className="justify-start border-slate-300 bg-white text-slate-700 hover:bg-slate-50">
-              <TrendingUp className="mr-2 h-4 w-4" /> Analytics
-            </Button>
-            <Button variant="outline" className="justify-start border-slate-300 bg-white text-slate-700 hover:bg-slate-50">
-              <MessageSquare className="mr-2 h-4 w-4" /> Messages
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200 bg-white/90 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-slate-900">Notifications</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {[
-              { icon: Eye, text: "3 assets waiting for review", time: "2h ago" },
-              { icon: AlertTriangle, text: "Campaign deadline in 48 hours", time: "4h ago" },
-              { icon: MessageSquare, text: "New proposal from creator team", time: "1d ago" },
-            ].map((item) => (
-              <div key={item.text} className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3">
-                <item.icon className="mt-0.5 h-4 w-4 text-cyan-700" />
-                <div>
-                  <p className="text-sm text-slate-900">{item.text}</p>
-                  <p className="text-xs text-slate-500">{item.time}</p>
-                </div>
-              </div>
-            ))}
-            <Button className="w-full bg-cyan-600 text-white hover:bg-cyan-700">
-              Open inbox <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   )
 }

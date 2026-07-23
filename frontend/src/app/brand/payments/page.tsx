@@ -206,7 +206,7 @@ export default function PaymentsPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:space-y-8 lg:px-8">
-      <Card className="border-white/60 bg-white/85 shadow-lg shadow-blue-100/40 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-none">
+      {/* <Card className="border-white/60 bg-white/85 shadow-lg shadow-blue-100/40 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-none">
         <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div>
             <Badge className="border-0 bg-blue-100 text-blue-900 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300">
@@ -221,7 +221,7 @@ export default function PaymentsPage() {
             Manage payment timing from the collaboration itself, then use this page to track what is due and what is already paid.
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="Total tracked" value={formatMoney(metrics.totalSpent)} icon={<Wallet className="h-5 w-5 text-blue-700 dark:text-blue-300" />} tone="blue" />
@@ -338,7 +338,7 @@ export default function PaymentsPage() {
         ))}
       </div>
 
-      <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
+      {/* <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
         <CardHeader>
           <CardTitle className="text-slate-900 dark:text-slate-100">Upcoming due payments</CardTitle>
           <CardDescription className="text-slate-600 dark:text-slate-400">
@@ -363,7 +363,7 @@ export default function PaymentsPage() {
             ))
           )}
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   )
 }

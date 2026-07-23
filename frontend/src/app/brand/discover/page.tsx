@@ -336,7 +336,7 @@ export default function DiscoverPage() {
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:space-y-8 lg:px-8">
       <Card className="border-white/60 bg-white/85 shadow-xl shadow-cyan-100/40 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-cyan-900/10">
         <CardContent className="flex flex-col gap-5 p-5 sm:p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          {/* <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <Badge className="border-0 bg-cyan-100 text-cyan-900 hover:bg-cyan-100 dark:bg-cyan-500/20 dark:text-cyan-300">
                 <Sparkles className="mr-1 h-3.5 w-3.5" /> Discover Creators
@@ -360,7 +360,7 @@ export default function DiscoverPage() {
                 <Users className="mr-2 h-4 w-4" /> Build shortlist
               </Button>
             </div>
-          </div>
+          </div> */}
 
           <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
             <div className="relative">
@@ -402,11 +402,10 @@ export default function DiscoverPage() {
               <button
                 key={niche}
                 onClick={() => setActiveNiche(niche)}
-                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                  activeNiche === niche
-                    ? "border-cyan-300 bg-cyan-100 text-cyan-900 dark:border-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300"
-                    : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-                }`}
+                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${activeNiche === niche
+                  ? "border-cyan-300 bg-cyan-100 text-cyan-900 dark:border-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300"
+                  : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                  }`}
               >
                 {niche}
               </button>
@@ -470,15 +469,14 @@ export default function DiscoverPage() {
                       </Badge>
                       {inviteStatus ? (
                         <Badge
-                          className={`border-0 ${
-                            inviteStatus === "pending"
-                              ? "bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300"
-                              : inviteStatus === "accepted"
-                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"
-                                : inviteStatus === "rejected"
-                                  ? "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300"
-                                  : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200"
-                          }`}
+                          className={`border-0 ${inviteStatus === "pending"
+                            ? "bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300"
+                            : inviteStatus === "accepted"
+                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"
+                              : inviteStatus === "rejected"
+                                ? "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300"
+                                : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200"
+                            }`}
                         >
                           {inviteStatus}
                         </Badge>
@@ -583,7 +581,7 @@ export default function DiscoverPage() {
                   </div>
                 </div>
               ))}
-            <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+            {/* <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
               <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
                 <TrendingUp className="h-4 w-4 text-emerald-600" />
                 Estimated campaign fit: <span className="font-semibold">87%</span>
@@ -592,8 +590,8 @@ export default function DiscoverPage() {
                 <Star className="h-3.5 w-3.5 text-amber-500" />
                 Based on engagement and niche relevance.
               </div>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+            </div> */}
+            {/* <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
               <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Recent invites</p>
               <div className="mt-2 space-y-2">
                 {sentInvites.slice(0, 5).map((invite) => (
@@ -603,15 +601,14 @@ export default function DiscoverPage() {
                       <p className="text-slate-500 dark:text-slate-400">{invite.influencerHandle}</p>
                     </div>
                     <Badge
-                      className={`border-0 ${
-                        invite.status === "pending"
-                          ? "bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300"
-                          : invite.status === "accepted"
-                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"
-                            : invite.status === "rejected"
-                              ? "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300"
-                              : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200"
-                      }`}
+                      className={`border-0 ${invite.status === "pending"
+                        ? "bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300"
+                        : invite.status === "accepted"
+                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"
+                          : invite.status === "rejected"
+                            ? "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300"
+                            : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200"
+                        }`}
                     >
                       {invite.status}
                     </Badge>
@@ -621,7 +618,7 @@ export default function DiscoverPage() {
                   <p className="text-xs text-slate-500 dark:text-slate-400">No invites sent yet.</p>
                 ) : null}
               </div>
-            </div>
+            </div> */}
           </CardContent>
         </Card>
       </div>
