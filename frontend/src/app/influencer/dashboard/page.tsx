@@ -175,7 +175,7 @@ function InfluencerDashboardContent() {
       <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <Card className="overflow-hidden rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
           <CardContent className="p-6 sm:p-8">
-            <div
+            {/* <div
               className="rounded-[28px] border border-[color:var(--vooki-app-border)] p-6 sm:p-7"
               style={{
                 background:
@@ -218,9 +218,9 @@ function InfluencerDashboardContent() {
                   </Link>
                 </Button>
               </div>
-            </div>
+            </div> */}
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-3">
               {overviewStats.map((stat) => (
                 <div
                   key={stat.label}
@@ -519,7 +519,7 @@ function InfluencerDashboardContent() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
+          {/* <Card className="rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
             <CardContent className="p-6">
               <p className="text-sm uppercase tracking-[0.24em] text-[color:var(--vooki-app-text-muted)]">
                 Quick actions
@@ -550,11 +550,11 @@ function InfluencerDashboardContent() {
                 ))}
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </section>
 
-      <Card className="rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
+      {/* <Card className="rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
         <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-[color:var(--vooki-app-text-muted)]">
@@ -590,7 +590,7 @@ function InfluencerDashboardContent() {
             </Button>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 }

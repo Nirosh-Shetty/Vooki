@@ -82,29 +82,29 @@ const tabs: {
   label: string;
   matcher: (status: PromotionStatus) => boolean;
 }[] = [
-  { value: "all", label: "All", matcher: () => true },
-  {
-    value: "active",
-    label: "Active",
-    matcher: (status) =>
-      ["accepted", "content_in_progress", "posted", "metrics_submitted"].includes(status),
-  },
-  {
-    value: "review",
-    label: "In review",
-    matcher: (status) => ["requested", "negotiating"].includes(status),
-  },
-  {
-    value: "completed",
-    label: "Completed",
-    matcher: (status) => status === "completed",
-  },
-  {
-    value: "pending",
-    label: "Payout",
-    matcher: (status) => status === "payment_pending",
-  },
-];
+    { value: "all", label: "All", matcher: () => true },
+    {
+      value: "active",
+      label: "Active",
+      matcher: (status) =>
+        ["accepted", "content_in_progress", "posted", "metrics_submitted"].includes(status),
+    },
+    {
+      value: "review",
+      label: "In review",
+      matcher: (status) => ["requested", "negotiating"].includes(status),
+    },
+    {
+      value: "completed",
+      label: "Completed",
+      matcher: (status) => status === "completed",
+    },
+    {
+      value: "pending",
+      label: "Payout",
+      matcher: (status) => status === "payment_pending",
+    },
+  ];
 
 const statusMeta: Record<PromotionStatus, { label: string; tone: string; shortNote: string }> = {
   requested: {
@@ -404,14 +404,14 @@ export default function MyCollaborations() {
       <Card className="rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
         <CardContent className="space-y-4 p-5 sm:p-6">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="max-w-xl">
+            {/* <div className="max-w-xl">
               <p className="text-sm uppercase tracking-[0.24em] text-[color:var(--vooki-app-text-muted)]">
                 Browse collaborations
               </p>
               <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)]">
                 Filter lightly, then jump straight into the right deal.
               </h2>
-            </div>
+            </div> */}
 
             <div className="flex w-full flex-col gap-3 sm:flex-row lg:max-w-xl">
               <div className="relative flex-1">
