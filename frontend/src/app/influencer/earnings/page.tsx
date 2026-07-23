@@ -209,7 +209,7 @@ export default function EarningsPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:space-y-8 lg:px-8">
-      <Card className="border-white/60 bg-white/85 shadow-lg shadow-green-100/40 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-none">
+      {/* <Card className="border-white/60 bg-white/85 shadow-lg shadow-green-100/40 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-none">
         <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div>
             <Badge className="border-0 bg-green-100 text-green-900 hover:bg-green-100 dark:bg-green-500/20 dark:text-green-300">
@@ -224,7 +224,7 @@ export default function EarningsPage() {
             Earnings are created from the collaboration flow, so this page becomes your payout timeline instead of a separate manual tool.
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="Total earned" value={formatMoney(metrics.totalEarned)} icon={<Wallet className="h-5 w-5 text-emerald-700 dark:text-emerald-300" />} tone="emerald" />

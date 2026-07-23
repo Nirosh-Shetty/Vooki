@@ -53,7 +53,7 @@ const tooltipStyle = {
 export default function InfluencerAnalytics() {
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:space-y-8 lg:px-8">
-      <Card className="border-white/60 bg-white/85 shadow-lg shadow-cyan-100/40 backdrop-blur-sm">
+      {/* <Card className="border-white/60 bg-white/85 shadow-lg shadow-cyan-100/40 backdrop-blur-sm">
         <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div>
             <Badge className="border-0 bg-cyan-100 text-cyan-900 hover:bg-cyan-100">Performance Summary</Badge>
@@ -64,7 +64,7 @@ export default function InfluencerAnalytics() {
             <Download className="mr-2 h-4 w-4" /> Export report
           </Button>
         </CardContent>
-      </Card>
+      </Card> */}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
