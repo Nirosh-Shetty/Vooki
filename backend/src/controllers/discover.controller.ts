@@ -341,7 +341,7 @@ export const createDiscoverInvites = async (
     if (!campaignId) {
       return res.status(400).json({ message: "campaignId is required" });
     }
-    console.log("Creating discover invites for brand:", requester.id, "campaign:", campaignId, "influencers:", influencerIds, "label:", campaignLabel, "note:", note);
+    // console.log("Creating discover invites for brand:", requester.id, "campaign:", campaignId, "influencers:", influencerIds, "label:", campaignLabel, "note:", note);
 
     const campaign = await CampaignModel.findOne({
       _id: String(campaignId),
@@ -428,8 +428,8 @@ export const getDiscoverInvites = async (
       status === "all"
         ? undefined
         : {
-            status: String(status),
-          };
+          status: String(status),
+        };
 
     if (requester.role === "influencer") {
       const query: any = {
@@ -646,9 +646,9 @@ export const respondToDiscoverInvite = async (
       },
       promotion: promotion
         ? {
-            id: String(promotion._id),
-            status: promotion.status,
-          }
+          id: String(promotion._id),
+          status: promotion.status,
+        }
         : null,
     });
   } catch (error) {
