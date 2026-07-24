@@ -1,4 +1,4 @@
-import { SocialConnection } from "../types/user";
+import { StatsConnection as SocialConnection } from "../types/user";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);

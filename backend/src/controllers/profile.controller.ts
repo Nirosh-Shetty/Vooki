@@ -21,14 +21,15 @@ export const profile = async (req: Request, res: Response) => {
     }
 
     const socialConnections = normalizeSocialConnectionsRecord(
-      user?.influencerDetails?.socialConnections
+      user?.statsConnection || user?.influencerProfile?.statsConnection || user?.influencerDetails?.statsConnection
     );
 
     return res.status(200).json({
       ...user,
-      influencerDetails: {
-        ...user.influencerDetails,
-        socialConnections,
+      avatar: user.avatar,
+      influencerProfile: {
+        ...(user.influencerProfile || user.influencerDetails || {}),
+        statsConnection: socialConnections,
       },
     });
   } catch (error) {
@@ -91,7 +92,7 @@ export const getPublicInfluencerProfile = async (req: Request, res: Response) =>
       role: "influencer",
     })
       .select(
-        "name username role profilePicture isVerified rating totalReviews influencerDetails.niche influencerDetails.followers influencerDetails.socialLinks"
+        "name username role avatar isVerified rating totalReviews influencerProfile.niche influencerProfile.followers influencerProfile.socialLinks influencerProfile.statsConnection"
       )
       .lean();
 
@@ -126,7 +127,7 @@ export const getPublicInfluencerProfile = async (req: Request, res: Response) =>
       name: user.name || "",
       handle: user.username ? `@${user.username}` : "",
       role: user.role,
-      profilePicture: user.profilePicture || "",
+      avatar: user.avatar || "",
       verified: Boolean(user.isVerified),
       niche: user?.influencerDetails?.niche || "General",
       followers,
@@ -180,7 +181,7 @@ export const updateInfluencerProfile = async (req: Request, res: Response) => {
       }
     }
 
-    user.influencerDetails = {
+    const nextInfluencerProfile = {
       ...existingDetails,
       followers: influencerDetails?.followers ?? existingDetails.followers,
       niche: applyLocaleSafeString(influencerDetails?.niche) ?? existingDetails.niche,
@@ -189,11 +190,15 @@ export const updateInfluencerProfile = async (req: Request, res: Response) => {
       audience: applyLocaleSafeString(influencerDetails?.audience) ?? existingDetails.audience,
       engagement: Number(influencerDetails?.engagement) || existingDetails.engagement,
       socialLinks: links,
+      statsConnection: existingDetails.statsConnection,
     }
+
+    user.influencerProfile = nextInfluencerProfile
+    user.influencerDetails = nextInfluencerProfile
 
     const photoUrl = await uploadNewProfilePhoto(req.body.photo)
     if (photoUrl) {
-      user.profilePicture = photoUrl
+      user.avatar = photoUrl
     }
 
     await user.save()
@@ -225,7 +230,7 @@ export const updateBrandProfile = async (req: Request, res: Response) => {
     if (phone) user.phone = Number(phone)
 
     const existingDetails = user.brandDetails || {}
-    user.brandDetails = {
+    const nextBrandProfile = {
       ...existingDetails,
       companyName: applyLocaleSafeString(brandDetails?.companyName) ?? existingDetails.companyName,
       website: brandDetails?.website ?? existingDetails.website,
@@ -236,9 +241,12 @@ export const updateBrandProfile = async (req: Request, res: Response) => {
       pointsOfContact: Number(brandDetails?.pointsOfContact) || existingDetails.pointsOfContact,
     }
 
+    user.brandProfile = nextBrandProfile
+    user.brandDetails = nextBrandProfile
+
     const photoUrl = await uploadNewProfilePhoto(req.body.photo)
     if (photoUrl) {
-      user.profilePicture = photoUrl
+      user.avatar = photoUrl
     }
 
     await user.save()

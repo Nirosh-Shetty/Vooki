@@ -155,7 +155,7 @@ export const createCollaborationInvite = async (
 
     // Fetch brand info for response
     const brand = await UserModel.findById(requester.id).select(
-      "_id name profilePicture"
+      "_id name avatar"
     );
 
     return res.status(201).json({
@@ -172,7 +172,7 @@ export const createCollaborationInvite = async (
         brand: {
           id: brand?._id,
           name: brand?.name,
-          profilePicture: brand?.profilePicture,
+          avatar: brand?.avatar,
         },
       },
     });
@@ -213,7 +213,7 @@ export const getReceivedInvites = async (
     const invitesWithBrandInfo = await Promise.all(
       invites.map(async (invite: any) => {
         const brand = await UserModel.findById(invite.brandId).select(
-          "_id name profilePicture"
+          "_id name avatar"
         );
 
         return {
@@ -221,7 +221,7 @@ export const getReceivedInvites = async (
           brand: {
             id: brand?._id,
             name: brand?.name,
-            profilePicture: brand?.profilePicture,
+            avatar: brand?.avatar,
           },
         };
       })
@@ -374,8 +374,8 @@ export const counterInvite = async (
     // Create or find conversation
     let conversation = invite.conversationId
       ? await ConversationModel.findOne({
-          _id: invite.conversationId,
-        })
+        _id: invite.conversationId,
+      })
       : null;
 
     if (!conversation) {
@@ -456,8 +456,8 @@ export const askQuestion = async (
     // Create or find conversation
     let conversation = invite.conversationId
       ? await ConversationModel.findOne({
-          _id: invite.conversationId,
-        })
+        _id: invite.conversationId,
+      })
       : null;
 
     if (!conversation) {
@@ -575,8 +575,8 @@ export const acceptCounterOffer = async (
     // Create or find conversation
     let conversation = invite.conversationId
       ? await ConversationModel.findOne({
-          _id: invite.conversationId,
-        })
+        _id: invite.conversationId,
+      })
       : null;
 
     if (!conversation) {
@@ -692,8 +692,8 @@ export const brandCounterOffer = async (
     // Create or find conversation
     let conversation = invite.conversationId
       ? await ConversationModel.findOne({
-          _id: invite.conversationId,
-        })
+        _id: invite.conversationId,
+      })
       : null;
 
     if (!conversation) {

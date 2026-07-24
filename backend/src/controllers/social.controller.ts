@@ -47,8 +47,8 @@ const requireAuthUser = (req: Request, res: Response) => {
 
 const AUTH_COOKIE_MAXAGE = Number(process.env.JWT_AUTH_TOKEN_MAXAGE) || 5 * 24 * 60 * 60 * 1000;
 
-const setAuthTokenCookie = (res: Response, user: Pick<IUser, "_id" | "role">) => {
-  const token = generateToken(user._id.toString(), user.role);
+const setAuthTokenCookie = (res: Response, user: Pick<IUser, "_id" | "role" | "username">) => {
+  const token = generateToken(user._id.toString(), user.role, user.username || "");
   res.cookie("auth_token", token, {
     httpOnly: true,
     domain: process.env.COOKIE_DOMAIN,
@@ -63,15 +63,15 @@ const saveSocialConnection = async (
   platform: string,
   payload: SocialConnection
 ) => {
-  const details = user.influencerDetails || {};
-  const connections = toSocialConnectionsMap(details.socialConnections);
+  const connections = toSocialConnectionsMap(user.statsConnection);
   const nextConnection = mergeSocialConnection(platform, connections.get(platform), payload);
   connections.set(platform, nextConnection);
-  user.influencerDetails = {
-    ...details,
-    socialConnections: connections,
+  user.statsConnection = connections;
+  user.influencerProfile = {
+    ...(user.influencerProfile || {}),
+    statsConnection: connections,
   };
-  user.markModified("influencerDetails.socialConnections");
+  user.markModified("statsConnection");
   await user.save();
   return nextConnection;
 };
@@ -302,10 +302,11 @@ export const connectSocialAccount = async (req: Request, res: Response) => {
 export const getSocialConnections = async (req: Request, res: Response) => {
   const userId = requireAuthUser(req, res);
   if (!userId) return;
-  const user = await UserModel.findById(userId).select("influencerDetails.socialConnections");
+  const user = await UserModel.findById(userId).select("statsConnection influencerProfile.statsConnection");
   if (!user) return res.status(404).json({ message: "User not found" });
+  const source = user.statsConnection || user.influencerProfile?.statsConnection;
   return res.status(200).json({
-    connections: normalizeSocialConnectionsRecord(user.influencerDetails?.socialConnections),
+    connections: normalizeSocialConnectionsRecord(source),
   });
 };
 
@@ -319,7 +320,7 @@ export const updateSocialMetrics = async (req: Request, res: Response) => {
   }
   const user = await UserModel.findById(userId);
   if (!user) return res.status(404).json({ message: "User not found" });
-  const connections = toSocialConnectionsMap(user.influencerDetails?.socialConnections);
+  const connections = toSocialConnectionsMap(user.statsConnection || user.influencerProfile?.statsConnection);
   if (!connections.get(platform)) {
     return res.status(404).json({ message: "Connection not found" });
   }

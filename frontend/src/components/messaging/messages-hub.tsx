@@ -300,34 +300,6 @@ export function MessagesHub({
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-      <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-        <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-          <div>
-            <Badge className={`border-0 ${roleBadgeStyles[role]}`}>Messaging</Badge>
-            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">{heading}</h1>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{subheading}</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
-              <TabsList className="grid h-auto grid-cols-4 border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="active">Active</TabsTrigger>
-                <TabsTrigger value="pending">Pending</TabsTrigger>
-                <TabsTrigger value="closed">Closed</TabsTrigger>
-              </TabsList>
-            </Tabs>
-            <Button
-              onClick={() => setSearchDialogOpen(true)}
-              className="gap-2 bg-cyan-600 text-white hover:bg-cyan-700"
-              size="sm"
-            >
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Message</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
       <div className="grid h-[calc(100vh-17.5rem)] min-h-[560px] gap-4 lg:grid-cols-[360px_1fr]">
         <Card className={`${mobileChatOpen ? "hidden lg:flex" : "flex"} border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85`}>
           <div className="flex h-full w-full flex-col">

@@ -45,116 +45,116 @@ type Campaign = {
   deliverablesTotal: number
 }
 
-const seedCampaigns: Campaign[] = [
-  {
-    id: "cmp_01",
-    name: "Spring Launch Burst",
-    objective: "Drive product awareness across short-form channels",
-    niche: "Lifestyle",
-    status: "active",
-    priority: "high",
-    paymentMethod: "direct",
-    budgetTotal: 14500,
-    budgetSpent: 8200,
-    roi: 4.1,
-    startDate: "2026-02-05",
-    endDate: "2026-03-02",
-    invitedCreators: 21,
-    acceptedCreators: 11,
-    deliverablesDone: 18,
-    deliverablesTotal: 32,
-  },
-  {
-    id: "cmp_02",
-    name: "Creator Testimonial Series",
-    objective: "Build social proof for paid ads and website",
-    niche: "Tech",
-    status: "active",
-    priority: "medium",
-    paymentMethod: "direct",
-    budgetTotal: 9200,
-    budgetSpent: 4100,
-    roi: 3.6,
-    startDate: "2026-02-11",
-    endDate: "2026-03-06",
-    invitedCreators: 14,
-    acceptedCreators: 7,
-    deliverablesDone: 9,
-    deliverablesTotal: 20,
-  },
-  {
-    id: "cmp_03",
-    name: "Feature Deep-Dive Reels",
-    objective: "Explain key features with trusted creators",
-    niche: "Consumer Tech",
-    status: "draft",
-    priority: "medium",
-    paymentMethod: "direct",
-    budgetTotal: 7100,
-    budgetSpent: 0,
-    roi: 0,
-    startDate: "2026-03-08",
-    endDate: "2026-03-28",
-    invitedCreators: 0,
-    acceptedCreators: 0,
-    deliverablesDone: 0,
-    deliverablesTotal: 16,
-  },
-  {
-    id: "cmp_04",
-    name: "Valentine Weekend Push",
-    objective: "Boost weekend sales with urgency-focused content",
-    niche: "Fashion",
-    status: "completed",
-    priority: "high",
-    paymentMethod: "direct",
-    budgetTotal: 5800,
-    budgetSpent: 5760,
-    roi: 5.2,
-    startDate: "2026-01-30",
-    endDate: "2026-02-14",
-    invitedCreators: 10,
-    acceptedCreators: 8,
-    deliverablesDone: 24,
-    deliverablesTotal: 24,
-  },
-  {
-    id: "cmp_05",
-    name: "Ambassador Retainer Q1",
-    objective: "Always-on awareness through recurring creators",
-    niche: "Wellness",
-    status: "paused",
-    priority: "low",
-    paymentMethod: "direct",
-    budgetTotal: 12000,
-    budgetSpent: 6900,
-    roi: 2.7,
-    startDate: "2026-01-15",
-    endDate: "2026-03-31",
-    invitedCreators: 18,
-    acceptedCreators: 9,
-    deliverablesDone: 13,
-    deliverablesTotal: 36,
-  },
-  {
-    id: "cmp_06",
-    name: "Holiday UGC Archive",
-    objective: "Retire and archive Q4 performance assets",
-    niche: "General",
-    status: "archived",
-    priority: "low",
-    paymentMethod: "direct",
-    budgetTotal: 4000,
-    budgetSpent: 4000,
-    roi: 3.2,
-    startDate: "2025-11-18",
-    endDate: "2025-12-28",
-    invitedCreators: 12,
-    acceptedCreators: 9,
-    deliverablesDone: 27,
-    deliverablesTotal: 27,
-  },
-]
+// const seedCampaigns: Campaign[] = [
+//   {
+//     id: "cmp_01",
+//     name: "Spring Launch Burst",
+//     objective: "Drive product awareness across short-form channels",
+//     niche: "Lifestyle",
+//     status: "active",
+//     priority: "high",
+//     paymentMethod: "direct",
+//     budgetTotal: 14500,
+//     budgetSpent: 8200,
+//     roi: 4.1,
+//     startDate: "2026-02-05",
+//     endDate: "2026-03-02",
+//     invitedCreators: 21,
+//     acceptedCreators: 11,
+//     deliverablesDone: 18,
+//     deliverablesTotal: 32,
+//   },
+//   {
+//     id: "cmp_02",
+//     name: "Creator Testimonial Series",
+//     objective: "Build social proof for paid ads and website",
+//     niche: "Tech",
+//     status: "active",
+//     priority: "medium",
+//     paymentMethod: "direct",
+//     budgetTotal: 9200,
+//     budgetSpent: 4100,
+//     roi: 3.6,
+//     startDate: "2026-02-11",
+//     endDate: "2026-03-06",
+//     invitedCreators: 14,
+//     acceptedCreators: 7,
+//     deliverablesDone: 9,
+//     deliverablesTotal: 20,
+//   },
+//   {
+//     id: "cmp_03",
+//     name: "Feature Deep-Dive Reels",
+//     objective: "Explain key features with trusted creators",
+//     niche: "Consumer Tech",
+//     status: "draft",
+//     priority: "medium",
+//     paymentMethod: "direct",
+//     budgetTotal: 7100,
+//     budgetSpent: 0,
+//     roi: 0,
+//     startDate: "2026-03-08",
+//     endDate: "2026-03-28",
+//     invitedCreators: 0,
+//     acceptedCreators: 0,
+//     deliverablesDone: 0,
+//     deliverablesTotal: 16,
+//   },
+//   {
+//     id: "cmp_04",
+//     name: "Valentine Weekend Push",
+//     objective: "Boost weekend sales with urgency-focused content",
+//     niche: "Fashion",
+//     status: "completed",
+//     priority: "high",
+//     paymentMethod: "direct",
+//     budgetTotal: 5800,
+//     budgetSpent: 5760,
+//     roi: 5.2,
+//     startDate: "2026-01-30",
+//     endDate: "2026-02-14",
+//     invitedCreators: 10,
+//     acceptedCreators: 8,
+//     deliverablesDone: 24,
+//     deliverablesTotal: 24,
+//   },
+//   {
+//     id: "cmp_05",
+//     name: "Ambassador Retainer Q1",
+//     objective: "Always-on awareness through recurring creators",
+//     niche: "Wellness",
+//     status: "paused",
+//     priority: "low",
+//     paymentMethod: "direct",
+//     budgetTotal: 12000,
+//     budgetSpent: 6900,
+//     roi: 2.7,
+//     startDate: "2026-01-15",
+//     endDate: "2026-03-31",
+//     invitedCreators: 18,
+//     acceptedCreators: 9,
+//     deliverablesDone: 13,
+//     deliverablesTotal: 36,
+//   },
+//   {
+//     id: "cmp_06",
+//     name: "Holiday UGC Archive",
+//     objective: "Retire and archive Q4 performance assets",
+//     niche: "General",
+//     status: "archived",
+//     priority: "low",
+//     paymentMethod: "direct",
+//     budgetTotal: 4000,
+//     budgetSpent: 4000,
+//     roi: 3.2,
+//     startDate: "2025-11-18",
+//     endDate: "2025-12-28",
+//     invitedCreators: 12,
+//     acceptedCreators: 9,
+//     deliverablesDone: 27,
+//     deliverablesTotal: 27,
+//   },
+// ]
 
 type CampaignListResponse = {
   items?: Campaign[]
@@ -218,7 +218,7 @@ export default function CampaignsPage() {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<CampaignStatus | "all">("all")
   const [priorityFilter, setPriorityFilter] = useState<CampaignPriority | "all">("all")
-  const [campaigns, setCampaigns] = useState<Campaign[]>(seedCampaigns)
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [promotions, setPromotions] = useState<PromotionItem[]>([])
@@ -244,7 +244,7 @@ export default function CampaignsPage() {
         }
       } catch (err: unknown) {
         if (err instanceof DOMException && err.name === "AbortError") return
-        setCampaigns(seedCampaigns)
+        // setCampaigns(seedCampaigns)
         setError("Showing preview campaign data. Live campaign API unavailable.")
       } finally {
         setLoading(false)
@@ -400,8 +400,8 @@ export default function CampaignsPage() {
               <button
                 onClick={() => setPriorityFilter("all")}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium ${priorityFilter === "all"
-                    ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
-                    : "text-slate-600 dark:text-slate-300"
+                  ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
+                  : "text-slate-600 dark:text-slate-300"
                   }`}
               >
                 All Priority
@@ -409,8 +409,8 @@ export default function CampaignsPage() {
               <button
                 onClick={() => setPriorityFilter("high")}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium ${priorityFilter === "high"
-                    ? "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300"
-                    : "text-slate-600 dark:text-slate-300"
+                  ? "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300"
+                  : "text-slate-600 dark:text-slate-300"
                   }`}
               >
                 High
@@ -418,8 +418,8 @@ export default function CampaignsPage() {
               <button
                 onClick={() => setPriorityFilter("medium")}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium ${priorityFilter === "medium"
-                    ? "bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300"
-                    : "text-slate-600 dark:text-slate-300"
+                  ? "bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300"
+                  : "text-slate-600 dark:text-slate-300"
                   }`}
               >
                 Medium
@@ -427,8 +427,8 @@ export default function CampaignsPage() {
               <button
                 onClick={() => setPriorityFilter("low")}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium ${priorityFilter === "low"
-                    ? "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200"
-                    : "text-slate-600 dark:text-slate-300"
+                  ? "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200"
+                  : "text-slate-600 dark:text-slate-300"
                   }`}
               >
                 Low
@@ -453,8 +453,8 @@ export default function CampaignsPage() {
             <button
               onClick={() => setStatusFilter("all")}
               className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${statusFilter === "all"
-                  ? "border-cyan-300 bg-cyan-100 text-cyan-900 dark:border-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300"
-                  : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                ? "border-cyan-300 bg-cyan-100 text-cyan-900 dark:border-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300"
+                : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                 }`}
             >
               All ({campaigns.length})
@@ -464,8 +464,8 @@ export default function CampaignsPage() {
                 key={status}
                 onClick={() => setStatusFilter(status)}
                 className={`rounded-full border px-3 py-1.5 text-xs font-medium capitalize transition-colors ${statusFilter === status
-                    ? "border-cyan-300 bg-cyan-100 text-cyan-900 dark:border-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300"
-                    : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                  ? "border-cyan-300 bg-cyan-100 text-cyan-900 dark:border-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300"
+                  : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                   }`}
               >
                 {status} ({statusCount[status]})
