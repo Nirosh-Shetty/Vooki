@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: 'brand' | 'influencer';
+  requiredRole?: 'brand' | 'influencer' | 'manager';
 }
 
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
@@ -27,7 +27,12 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
 
     // Check role if specified
     if (requiredRole && user.role !== requiredRole) {
-      const redirectPath = user.role === 'brand' ? '/brand/dashboard' : '/influencer/dashboard';
+      const redirectPath =
+        user.role === 'brand'
+          ? '/brand/dashboard'
+          : user.role === 'manager'
+            ? '/manager/dashboard'
+            : '/influencer/dashboard';
       router.push(redirectPath);
     }
   }, [user, isLoading, requiredRole, router]);
