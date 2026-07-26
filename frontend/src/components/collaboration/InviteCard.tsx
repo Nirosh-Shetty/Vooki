@@ -1,41 +1,42 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  CheckCircle2,
-  MessageCircle,
-  ThumbsUp,
-  XCircle,
-  ChevronDown,
-} from "lucide-react"
-import { CounterOfferModal } from "./CounterOfferModal"
-import { AskQuestionDialog } from "./AskQuestionDialog"
-import { DeclineConfirmDialog } from "./DeclineConfirmDialog"
+import { useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { CheckCircle2, ChevronDown, MessageCircle, ThumbsUp, XCircle } from "lucide-react";
+import { AskQuestionDialog } from "./AskQuestionDialog";
+import { CounterOfferModal } from "./CounterOfferModal";
+import { DeclineConfirmDialog } from "./DeclineConfirmDialog";
 
 interface InviteCardProps {
-  invite: any
+  invite: any;
   brand: {
-    id: string
-    name: string
-    profilePicture?: string
-    brandName?: string
-  }
-  onAction?: () => void
+    id: string;
+    name: string;
+    profilePicture?: string;
+    brandName?: string;
+  };
+  onAction?: () => void;
 }
 
+const statusMap: Record<string, string> = {
+  pending: "bg-[color:var(--vooki-warm-soft)] text-[color:var(--vooki-warm)]",
+  counter_offered: "bg-[color:var(--vooki-violet-soft)] text-[color:var(--vooki-violet)]",
+  accepted: "bg-[color:var(--vooki-accent-soft)] text-[color:var(--vooki-accent-strong)]",
+  declined: "bg-[color:var(--vooki-app-surface-hover)] text-[color:var(--vooki-app-text-soft)]",
+};
+
 export function InviteCard({ invite, brand, onAction }: InviteCardProps) {
-  const [loading, setLoading] = useState(false)
-  const [showCounter, setShowCounter] = useState(false)
-  const [showQuestion, setShowQuestion] = useState(false)
-  const [showDecline, setShowDecline] = useState(false)
-  const [expandedDetails, setExpandedDetails] = useState(false)
+  const [loading, setLoading] = useState(false);
+  const [showCounter, setShowCounter] = useState(false);
+  const [showQuestion, setShowQuestion] = useState(false);
+  const [showDecline, setShowDecline] = useState(false);
+  const [expandedDetails, setExpandedDetails] = useState(false);
 
   const handleAccept = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/collaborations/invites/${invite._id}/accept`,
@@ -43,209 +44,199 @@ export function InviteCard({ invite, brand, onAction }: InviteCardProps) {
           method: "POST",
           credentials: "include",
         }
-      )
+      );
 
-      if (!response.ok) throw new Error("Failed to accept invite")
+      if (!response.ok) throw new Error("Failed to accept invite");
 
-      onAction?.()
+      onAction?.();
     } catch (error) {
-      console.error(error)
+      console.error(error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const statusMap: { [k in string]: string } = {
-    pending: "bg-amber-100 text-amber-800",
-    counter_offered: "bg-blue-100 text-blue-800",
-    accepted: "bg-green-100 text-green-800",
-    declined: "bg-red-100 text-red-800",
-  }
-
-  const statusBadgeStyle = statusMap[invite.status as string] || "bg-gray-100 text-gray-800"
-  const compensation = invite.compensation || {}
+  const compensation = invite.compensation || {};
   const collaborationTypeText = invite.collaborationType
-    ? invite.collaborationType
-        .replace(/_/g, " ")
-        .charAt(0)
-        .toUpperCase() + invite.collaborationType.slice(1)
-    : ""
+    ? invite.collaborationType.replace(/_/g, " ").charAt(0).toUpperCase() +
+      invite.collaborationType.replace(/_/g, " ").slice(1)
+    : "Collaboration";
   const totalDeliverables = Array.isArray(invite.deliverables)
-    ? invite.deliverables.reduce((sum: number, d: any) => sum + (d?.quantity || 0), 0)
-    : 0
-  const deliveryItems = Array.isArray(invite.deliverables) ? invite.deliverables : []
+    ? invite.deliverables.reduce(
+        (sum: number, deliverable: any) => sum + (deliverable?.quantity || 0),
+        0
+      )
+    : 0;
+  const deliveryItems = Array.isArray(invite.deliverables) ? invite.deliverables : [];
   const responseDeadline = invite.timeline?.responseDeadline
     ? new Date(invite.timeline.responseDeadline).toLocaleDateString()
-    : "TBD"
+    : "TBD";
   const postingEndDate = invite.timeline?.postingEndDate
     ? new Date(invite.timeline.postingEndDate).toLocaleDateString()
-    : null
+    : null;
   const draftDueDate = invite.timeline?.draftDueDate
     ? new Date(invite.timeline.draftDueDate).toLocaleDateString()
-    : null
-  const compensationText = compensation.type === "fixed"
-    ? compensation.amount != null
-      ? `₹${compensation.amount.toLocaleString()}`
-      : "N/A"
-    : compensation.minAmount != null && compensation.maxAmount != null
-    ? `₹${compensation.minAmount.toLocaleString()} - ${compensation.maxAmount.toLocaleString()}`
-    : "N/A"
+    : null;
+  const compensationText =
+    compensation.type === "fixed"
+      ? compensation.amount != null
+        ? `Rs ${compensation.amount.toLocaleString()}`
+        : "N/A"
+      : compensation.minAmount != null && compensation.maxAmount != null
+        ? `Rs ${compensation.minAmount.toLocaleString()} - ${compensation.maxAmount.toLocaleString()}`
+        : "N/A";
+
+  const statusBadgeStyle = statusMap[invite.status as string] || statusMap.pending;
+  const statusLabel =
+    invite.status === "counter_offered"
+      ? "Counter pending"
+      : invite.status.charAt(0).toUpperCase() + invite.status.slice(1);
 
   return (
     <>
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3 flex-1">
-              <Avatar className="w-10 h-10">
+      <Card className="rounded-[30px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] transition-transform hover:-translate-y-0.5">
+        <CardContent className="p-5 sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex min-w-0 flex-1 items-start gap-3">
+              <Avatar className="h-11 w-11 border border-[color:var(--vooki-app-border)]">
                 <AvatarImage src={brand.profilePicture} />
-                <AvatarFallback>{brand.name?.[0]}</AvatarFallback>
+                <AvatarFallback className="bg-[color:var(--vooki-violet-soft)] text-[color:var(--vooki-violet)]">
+                  {(brand.brandName || brand.name || "B").slice(0, 2).toUpperCase()}
+                </AvatarFallback>
               </Avatar>
 
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold text-sm truncate">
-                    {brand.brandName || brand.name}
-                  </p>
-                  <Badge variant="outline" className={statusBadgeStyle}>
-                    {invite.status === "counter_offered"
-                      ? "Counter Pending"
-                      : invite.status.charAt(0).toUpperCase() +
-                        invite.status.slice(1)}
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="truncate text-lg font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)]">
+                    {invite.campaignTitle || "Collaboration invite"}
+                  </h3>
+                  <Badge className={`border-0 hover:opacity-100 ${statusBadgeStyle}`}>
+                    {statusLabel}
                   </Badge>
                 </div>
-                <p className="text-sm text-gray-600 truncate">
-                  {invite.campaignTitle}
+                <p className="mt-1 text-sm text-[color:var(--vooki-app-text-soft)]">
+                  {brand.brandName || brand.name || "Brand"}
                 </p>
               </div>
             </div>
 
-            <div className="text-right">
-              <p className="font-semibold text-sm">{compensationText}</p>
-              <p className="text-xs text-gray-500">{collaborationTypeText}</p>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-          {/* Brand Message */}
-          {invite.brandMessage && (
-            <div className="p-3 bg-blue-50 rounded italic text-sm text-gray-700 border-l-4 border-blue-300">
-              "{invite.brandMessage}"
-            </div>
-          )}
-
-          {/* Quick Info */}
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div>
-              <p className="text-gray-500 text-xs">Deliverables</p>
-              <p className="font-medium">{totalDeliverables} items</p>
-            </div>
-            <div>
-              <p className="text-gray-500 text-xs">Response Deadline</p>
-              <p className="font-medium">{responseDeadline}</p>
+            <div className="sm:text-right">
+              <p className="text-xl font-semibold text-[color:var(--vooki-app-text-strong)]">
+                {compensationText}
+              </p>
+              <p className="mt-1 text-sm text-[color:var(--vooki-app-text-soft)]">
+                {collaborationTypeText}
+              </p>
             </div>
           </div>
 
-          {/* Expandable Details */}
-          {expandedDetails && (
-            <div className="space-y-3 border-t pt-3">
+          {invite.brandMessage ? (
+            <div className="mt-5 rounded-[24px] border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4 text-sm leading-6 text-[color:var(--vooki-app-text-soft)]">
+              {invite.brandMessage}
+            </div>
+          ) : null}
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <InfoBlock label="Deliverables" value={`${totalDeliverables} items`} />
+            <InfoBlock label="Response deadline" value={responseDeadline} />
+          </div>
+
+          {expandedDetails ? (
+            <div className="mt-5 space-y-4 rounded-[24px] border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4">
               <div>
-                <p className="text-xs text-gray-500 mb-1">Deliverables</p>
-                <div className="space-y-1">
+                <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--vooki-app-text-muted)]">
+                  Deliverables
+                </p>
+                <div className="mt-3 space-y-2">
                   {deliveryItems.length > 0 ? (
-                    deliveryItems.map((d: any, i: number) => (
-                      <div key={i} className="text-sm text-gray-700">
-                        {d.quantity}x {d.format} ({d.platform})
-                        {d.description && (
-                          <span className="text-gray-500"> - {d.description}</span>
-                        )}
+                    deliveryItems.map((deliverable: any, index: number) => (
+                      <div
+                        key={index}
+                        className="text-sm leading-6 text-[color:var(--vooki-app-text-soft)]"
+                      >
+                        {deliverable.quantity}x {deliverable.format} ({deliverable.platform})
+                        {deliverable.description ? ` - ${deliverable.description}` : ""}
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-gray-700">No deliverables specified</p>
+                    <p className="text-sm text-[color:var(--vooki-app-text-soft)]">
+                      No deliverables specified
+                    </p>
                   )}
                 </div>
               </div>
 
               <div>
-                <p className="text-xs text-gray-500 mb-1">Timeline</p>
-                <div className="text-sm text-gray-700 space-y-1">
+                <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--vooki-app-text-muted)]">
+                  Timeline
+                </p>
+                <div className="mt-3 space-y-1 text-sm text-[color:var(--vooki-app-text-soft)]">
                   <p>Post by: {postingEndDate || "TBD"}</p>
-                  {draftDueDate && <p>Draft due: {draftDueDate}</p>}
+                  {draftDueDate ? <p>Draft due: {draftDueDate}</p> : null}
                 </div>
               </div>
             </div>
-          )}
+          ) : null}
 
           <Button
             variant="ghost"
-            size="sm"
-            className="w-full justify-center text-gray-600"
+            className="mt-4 h-10 w-full rounded-full text-[color:var(--vooki-app-text-soft)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)]"
             onClick={() => setExpandedDetails(!expandedDetails)}
           >
             <ChevronDown
-              className={`w-4 h-4 transition-transform ${
-                expandedDetails ? "rotate-180" : ""
-              }`}
+              className={`h-4 w-4 transition-transform ${expandedDetails ? "rotate-180" : ""}`}
             />
           </Button>
 
-          {/* Actions */}
-          <div className="flex gap-2 pt-2">
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             {invite.status === "pending" || invite.status === "counter_offered" ? (
               <>
                 <Button
-                  size="sm"
-                  className="flex-1 gap-2"
+                  className="rounded-full border border-[color:var(--vooki-accent-border)] bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] shadow-[var(--vooki-shadow-accent)] hover:bg-[color:var(--vooki-accent-strong)]"
                   onClick={handleAccept}
                   disabled={loading}
                 >
-                  <CheckCircle2 className="w-4 h-4" />
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
                   Accept
                 </Button>
 
                 <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex-1 gap-2"
+                  variant="ghost"
+                  className="rounded-full border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-hover)]"
                   onClick={() => setShowCounter(true)}
                 >
-                  <ThumbsUp className="w-4 h-4" />
+                  <ThumbsUp className="mr-2 h-4 w-4" />
                   Counter
                 </Button>
 
                 <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex-1 gap-2"
+                  variant="ghost"
+                  className="rounded-full border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-hover)]"
                   onClick={() => setShowQuestion(true)}
                 >
-                  <MessageCircle className="w-4 h-4" />
+                  <MessageCircle className="mr-2 h-4 w-4" />
                   Ask
                 </Button>
 
                 <Button
-                  size="sm"
                   variant="ghost"
-                  className="flex-1 gap-2 text-red-600 hover:text-red-700"
+                  className="rounded-full text-[color:var(--vooki-warm)] hover:bg-[color:var(--vooki-warm-soft)] hover:text-[color:var(--vooki-warm)]"
                   onClick={() => setShowDecline(true)}
                 >
-                  <XCircle className="w-4 h-4" />
+                  <XCircle className="mr-2 h-4 w-4" />
                   Decline
                 </Button>
               </>
             ) : (
-              <p className="text-sm text-gray-600 py-2 text-center w-full">
-                {invite.status === "accepted" && "✓ You accepted this invite"}
-                {invite.status === "declined" && "✗ You declined this invite"}
+              <p className="w-full rounded-2xl bg-[color:var(--vooki-app-surface-strong)] px-4 py-3 text-center text-sm text-[color:var(--vooki-app-text-soft)]">
+                {invite.status === "accepted" && "You accepted this invite"}
+                {invite.status === "declined" && "You declined this invite"}
               </p>
             )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Modals */}
       <CounterOfferModal
         inviteId={invite._id}
         currentTerms={invite}
@@ -253,14 +244,12 @@ export function InviteCard({ invite, brand, onAction }: InviteCardProps) {
         onOpenChange={setShowCounter}
         onSuccess={onAction}
       />
-
       <AskQuestionDialog
         inviteId={invite._id}
         open={showQuestion}
         onOpenChange={setShowQuestion}
         onSuccess={onAction}
       />
-
       <DeclineConfirmDialog
         inviteId={invite._id}
         open={showDecline}
@@ -268,5 +257,16 @@ export function InviteCard({ invite, brand, onAction }: InviteCardProps) {
         onSuccess={onAction}
       />
     </>
-  )
+  );
+}
+
+function InfoBlock({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] px-4 py-3">
+      <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--vooki-app-text-muted)]">
+        {label}
+      </p>
+      <p className="mt-2 text-sm font-medium text-[color:var(--vooki-app-text-strong)]">{value}</p>
+    </div>
+  );
 }
