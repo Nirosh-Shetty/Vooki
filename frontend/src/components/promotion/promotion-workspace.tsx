@@ -337,12 +337,12 @@ export function PromotionWorkspace({
           product: item.product || "",
           deliverables: item.deliverables?.length
             ? item.deliverables.map((deliverable) =>
-                createDeliverableDraft({
-                  platform: deliverable.platform,
-                  format: deliverable.format,
-                  quantity: String(deliverable.quantity || 1),
-                })
-              )
+              createDeliverableDraft({
+                platform: deliverable.platform,
+                format: deliverable.format,
+                quantity: String(deliverable.quantity || 1),
+              })
+            )
             : [createDeliverableDraft()],
           draftDueAt: toDateInput(item.draftDueAt),
           postAt: toDateInput(item.postAt),
@@ -1014,7 +1014,7 @@ export function PromotionWorkspace({
             </div>
 
             <div className="space-y-6">
-              <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
+              {/* <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
                 <CardHeader>
                   <CardTitle className="text-slate-900 dark:text-slate-100">What happens next</CardTitle>
                   <CardDescription className="text-slate-600 dark:text-slate-400">
@@ -1075,7 +1075,7 @@ export function PromotionWorkspace({
                     </Button>
                   ) : null}
                 </CardContent>
-              </Card>
+              </Card> */}
               {role === "brand" ? (
                 <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
                   <CardHeader>
