@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -215,6 +216,7 @@ const promotionPillClass: Record<PromotionStatus, string> = {
 }
 
 export default function CampaignsPage() {
+  const router = useRouter()
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<CampaignStatus | "all">("all")
   const [priorityFilter, setPriorityFilter] = useState<CampaignPriority | "all">("all")
@@ -496,7 +498,11 @@ export default function CampaignsPage() {
               : 0
 
             return (
-              <Card key={campaign.id} className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
+              <Card
+                key={campaign.id}
+                onClick={() => router.push(`/brand/campaigns/${campaign.id}`)}
+                className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85 cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
+              >
                 <CardHeader className="space-y-3">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
@@ -579,13 +585,6 @@ export default function CampaignsPage() {
                         Accepted {campaign.acceptedCreators}
                       </span>
                     </div>
-                    <Button
-                      asChild
-                      variant="outline"
-                      className="h-8 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                    >
-                      <Link href={`/brand/campaigns/${campaign.id}`}>Open Campaign</Link>
-                    </Button>
                   </div>
                 </CardContent>
               </Card>

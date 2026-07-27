@@ -81,20 +81,28 @@ export function MessagesHubProvider({
       payload: { conversation: HubConversation; message: HubMessage }
     ) => {
       const { conversation, message } = payload;
-      if (!conversation.promotionId) {
+      if (!conversation.promotionId && !conversation.inviteId) {
         throw new Error("This thread is not linked to a collaboration yet.");
       }
 
       if (action === "accept_offer") {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/promotions/${conversation.promotionId}/status`,
-          {
-            method: "PATCH",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status: "accepted" }),
-          }
-        );
+        let endpoint = "";
+        
+        if (conversation.promotionId) {
+          endpoint = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/promotions/${conversation.promotionId}/status`;
+        } else if (conversation.inviteId) {
+          endpoint = role === "brand" 
+            ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/collaborations/invites/${conversation.inviteId}/accept-counter`
+            : `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/collaborations/invites/${conversation.inviteId}/accept`;
+        }
+
+        const response = await fetch(endpoint, {
+          method: conversation.promotionId ? "PATCH" : "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(conversation.promotionId ? { status: "accepted" } : {}),
+        });
+        
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
           throw new Error(data?.message || "Unable to accept this offer");
@@ -114,6 +122,26 @@ export function MessagesHubProvider({
 
         await fetchConversations();
         return;
+      }
+
+      if (conversation.inviteId && !conversation.promotionId) {
+        // Send actual counter offer to the backend for invites
+        const endpoint = role === "brand"
+          ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/collaborations/invites/${conversation.inviteId}/brand-counter`
+          : `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/collaborations/invites/${conversation.inviteId}/counter`;
+
+        try {
+          await fetch(endpoint, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: "I would like to adjust this offer before accepting. Can we align on the details here?",
+            }),
+          });
+        } catch (error) {
+          console.error("Failed to sync counter offer with backend:", error);
+        }
       }
 
       await sendMessage(conversation.id, undefined, {
@@ -160,6 +188,7 @@ export function MessagesHubProvider({
     threadType: conv.threadType,
     campaignId: conv.campaignId,
     promotionId: conv.promotionId,
+    inviteId: conv.inviteId,
     campaignTitle: conv.campaignTitle,
     avatar: conv.otherUser?.profilePicture?.substring(0, 2).toUpperCase() || "??",
     lastMessage: conv.lastMessage,

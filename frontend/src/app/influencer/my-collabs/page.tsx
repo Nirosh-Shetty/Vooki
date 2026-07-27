@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -171,6 +172,7 @@ const priorityRank: Record<PromotionStatus, number> = {
 };
 
 export default function MyCollaborations() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]["value"]>("all");
   const [promotions, setPromotions] = useState<Promotion[]>(seedPromotions);
@@ -240,159 +242,8 @@ export default function MyCollaborations() {
     [promotions]
   );
 
-  const upcoming = useMemo(
-    () =>
-      [...filtered]
-        .sort((a, b) => {
-          const rankDiff = priorityRank[a.status] - priorityRank[b.status];
-          if (rankDiff !== 0) return rankDiff;
-          return new Date(a.paymentDueAt).getTime() - new Date(b.paymentDueAt).getTime();
-        })
-        .slice(0, 3),
-    [filtered]
-  );
-
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:space-y-8 lg:px-8">
-      {/* <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <Card className="overflow-hidden rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
-          <CardContent className="p-6 sm:p-8">
-            <div
-              className="rounded-[28px] border border-[color:var(--vooki-app-border)] p-6 sm:p-7"
-              style={{
-                background:
-                  "linear-gradient(135deg, color-mix(in srgb, var(--vooki-accent-soft) 100%, transparent), color-mix(in srgb, var(--vooki-violet-soft) 100%, transparent) 58%, color-mix(in srgb, var(--vooki-blue-soft) 100%, transparent))",
-              }}
-            >
-              <Badge className="w-fit border-0 bg-[color:var(--vooki-app-inverse-surface)] text-[color:var(--vooki-app-inverse-text)] hover:bg-[color:var(--vooki-app-inverse-surface)]">
-                <Sparkles className="mr-1 h-3.5 w-3.5 text-[color:var(--vooki-accent-strong)]" />
-                Collaboration flow
-              </Badge>
-
-              <div className="mt-5 max-w-2xl space-y-3">
-                <h1 className="text-3xl font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)] sm:text-4xl">
-                  Keep every active deal easy to scan, not mentally heavy.
-                </h1>
-                <p className="text-base leading-7 text-[color:var(--vooki-app-text-soft)] sm:text-lg">
-                  See what needs your attention, what is already moving well, and what is closest to
-                  payout without treating your work like a spreadsheet.
-                </p>
-              </div>
-
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Button
-                  asChild
-                  className="rounded-full border border-[color:var(--vooki-accent-border)] bg-[color:var(--vooki-accent)] px-5 text-[color:var(--vooki-accent-text)] shadow-[var(--vooki-shadow-accent)] hover:bg-[color:var(--vooki-accent-strong)]"
-                >
-                  <Link href="/influencer/messages">
-                    Open messages
-                    <MessageSquare className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  variant="ghost"
-                  className="rounded-full border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] px-5 text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-hover)]"
-                >
-                  <Link href="/influencer/earnings">
-                    Check earnings
-                    <Wallet className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-3 sm:grid-cols-4">
-              <SummaryCard
-                label="Active now"
-                value={counts.active}
-                note="Live work in motion"
-                tone="accent"
-              />
-              <SummaryCard
-                label="In review"
-                value={counts.review}
-                note="Still aligning details"
-                tone="violet"
-              />
-              <SummaryCard
-                label="Payout next"
-                value={counts.pending}
-                note="Ready for the money step"
-                tone="warm"
-              />
-              <SummaryCard
-                label="Completed"
-                value={counts.completed}
-                note="Wrapped cleanly"
-                tone="blue"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
-          <CardContent className="p-6 sm:p-7">
-            <p className="text-sm uppercase tracking-[0.24em] text-[color:var(--vooki-app-text-muted)]">
-              What needs attention
-            </p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)]">
-              The next few moves are already clear.
-            </h2>
-
-            <div className="mt-6 space-y-3">
-              {upcoming.map((promotion) => {
-                const meta = statusMeta[promotion.status];
-                return (
-                  <div
-                    key={promotion.id}
-                    className="rounded-[24px] border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-base font-medium text-[color:var(--vooki-app-text-strong)]">
-                          {promotion.campaignTitle}
-                        </p>
-                        <p className="mt-1 text-sm text-[color:var(--vooki-app-text-soft)]">
-                          {promotion.brandName || "Brand collaboration"}
-                        </p>
-                      </div>
-                      <Badge className={`border-0 hover:opacity-100 ${meta.tone}`}>
-                        {meta.label}
-                      </Badge>
-                    </div>
-                    <p className="mt-3 text-sm leading-6 text-[color:var(--vooki-app-text-soft)]">
-                      {meta.shortNote}
-                    </p>
-                    <div className="mt-3 inline-flex items-center gap-2 text-xs text-[color:var(--vooki-app-text-muted)]">
-                      <CalendarClock className="h-3.5 w-3.5" />
-                      Payment due {new Date(promotion.paymentDueAt).toLocaleDateString()}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="mt-4 rounded-[24px] border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--vooki-violet-soft)] text-[color:var(--vooki-violet)]">
-                  <CircleAlert className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-[color:var(--vooki-app-text-strong)]">
-                    Why this page matters
-                  </p>
-                  <p className="mt-1 text-sm leading-6 text-[color:var(--vooki-app-text-soft)]">
-                    It should help you decide what to do next in a few seconds, not make you decode
-                    a workflow map.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </section> */}
-
       {error ? (
         <Card className="rounded-[28px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app-soft)]">
           <CardContent className="p-4 text-sm text-[color:var(--vooki-app-text-soft)]">
@@ -404,15 +255,6 @@ export default function MyCollaborations() {
       <Card className="rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
         <CardContent className="space-y-4 p-5 sm:p-6">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            {/* <div className="max-w-xl">
-              <p className="text-sm uppercase tracking-[0.24em] text-[color:var(--vooki-app-text-muted)]">
-                Browse collaborations
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)]">
-                Filter lightly, then jump straight into the right deal.
-              </h2>
-            </div> */}
-
             <div className="flex w-full flex-col gap-3 sm:flex-row lg:max-w-xl">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--vooki-app-text-muted)]" />
@@ -473,8 +315,7 @@ export default function MyCollaborations() {
                   No collaborations found
                 </h3>
                 <p className="mt-1 max-w-md text-sm leading-6 text-[color:var(--vooki-app-text-soft)]">
-                  Try a different search or let the next invite come through. This page will stay
-                  simple when the list is empty too.
+                  Try a different search or let the next invite come through.
                 </p>
               </CardContent>
             </Card>
@@ -485,7 +326,8 @@ export default function MyCollaborations() {
             return (
               <Card
                 key={promotion.id}
-                className="rounded-[30px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] transition-transform hover:-translate-y-0.5"
+                onClick={() => router.push(`/influencer/my-collabs/${promotion.id}`)}
+                className="group relative overflow-hidden rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] cursor-pointer hover:border-[color:var(--vooki-app-border-hover)] transition-colors"
               >
                 <CardContent className="p-5 sm:p-6">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -541,17 +383,11 @@ export default function MyCollaborations() {
                   </div>
 
                   <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                    <Button
-                      asChild
-                      className="rounded-full border border-[color:var(--vooki-accent-border)] bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] shadow-[var(--vooki-shadow-accent)] hover:bg-[color:var(--vooki-accent-strong)]"
-                    >
-                      <Link href={`/influencer/my-collabs/${promotion.id}`}>View details</Link>
-                    </Button>
-
                     {promotion.brandId ? (
                       <Button
                         asChild
                         variant="ghost"
+                        onClick={(e) => e.stopPropagation()}
                         className="rounded-full border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-hover)]"
                       >
                         <Link href={`/influencer/messages?otherUserId=${promotion.brandId}`}>
@@ -560,17 +396,6 @@ export default function MyCollaborations() {
                         </Link>
                       </Button>
                     ) : null}
-
-                    <Button
-                      asChild
-                      variant="ghost"
-                      className="rounded-full border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-hover)]"
-                    >
-                      <Link href={`/influencer/my-collabs/${promotion.id}`}>
-                        <Upload className="mr-2 h-4 w-4" />
-                        Continue workflow
-                      </Link>
-                    </Button>
                   </div>
                 </CardContent>
               </Card>

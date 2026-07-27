@@ -21,7 +21,7 @@ promotionRouter.get("/", listPromotions);
 promotionRouter.post("/", requireRole("brand", "manager"), createPromotion);
 promotionRouter.get("/:promotionId", requireRole("brand", "manager", "influencer"), getPromotionById);
 promotionRouter.patch("/:promotionId/terms", requireRole("brand", "manager"), updatePromotionTerms);
-promotionRouter.patch("/:promotionId/status", requireRole("brand", "manager"), updatePromotionStatus);
+promotionRouter.patch("/:promotionId/status", requireRole("brand", "manager", "influencer"), updatePromotionStatus);
 promotionRouter.patch("/:promotionId/delivery", requireRole("influencer"), submitPromotionDelivery);
 promotionRouter.patch("/:promotionId/delivery/review", requireRole("brand", "manager"), reviewPromotionDelivery);
 promotionRouter.patch("/:promotionId/performance", requireRole("influencer"), submitPromotionPerformance);

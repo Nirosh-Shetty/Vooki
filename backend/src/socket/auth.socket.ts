@@ -37,7 +37,7 @@ export const socketAuthMiddleware = (socket: any, next: any) => {
     socket.userRole = decoded.role;
     socket.username = decoded.username || "";
 
-    console.log("✅ Socket auth successful:", { userId: socket.userId, role: socket.userRole });
+    // console.log("✅ Socket auth successful:", { userId: socket.userId, role: socket.userRole });
     next();
   } catch (err) {
     console.error("❌ Socket auth error:", err);

@@ -10,6 +10,11 @@ interface ConversationData {
   lastMessageAt?: string;
   status: "active" | "archived" | "closed";
   unreadCount: number;
+  threadType: "direct" | "campaign" | "collaboration";
+  campaignId?: string;
+  promotionId?: string;
+  inviteId?: string;
+  campaignTitle?: string;
   otherUser?: {
     name: string;
     username: string;

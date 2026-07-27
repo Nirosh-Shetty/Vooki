@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, CheckCircle2, DollarSign, Loader2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -147,6 +147,7 @@ const promotionStatusTransitions: Record<PromotionStatus, PromotionStatus[]> = {
 
 export default function CampaignDetailPage() {
   const params = useParams<{ campaignId: string }>()
+  const router = useRouter()
   const campaignId = params?.campaignId
 
   const [campaign, setCampaign] = useState<Campaign | null>(null)
@@ -502,7 +503,8 @@ export default function CampaignDetailPage() {
               {promotions.map((promotion) => (
                 <div
                   key={promotion.id}
-                  className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+                  onClick={() => router.push(`/brand/promotions/${promotion.id}`)}
+                  className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900 cursor-pointer hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -520,12 +522,14 @@ export default function CampaignDetailPage() {
                     <div className="flex flex-wrap gap-2">
                       <select
                         value={statusDrafts[promotion.id] || promotion.status}
-                        onChange={(event) =>
+                        onChange={(event) => {
+                          event.stopPropagation()
                           setStatusDrafts((prev) => ({
                             ...prev,
                             [promotion.id]: event.target.value as PromotionStatus,
                           }))
-                        }
+                        }}
+                        onClick={(e) => e.stopPropagation()}
                         className="h-8 rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                       >
                         {[promotion.status, ...promotionStatusTransitions[promotion.status]].map((status) => (
@@ -538,21 +542,18 @@ export default function CampaignDetailPage() {
                         asChild
                         size="sm"
                         variant="outline"
+                        onClick={(e) => e.stopPropagation()}
                         className="h-8 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                       >
                         <Link href={`/brand/messages?otherUserId=${promotion.influencerId}`}>Open chat</Link>
                       </Button>
-                      <Button
-                        asChild
-                        size="sm"
-                        variant="outline"
-                        className="h-8 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                      >
-                        <Link href={`/brand/promotions/${promotion.id}`}>Open collaboration</Link>
-                      </Button>
+
                       <Button
                         size="sm"
-                        onClick={() => updatePromotionStatus(promotion.id)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          updatePromotionStatus(promotion.id)
+                        }}
                         disabled={statusBusyId === promotion.id || (statusDrafts[promotion.id] || promotion.status) === promotion.status}
                         className="h-8 bg-slate-900 text-white hover:bg-slate-800 dark:bg-cyan-600 dark:hover:bg-cyan-700"
                       >
@@ -562,7 +563,10 @@ export default function CampaignDetailPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => markPaid(promotion.id)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          markPaid(promotion.id)
+                        }}
                         disabled={payBusyId === promotion.id || promotion.paymentStatus === "paid"}
                         className="h-8 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                       >

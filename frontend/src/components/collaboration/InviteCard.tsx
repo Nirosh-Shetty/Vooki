@@ -5,8 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, ChevronDown, MessageCircle, ThumbsUp, XCircle } from "lucide-react";
-import { AskQuestionDialog } from "./AskQuestionDialog";
+import { CheckCircle2, ChevronDown, ThumbsUp, XCircle } from "lucide-react";
 import { CounterOfferModal } from "./CounterOfferModal";
 import { DeclineConfirmDialog } from "./DeclineConfirmDialog";
 
@@ -31,7 +30,6 @@ const statusMap: Record<string, string> = {
 export function InviteCard({ invite, brand, onAction }: InviteCardProps) {
   const [loading, setLoading] = useState(false);
   const [showCounter, setShowCounter] = useState(false);
-  const [showQuestion, setShowQuestion] = useState(false);
   const [showDecline, setShowDecline] = useState(false);
   const [expandedDetails, setExpandedDetails] = useState(false);
 
@@ -56,18 +54,19 @@ export function InviteCard({ invite, brand, onAction }: InviteCardProps) {
     }
   };
 
-  const compensation = invite.compensation || {};
+  const activeTerms = invite.activeCounterOffer || invite;
+  const compensation = activeTerms.compensation || {};
   const collaborationTypeText = invite.collaborationType
     ? invite.collaborationType.replace(/_/g, " ").charAt(0).toUpperCase() +
       invite.collaborationType.replace(/_/g, " ").slice(1)
     : "Collaboration";
-  const totalDeliverables = Array.isArray(invite.deliverables)
-    ? invite.deliverables.reduce(
+  const totalDeliverables = Array.isArray(activeTerms.deliverables)
+    ? activeTerms.deliverables.reduce(
         (sum: number, deliverable: any) => sum + (deliverable?.quantity || 0),
         0
       )
     : 0;
-  const deliveryItems = Array.isArray(invite.deliverables) ? invite.deliverables : [];
+  const deliveryItems = Array.isArray(activeTerms.deliverables) ? activeTerms.deliverables : [];
   const responseDeadline = invite.timeline?.responseDeadline
     ? new Date(invite.timeline.responseDeadline).toLocaleDateString()
     : "TBD";
@@ -87,9 +86,12 @@ export function InviteCard({ invite, brand, onAction }: InviteCardProps) {
         : "N/A";
 
   const statusBadgeStyle = statusMap[invite.status as string] || statusMap.pending;
+  
+  const isWaitingForBrand = invite.status === "counter_offered" && invite.activeCounterOffer?.createdBy === "creator";
+
   const statusLabel =
     invite.status === "counter_offered"
-      ? "Counter pending"
+      ? isWaitingForBrand ? "Waiting for Brand" : "Brand Countered"
       : invite.status.charAt(0).toUpperCase() + invite.status.slice(1);
 
   return (
@@ -189,7 +191,7 @@ export function InviteCard({ invite, brand, onAction }: InviteCardProps) {
           </Button>
 
           <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-            {invite.status === "pending" || invite.status === "counter_offered" ? (
+            {invite.status === "pending" || (invite.status === "counter_offered" && !isWaitingForBrand) ? (
               <>
                 <Button
                   className="rounded-full border border-[color:var(--vooki-accent-border)] bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] shadow-[var(--vooki-shadow-accent)] hover:bg-[color:var(--vooki-accent-strong)]"
@@ -211,15 +213,6 @@ export function InviteCard({ invite, brand, onAction }: InviteCardProps) {
 
                 <Button
                   variant="ghost"
-                  className="rounded-full border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-hover)]"
-                  onClick={() => setShowQuestion(true)}
-                >
-                  <MessageCircle className="mr-2 h-4 w-4" />
-                  Ask
-                </Button>
-
-                <Button
-                  variant="ghost"
                   className="rounded-full text-[color:var(--vooki-warm)] hover:bg-[color:var(--vooki-warm-soft)] hover:text-[color:var(--vooki-warm)]"
                   onClick={() => setShowDecline(true)}
                 >
@@ -231,6 +224,7 @@ export function InviteCard({ invite, brand, onAction }: InviteCardProps) {
               <p className="w-full rounded-2xl bg-[color:var(--vooki-app-surface-strong)] px-4 py-3 text-center text-sm text-[color:var(--vooki-app-text-soft)]">
                 {invite.status === "accepted" && "You accepted this invite"}
                 {invite.status === "declined" && "You declined this invite"}
+                {isWaitingForBrand && "Waiting for the brand to review your counter offer"}
               </p>
             )}
           </div>
@@ -239,15 +233,9 @@ export function InviteCard({ invite, brand, onAction }: InviteCardProps) {
 
       <CounterOfferModal
         inviteId={invite._id}
-        currentTerms={invite}
+        currentTerms={activeTerms}
         open={showCounter}
         onOpenChange={setShowCounter}
-        onSuccess={onAction}
-      />
-      <AskQuestionDialog
-        inviteId={invite._id}
-        open={showQuestion}
-        onOpenChange={setShowQuestion}
         onSuccess={onAction}
       />
       <DeclineConfirmDialog

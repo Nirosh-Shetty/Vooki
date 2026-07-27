@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, CheckCircle2, Loader2, MessageSquare, Plus, Save, Trash2, TrendingUp } from "lucide-react"
+import { ArrowLeft, CheckCircle2, DollarSign, Loader2, MessageSquare, Plus, Save, Trash2, TrendingUp } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -22,6 +22,17 @@ type PromotionStatus =
   | "metrics_submitted"
   | "payment_pending"
   | "completed"
+
+const statusTransitions: Record<PromotionStatus, PromotionStatus[]> = {
+  requested: ["negotiating", "accepted"],
+  negotiating: ["accepted"],
+  accepted: ["content_in_progress"],
+  content_in_progress: ["posted"],
+  posted: ["metrics_submitted"],
+  metrics_submitted: ["payment_pending"],
+  payment_pending: [], // Removed "completed" so we rely on Record Payment button
+  completed: [],
+}
 
 type Deliverable = {
   platform: string
@@ -726,8 +737,75 @@ export function PromotionWorkspace({
           </Card>
 
           <div className="grid gap-6 lg:grid-cols-[1.4fr,1fr]">
-            <div className="space-y-6">
-              <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
+            <div className="space-y-6 flex flex-col">
+              {/* Next steps moved to the top of the left column (or right, let's keep it right but move it up in the code? No, let's just make it the first card in the main column. Actually, the user wants 'placement of elements aren't good. Will restructure them'. I'll move Agreement proposal down, and Next Steps up!) */}
+              <div className="order-1 lg:order-none space-y-6">
+                <Card className="border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-[32px]">
+                  <CardHeader>
+                    <CardTitle className="text-xl text-[color:var(--vooki-app-text-strong)]">Next steps</CardTitle>
+                    <CardDescription className="text-sm text-[color:var(--vooki-app-text-soft)]">
+                      Progress the collaboration through these actions.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="w-full rounded-full border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-hover)]"
+                    >
+                      <Link href={openChatHref}>
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        {role === "brand" ? "Open collaboration chat" : "Open brand chat"}
+                      </Link>
+                    </Button>
+
+                    {isPlanningPhase ? (
+                      <Button
+                        variant="outline"
+                        onClick={() => sendPlanningMessage(role === "brand" ? "offer" : "counter_offer")}
+                        disabled={sendingStructuredMessage !== null}
+                        className="w-full rounded-full border-[color:var(--vooki-violet-soft)] bg-[color:var(--vooki-violet-soft)] text-[color:var(--vooki-violet)] hover:bg-[color:var(--vooki-violet-soft)]/80"
+                      >
+                        {sendingStructuredMessage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
+                        {role === "brand" ? "Send updated terms in chat" : "Request changes in chat"}
+                      </Button>
+                    ) : null}
+
+                    {allowedNextStatuses.length > 0 ? (
+                      allowedNextStatuses.map((status) => (
+                        <Button
+                          key={status}
+                          onClick={() => updateStatus(status)}
+                          disabled={updatingStatus}
+                          className="w-full rounded-full border border-[color:var(--vooki-accent-border)] bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] shadow-[var(--vooki-shadow-accent)] hover:bg-[color:var(--vooki-accent-strong)]"
+                        >
+                          {updatingStatus && statusAction === status ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                          {getStatusActionLabel(role, status)}
+                        </Button>
+                      ))
+                    ) : (
+                      <div className="rounded-2xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] px-4 py-3 text-center text-sm text-[color:var(--vooki-app-text-soft)]">
+                        No stage update is needed right now. Continue the conversation or complete the current work step.
+                      </div>
+                    )}
+
+                    {role === "brand" ? (
+                      <Button
+                        variant="outline"
+                        onClick={markPaid}
+                        disabled={markingPaid || promotion.paymentStatus === "paid"}
+                        className="w-full rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900/50 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20"
+                      >
+                        {markingPaid ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <DollarSign className="mr-2 h-4 w-4" />}
+                        {promotion.paymentStatus === "paid" ? "Payment recorded" : "Record payment & complete"}
+                      </Button>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="order-2 lg:order-none space-y-6 mt-6">
+                <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
                 <CardHeader>
                   <CardTitle className="text-slate-900 dark:text-slate-100">
                     {role === "brand" ? "Agreement proposal" : "Agreement snapshot"}
@@ -1013,69 +1091,7 @@ export function PromotionWorkspace({
               ) : null}
             </div>
 
-            <div className="space-y-6">
-              {/* <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 dark:text-slate-100">What happens next</CardTitle>
-                  <CardDescription className="text-slate-600 dark:text-slate-400">
-                    Use chat for negotiation, then use these actions to move the collaboration forward in a clean, human way.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="w-full border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    <Link href={openChatHref}>
-                      <MessageSquare className="mr-2 h-4 w-4" />
-                      {role === "brand" ? "Open collaboration chat" : "Open brand chat"}
-                    </Link>
-                  </Button>
 
-                  {isPlanningPhase ? (
-                    <Button
-                      variant="outline"
-                      onClick={() => sendPlanningMessage(role === "brand" ? "offer" : "counter_offer")}
-                      disabled={sendingStructuredMessage !== null}
-                      className="w-full border-cyan-300 bg-cyan-50 text-cyan-900 hover:bg-cyan-100 dark:border-cyan-700 dark:bg-cyan-500/10 dark:text-cyan-300 dark:hover:bg-cyan-500/20"
-                    >
-                      {sendingStructuredMessage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
-                      {role === "brand" ? "Send offer in chat" : "Request changes in chat"}
-                    </Button>
-                  ) : null}
-
-                  {allowedNextStatuses.length > 0 ? (
-                    allowedNextStatuses.map((status) => (
-                      <Button
-                        key={status}
-                        onClick={() => updateStatus(status)}
-                        disabled={updatingStatus}
-                        className="w-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-cyan-600 dark:hover:bg-cyan-700"
-                      >
-                        {updatingStatus && statusAction === status ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                        {getStatusActionLabel(role, status)}
-                      </Button>
-                    ))
-                  ) : (
-                    <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                      No stage update is needed right now. Continue the conversation or complete the current work step.
-                    </div>
-                  )}
-
-                  {role === "brand" ? (
-                    <Button
-                      variant="outline"
-                      onClick={markPaid}
-                      disabled={markingPaid || promotion.paymentStatus === "paid"}
-                      className="w-full border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                    >
-                      {markingPaid ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                      {promotion.paymentStatus === "paid" ? "Payment recorded" : "Record payment"}
-                    </Button>
-                  ) : null}
-                </CardContent>
-              </Card> */}
               {role === "brand" ? (
                 <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
                   <CardHeader>

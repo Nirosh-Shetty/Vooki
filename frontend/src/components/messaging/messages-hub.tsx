@@ -53,6 +53,7 @@ export interface HubConversation {
   threadType?: "direct" | "campaign" | "collaboration";
   campaignId?: string;
   promotionId?: string;
+  inviteId?: string;
   campaignTitle?: string;
 }
 
@@ -485,15 +486,14 @@ export function MessagesHub({
                       message.offerData?.promotionId
                     );
                     const isIncoming = message.sender === "other";
-                    const showInfluencerOfferActions =
-                      role === "influencer" && isIncoming && message.messageType === "offer";
-                    const showBrandCounterActions =
-                      role === "brand" && isIncoming && message.messageType === "counter_offer";
+                    const showAcceptRejectActions =
+                      (role === "influencer" && isIncoming && (message.messageType === "offer" || message.messageType === "counter_offer")) ||
+                      (role === "brand" && isIncoming && message.messageType === "counter_offer");
 
                     const actions =
                       isStructured && isIncoming ? (
                         <>
-                          {showInfluencerOfferActions ? (
+                          {showAcceptRejectActions ? (
                             <>
                               <Button
                                 size="sm"
@@ -532,13 +532,7 @@ export function MessagesHub({
                             </>
                           ) : null}
 
-                          {showBrandCounterActions && collaborationHref ? (
-                            <Button size="sm" variant="outline" asChild>
-                              <Link href={collaborationHref}>Review in collaboration</Link>
-                            </Button>
-                          ) : null}
-
-                          {!showBrandCounterActions && collaborationHref ? (
+                          {!showAcceptRejectActions && collaborationHref ? (
                             <Button size="sm" variant="outline" asChild>
                               <Link href={collaborationHref}>Open collaboration</Link>
                             </Button>

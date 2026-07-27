@@ -291,8 +291,14 @@ export const acceptInvite = async (
       advanceAmount: 0,
       paymentDueAt: invite.timeline?.postingEndDate || new Date(),
       paymentMethod: "direct",
-      status: "negotiating",
+      status: "accepted",
     });
+
+    // Increment acceptedCreators on campaign
+    await CampaignModel.updateOne(
+      { _id: String(invite.campaignId) },
+      { $inc: { acceptedCreators: 1 } }
+    );
 
     // Update invite
     invite.status = "accepted";
@@ -617,8 +623,19 @@ export const acceptCounterOffer = async (
         invite.timeline?.postingEndDate ||
         new Date(),
       paymentMethod: "direct",
-      status: "negotiating",
+      status: "accepted",
     });
+
+    // Increment acceptedCreators on campaign
+    await CampaignModel.updateOne(
+      { _id: String(invite.campaignId) },
+      { $inc: { acceptedCreators: 1 } }
+    );
+
+    // Update invite
+    invite.status = "accepted";
+    invite.promotionId = String(promotion._id);
+    await invite.save();
 
     // Send system message
     await MessageModel.create({
