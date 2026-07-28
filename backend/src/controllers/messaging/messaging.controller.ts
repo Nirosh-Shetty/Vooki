@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Conversation from "../../models/Conversation";
 import Message from "../../models/Message";
 import UserModel from "../../models/Users";
+import DiscoverInviteModel from "../../models/DiscoverInvite";
 import { getRequestUserId } from "../../utils/requestUser";
 import {
   findOrCreateDirectConversation,
@@ -51,6 +52,11 @@ export const getConversations = async (
           read: false,
         });
 
+        // Find associated invite if this is an invite thread
+        const invite = await DiscoverInviteModel.findOne({ conversationId: String(conv._id) })
+          .select('_id')
+          .lean();
+
         return {
           id: (conv._id as any).toString(),
           participants: conv.participants,
@@ -59,6 +65,7 @@ export const getConversations = async (
           status: conv.status,
           unreadCount,
           otherUser,
+          inviteId: invite ? String(invite._id) : undefined,
         };
       })
     );

@@ -1,5 +1,6 @@
 import express from "express";
 import { authMiddleware } from "../middleware/auth";
+import { requireRole } from "../middleware/requireRole";
 import {
   createCampaign,
   getCampaignById,
@@ -13,9 +14,9 @@ const campaignRouter = express.Router();
 campaignRouter.use(authMiddleware);
 
 campaignRouter.get("/", listCampaigns);
-campaignRouter.post("/", createCampaign);
-campaignRouter.get("/:campaignId", getCampaignById);
-campaignRouter.patch("/:campaignId", updateCampaign);
-campaignRouter.patch("/:campaignId/status", updateCampaignStatus);
+campaignRouter.post("/", requireRole("brand", "manager"), createCampaign);
+campaignRouter.get("/:campaignId", requireRole("brand", "manager", "influencer"), getCampaignById);
+campaignRouter.patch("/:campaignId", requireRole("brand", "manager"), updateCampaign);
+campaignRouter.patch("/:campaignId/status", requireRole("brand", "manager"), updateCampaignStatus);
 
 export default campaignRouter;

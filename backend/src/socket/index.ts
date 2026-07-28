@@ -12,7 +12,7 @@ export const initializeSocket = (expressApp: any) => {
 
     // Create HTTP server and attach Express app to it
     httpServer = createServer(expressApp);
-    
+
     io = new SocketIO(httpServer, {
       cors: {
         origin: process.env.FRONTEND_URL || "http://localhost:3000",
@@ -30,19 +30,19 @@ export const initializeSocket = (expressApp: any) => {
     // Connection handler
     io.on("connection", (socket: any) => {
       const userId = socket.userId;
-      console.log(`✅ User ${userId} connected:`, socket.id);
-      console.log(`   Socket rooms:`, socket.rooms);
+      // console.log(`✅ User ${userId} connected:`, socket.id);
+      // console.log(`   Socket rooms:`, socket.rooms);
 
       // Join user room for direct notifications
       socket.join(`user:${userId}`);
-      console.log(`   Joined room: user:${userId}`);
+      // console.log(`   Joined room: user:${userId}`);
 
       // Handle messaging events
       handleMessaging(io, socket, userId!);
 
       // Disconnect handler
       socket.on("disconnect", () => {
-        console.log(`User ${userId} disconnected:`, socket.id);
+        // console.log(`User ${userId} disconnected:`, socket.id);
         socket.leave(`user:${userId}`);
       });
 

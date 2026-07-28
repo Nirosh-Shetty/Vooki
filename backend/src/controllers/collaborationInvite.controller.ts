@@ -126,12 +126,18 @@ export const createCollaborationInvite = async (
         .json({ message: "At least one deliverable is required" });
     }
 
-    // Validate timeline
-    if (!timeline || !timeline.responseDeadline) {
-      return res
-        .status(400)
-        .json({ message: "Timeline with responseDeadline is required" });
-    }
+    // Process timeline with sensible defaults
+    const now = new Date();
+    const defaultStart = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+    const defaultEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+    const defaultDeadline = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    const processedTimeline = {
+      postingStartDate: timeline?.postingStartDate ? new Date(timeline.postingStartDate) : defaultStart,
+      postingEndDate: timeline?.postingEndDate ? new Date(timeline.postingEndDate) : defaultEnd,
+      draftDueDate: timeline?.draftDueDate ? new Date(timeline.draftDueDate) : undefined,
+      responseDeadline: timeline?.responseDeadline ? new Date(timeline.responseDeadline) : defaultDeadline,
+    };
 
     // Create invite
     const newInvite = await DiscoverInviteModel.create({
@@ -141,7 +147,7 @@ export const createCollaborationInvite = async (
       campaignTitle: String(campaign.name),
       collaborationType,
       deliverables,
-      timeline,
+      timeline: processedTimeline,
       compensation,
       brandMessage: String(brandMessage || "").trim(),
       status: "pending",
@@ -155,7 +161,7 @@ export const createCollaborationInvite = async (
 
     // Fetch brand info for response
     const brand = await UserModel.findById(requester.id).select(
-      "_id name profilePicture"
+      "_id name avatar"
     );
 
     return res.status(201).json({
@@ -172,12 +178,79 @@ export const createCollaborationInvite = async (
         brand: {
           id: brand?._id,
           name: brand?.name,
-          profilePicture: brand?.profilePicture,
+          avatar: brand?.avatar,
         },
       },
     });
   } catch (error) {
     console.error("Error creating collaboration invite:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * BRAND: Get all invites sent for a brand (optionally filtered by campaign)
+ * GET /api/collaborations/invites
+ */
+export const getBrandInvites = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const requester = getRequestUser(req);
+    if (!requester?.id || requester.role !== "brand") {
+      return res.status(403).json({ message: "Only brands can view these invites" });
+    }
+
+    const { campaignId, status, limit } = req.query;
+
+    let query: any = { brandId: requester.id };
+    
+    if (campaignId) {
+      query.campaignId = String(campaignId);
+    }
+    
+    if (status && status !== "all") {
+      query.status = String(status);
+    }
+
+    let invitesQuery = DiscoverInviteModel.find(query).sort({ createdAt: -1 });
+    
+    if (limit) {
+      invitesQuery = invitesQuery.limit(Number(limit));
+    }
+
+    const invites = await invitesQuery.lean();
+
+    // Fetch influencer info for each invite
+    const invitesWithInfluencerInfo = await Promise.all(
+      invites.map(async (invite: any) => {
+        const influencer = await UserModel.findById(invite.influencerId).select(
+          "_id name handle niche avatar"
+        );
+
+        return {
+          id: invite._id,
+          influencerId: invite.influencerId,
+          influencerName: influencer?.name || "",
+          influencerHandle: influencer?.handle || "",
+          influencerNiche: influencer?.niche || "",
+          campaignId: invite.campaignId,
+          campaignLabel: invite.campaignTitle,
+          note: invite.brandMessage || "",
+          status: invite.status,
+          promotionId: invite.promotionId || "",
+          promotionStatus: "", // Can fetch promotion status if needed, but not strictly required
+          createdAt: invite.createdAt,
+        };
+      })
+    );
+
+    return res.status(200).json({
+      items: invitesWithInfluencerInfo,
+    });
+  } catch (error) {
+    console.error("Error fetching brand invites:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -213,7 +286,7 @@ export const getReceivedInvites = async (
     const invitesWithBrandInfo = await Promise.all(
       invites.map(async (invite: any) => {
         const brand = await UserModel.findById(invite.brandId).select(
-          "_id name profilePicture"
+          "_id name avatar"
         );
 
         return {
@@ -221,7 +294,7 @@ export const getReceivedInvites = async (
           brand: {
             id: brand?._id,
             name: brand?.name,
-            profilePicture: brand?.profilePicture,
+            avatar: brand?.avatar,
           },
         };
       })
@@ -291,14 +364,25 @@ export const acceptInvite = async (
       advanceAmount: 0,
       paymentDueAt: invite.timeline?.postingEndDate || new Date(),
       paymentMethod: "direct",
-      status: "negotiating",
+      status: "accepted",
     });
 
-    // Update invite
+    // Increment acceptedCreators on campaign
+    await CampaignModel.updateOne(
+      { _id: String(invite.campaignId) },
+      { $inc: { acceptedCreators: 1 } }
+    );
+
+    // Update invite & conversation
     invite.status = "accepted";
     invite.conversationId = String(conversation._id);
     invite.promotionId = String(promotion._id);
     await invite.save();
+
+    await ConversationModel.updateOne(
+      { _id: conversation._id },
+      { promotionId: String(promotion._id), threadType: "collaboration" }
+    );
 
     // Send system message in chat
     await MessageModel.create({
@@ -374,8 +458,8 @@ export const counterInvite = async (
     // Create or find conversation
     let conversation = invite.conversationId
       ? await ConversationModel.findOne({
-          _id: invite.conversationId,
-        })
+        _id: invite.conversationId,
+      })
       : null;
 
     if (!conversation) {
@@ -456,8 +540,8 @@ export const askQuestion = async (
     // Create or find conversation
     let conversation = invite.conversationId
       ? await ConversationModel.findOne({
-          _id: invite.conversationId,
-        })
+        _id: invite.conversationId,
+      })
       : null;
 
     if (!conversation) {
@@ -575,8 +659,8 @@ export const acceptCounterOffer = async (
     // Create or find conversation
     let conversation = invite.conversationId
       ? await ConversationModel.findOne({
-          _id: invite.conversationId,
-        })
+        _id: invite.conversationId,
+      })
       : null;
 
     if (!conversation) {
@@ -617,8 +701,26 @@ export const acceptCounterOffer = async (
         invite.timeline?.postingEndDate ||
         new Date(),
       paymentMethod: "direct",
-      status: "negotiating",
+      status: "accepted",
     });
+
+    // Increment acceptedCreators on campaign
+    await CampaignModel.updateOne(
+      { _id: String(invite.campaignId) },
+      { $inc: { acceptedCreators: 1 } }
+    );
+
+    // Update invite & conversation
+    invite.status = "accepted";
+    invite.promotionId = String(promotion._id);
+    await invite.save();
+
+    if (invite.conversationId) {
+      await ConversationModel.updateOne(
+        { _id: invite.conversationId },
+        { promotionId: String(promotion._id), threadType: "collaboration" }
+      );
+    }
 
     // Send system message
     await MessageModel.create({
@@ -692,8 +794,8 @@ export const brandCounterOffer = async (
     // Create or find conversation
     let conversation = invite.conversationId
       ? await ConversationModel.findOne({
-          _id: invite.conversationId,
-        })
+        _id: invite.conversationId,
+      })
       : null;
 
     if (!conversation) {

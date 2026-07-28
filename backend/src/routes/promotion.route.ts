@@ -1,5 +1,6 @@
 import express from "express";
 import { authMiddleware } from "../middleware/auth";
+import { requireRole } from "../middleware/requireRole";
 import {
   createPromotion,
   getPromotionById,
@@ -10,6 +11,7 @@ import {
   submitPromotionPerformance,
   updatePromotionStatus,
   updatePromotionTerms,
+  confirmPaymentReceived,
 } from "../controllers/promotion.controller";
 
 const promotionRouter = express.Router();
@@ -17,13 +19,14 @@ const promotionRouter = express.Router();
 promotionRouter.use(authMiddleware);
 
 promotionRouter.get("/", listPromotions);
-promotionRouter.post("/", createPromotion);
-promotionRouter.get("/:promotionId", getPromotionById);
-promotionRouter.patch("/:promotionId/terms", updatePromotionTerms);
-promotionRouter.patch("/:promotionId/status", updatePromotionStatus);
-promotionRouter.patch("/:promotionId/delivery", submitPromotionDelivery);
-promotionRouter.patch("/:promotionId/delivery/review", reviewPromotionDelivery);
-promotionRouter.patch("/:promotionId/performance", submitPromotionPerformance);
-promotionRouter.patch("/:promotionId/payment", markPromotionPaid);
+promotionRouter.post("/", requireRole("brand", "manager"), createPromotion);
+promotionRouter.get("/:promotionId", requireRole("brand", "manager", "influencer"), getPromotionById);
+promotionRouter.patch("/:promotionId/terms", requireRole("brand", "manager"), updatePromotionTerms);
+promotionRouter.patch("/:promotionId/status", requireRole("brand", "manager", "influencer"), updatePromotionStatus);
+promotionRouter.patch("/:promotionId/delivery", requireRole("influencer"), submitPromotionDelivery);
+promotionRouter.patch("/:promotionId/delivery/review", requireRole("brand", "manager"), reviewPromotionDelivery);
+promotionRouter.patch("/:promotionId/performance", requireRole("influencer"), submitPromotionPerformance);
+promotionRouter.patch("/:promotionId/payment", requireRole("brand", "manager"), markPromotionPaid);
+promotionRouter.patch("/:promotionId/payment/confirm", requireRole("influencer"), confirmPaymentReceived);
 
 export default promotionRouter;

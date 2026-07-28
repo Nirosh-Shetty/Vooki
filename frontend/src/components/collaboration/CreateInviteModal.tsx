@@ -42,19 +42,25 @@ interface Deliverable {
 interface CreateInviteModalProps {
   campaignId: string
   campaignName: string
+  preselectedInfluencerId?: string
+  trigger?: React.ReactNode
   onSuccess?: () => void
 }
 
 export function CreateInviteModal({
   campaignId,
   campaignName,
+  preselectedInfluencerId,
+  trigger,
   onSuccess,
 }: CreateInviteModalProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   // Form state
-  const [influencerId, setInfluencerId] = useState("")
+  const [influencerId, setInfluencerId] = useState(preselectedInfluencerId || "")
   const [collaborationType, setCollaborationType] = useState<CollaborationType>()
   const [deliverables, setDeliverables] = useState<Deliverable[]>([
     { platform: "instagram", format: "reel", quantity: 1 },
@@ -71,7 +77,6 @@ export function CreateInviteModal({
   const [draftDueDate, setDraftDueDate] = useState("")
   const [responseDeadline, setResponseDeadline] = useState("")
 
-  const [error, setError] = useState<string | null>(null)
 
   const handleAddDeliverable = () => {
     setDeliverables([
@@ -104,12 +109,7 @@ export function CreateInviteModal({
       return
     }
     if (!collaborationType) {
-      setError("Please select collaboration type")
-      return
-    }
-    if (!postingStartDate || !postingEndDate || !responseDeadline) {
-      setError("Please set all required dates")
-      return
+      setCollaborationType("sponsored_post")
     }
     if (
       compensationType === "fixed" &&
@@ -129,16 +129,21 @@ export function CreateInviteModal({
     setLoading(true)
 
     try {
+      const now = new Date()
+      const defaultStart = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000)
+      const defaultEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
+      const defaultDeadline = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+
       const payload = {
         influencerId,
         campaignId,
-        collaborationType,
+        collaborationType: collaborationType || "sponsored_post",
         deliverables,
         timeline: {
-          postingStartDate: new Date(postingStartDate),
-          postingEndDate: new Date(postingEndDate),
+          postingStartDate: postingStartDate ? new Date(postingStartDate) : defaultStart,
+          postingEndDate: postingEndDate ? new Date(postingEndDate) : defaultEnd,
           draftDueDate: draftDueDate ? new Date(draftDueDate) : undefined,
-          responseDeadline: new Date(responseDeadline),
+          responseDeadline: responseDeadline ? new Date(responseDeadline) : defaultDeadline,
         },
         compensation: {
           type: compensationType,
@@ -179,10 +184,14 @@ export function CreateInviteModal({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="gap-2">
-          <Plus className="w-4 h-4" />
-          Invite Creator
-        </Button>
+        {trigger ? (
+          trigger
+        ) : (
+          <Button size="sm" variant="outline" className="gap-2">
+            <Plus className="w-4 h-4" />
+            Invite Creator
+          </Button>
+        )}
       </DialogTrigger>
 
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -201,16 +210,18 @@ export function CreateInviteModal({
           )}
 
           {/* Creator Selection */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Creator</label>
-            <input
-              type="text"
-              placeholder="Enter creator ID or search"
-              value={influencerId}
-              onChange={(e) => setInfluencerId(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md"
-            />
-          </div>
+          {!preselectedInfluencerId && (
+            <div>
+              <label className="block text-sm font-medium mb-2">Creator</label>
+              <input
+                type="text"
+                placeholder="Enter creator ID or search"
+                value={influencerId}
+                onChange={(e) => setInfluencerId(e.target.value)}
+                className="w-full px-3 py-2 border rounded-md"
+              />
+            </div>
+          )}
 
           {/* Collaboration Type */}
           <div>
@@ -314,8 +325,18 @@ export function CreateInviteModal({
             </div>
           </div>
 
-          {/* Timeline */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Timeline - Advanced Settings */}
+          <div className="border-t pt-4">
+            <button
+              type="button"
+              className="text-sm text-slate-500 hover:text-slate-700 font-medium flex items-center gap-1"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+            >
+              {showAdvanced ? "Hide Advanced Settings" : "Show Advanced Settings (Optional Timeline)"}
+            </button>
+            
+            {showAdvanced && (
+              <div className="grid grid-cols-2 gap-3 mt-4">
             <div>
               <label className="block text-sm font-medium mb-2">
                 Posting Start Date
@@ -356,6 +377,8 @@ export function CreateInviteModal({
                 onChange={(e) => setResponseDeadline(e.target.value)}
               />
             </div>
+              </div>
+            )}
           </div>
 
           {/* Compensation */}

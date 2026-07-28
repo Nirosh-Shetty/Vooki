@@ -7,6 +7,7 @@ import { mailer } from "../../utils/mailer/index";
 import sessionStore from "../../utils/sessionStore";
 import { generateUsernameSuggestions } from "../../utils/generateUsernameSuggestions";
 import { uploadProfilePhotoToCloud } from "../../utils/uploadProfilePhotoToCloud";
+import { getRequestUserId } from "../../utils/requestUser";
 // import { apiResponse } from "../types/apiResponse";
 export const signUpBasicInfo = async (
   req: Request,
@@ -24,9 +25,29 @@ export const signUpBasicInfo = async (
       !existingUser.isTempAccount &&
       existingUser.isVerified
     ) {
-      return res
-        .status(400)
-        .json({ message: "User already exists", redirectTo: "/signin" });
+      const linkedProviders =
+        existingUser.oauthProviders
+          ?.filter((provider) => provider.provider !== "local")
+          .map((provider) => provider.provider) || [];
+
+      if (linkedProviders.length > 0 && !existingUser.password) {
+        const providerText = linkedProviders
+          .map((provider) => provider.charAt(0).toUpperCase() + provider.slice(1))
+          .join(" or ");
+
+        return res.status(400).json({
+          message: `An account with this email already exists and is connected to ${providerText}. Please sign in with ${providerText} or use a different email.`,
+          errorIn: "email",
+          linkedAccounts: linkedProviders,
+          redirectTo: "/signin",
+        });
+      }
+
+      return res.status(400).json({
+        message: "An account with this email already exists. Please sign in instead.",
+        errorIn: "email",
+        redirectTo: "/signin",
+      });
     }
 
     // ✅ Case 2: Pending signup, reservation not expired
@@ -65,20 +86,16 @@ export const signUpBasicInfo = async (
       username,
       password: hashedPass,
       role,
-      avatar: undefined, // can be set later
+      oauthProviders: [{ provider: "local" }],
       isVerified: false,
       isTempAccount: true,
       reservationExpiresAt: new Date(
         Date.now() +
         (Number(process.env.USER_RESERVATION_EXPIRY_MS) || 60 * 60 * 1000)
       ),
-      oauthProviders: [],
       isPremium: false,
-      jwtVersion: 0,
+      jwtVersion: 1,
       statsConnection: {},
-      // influencerProfile: {},
-      // brandProfile: {},
-      // managerProfile: {},
       loginHistory: [],
     });
 
@@ -143,9 +160,13 @@ export const signIn = async (req: Request, res: Response): Promise<any> => {
       });
     }
     if (!user.password) {
+      const linkedProviders =
+        user.oauthProviders
+          ?.filter((provider) => provider.provider !== "local")
+          .map((provider) => provider.provider) || [];
+
       return res.status(400).json({
-        message:
-          "This account was created with a social login. Please use Google or Facebook to sign in or reset the password",
+        message: `This account doesn't have a password set. Please log in with ${linkedProviders.length > 0 ? linkedProviders.map((provider) => provider.charAt(0).toUpperCase() + provider.slice(1)).join(" or ") : "a social provider"} or use Forgot Password to set one.`,
         errorIn: "identifier",
       });
     }
@@ -306,6 +327,10 @@ export const verifyOtp = async (req: Request, res: Response): Promise<any> => {
     user.otp = undefined; // Clear OTP after verification
     user.isTempAccount = false; // Mark account as permanent
     user.reservationExpiresAt = undefined;
+    if (!user.oauthProviders) user.oauthProviders = [];
+    if (!user.oauthProviders.some((provider) => provider.provider === "local")) {
+      user.oauthProviders.push({ provider: "local" });
+    }
     user.loginHistory.push(loginEvent); // Store login event
 
     await user.save();
@@ -367,11 +392,12 @@ export const completeSocialAuth = async (
       email,
       name,
       provider,
+      providerUserId,
+      accessToken = "",
+      refreshToken = "",
+      accessTokenExpires,
+      avatar = "",
       profilePictureUrl = "",
-      providerUserId = null,
-      accessToken = null,
-      refreshToken = null,
-      accessTokenExpires = null,
     } = sessionData;
     if (!email || !name || !provider) {
       return res.status(400).json({
@@ -398,16 +424,18 @@ export const completeSocialAuth = async (
       email.split("@")[0],
       1
     );
-    let uploadedAvatarUrl = "";
-    if (profilePictureUrl) {
+
+    let uploadedAvatar = "";
+    const incomingAvatar = avatar || profilePictureUrl;
+    if (incomingAvatar) {
       try {
-        uploadedAvatarUrl = await uploadProfilePhotoToCloud(
-          profilePictureUrl,
+        uploadedAvatar = await uploadProfilePhotoToCloud(
+          incomingAvatar,
           "profile-pictures"
         );
       } catch (uploadErr) {
         console.error("Avatar upload failed:", uploadErr);
-        uploadedAvatarUrl = "";
+        uploadedAvatar = "";
       }
     }
     const oauthProvider = {
@@ -421,15 +449,23 @@ export const completeSocialAuth = async (
       name,
       email,
       username: usernameSuggested[0],
-      avatar: uploadedAvatarUrl,
       role,
-      oauthProviders: [oauthProvider],
+      avatar: uploadedAvatar,
+      oauthProviders: [
+        {
+          provider,
+          providerUserId,
+          accessToken,
+          refreshToken,
+          accessTokenExpires,
+        },
+      ],
       isVerified: true,
       isTempAccount: false,
     });
 
     await newUser.save();
-    const token = generateToken(newUser._id.toString(), newUser.role, newUser?.username);
+    const token = generateToken(newUser._id.toString(), newUser.role, newUser.username);
     // Clear the session cookie
     await sessionStore.delete(sessionId);
     // Clear the session cookie and set auth_token cookie
@@ -459,10 +495,101 @@ export const signout = (req: Request, res: Response): any => {
       sameSite: "strict",
       path: "/",
     });
-    // console.log("signout successful");
     return res.status(200).json({ message: "Logged out" });
   } catch (error) {
     console.error("Error during signout:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getOAuthSession = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const sessionId = req.cookies.sessionId;
+    if (!sessionId) {
+      return res.status(400).json({
+        message: "No session found. Please try signing up again.",
+        redirectTo: "/signin",
+      });
+    }
+
+    const sessionData = await sessionStore.get(sessionId);
+    if (!sessionData) {
+      return res.status(400).json({
+        message: "Session expired. Please try signing up again.",
+        redirectTo: "/signin",
+      });
+    }
+
+    return res.status(200).json({
+      user: sessionData,
+    });
+  } catch (error) {
+    console.error("Error retrieving OAuth session:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Get socket token - returns the auth token from httpOnly cookie
+// This is needed because frontend cannot read httpOnly cookies, but can use this endpoint
+export const getSocketToken = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const token = req.cookies.auth_token;
+
+    if (!token) {
+      console.log("❌ No auth_token cookie found");
+      console.log("   Available cookies:", Object.keys(req.cookies));
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    console.log("✅ Returning socket token to frontend");
+    // Return token (not httpOnly, so frontend can read it)
+    return res.status(200).json({
+      token,
+    });
+  } catch (error) {
+    console.error("Error getting socket token:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Get current user profile - used by Auth context to fetch logged in user data
+export const getCurrentUser = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const userId = getRequestUserId(req);
+
+    if (!userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const user = await UserModel.findById(userId).select(
+      "id name email username role avatar"
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      data: {
+        id: user._id.toString(),
+        name: user.name,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+        avatar: user.avatar,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching current user:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };

@@ -12,9 +12,11 @@ import { Label } from "@/components/ui/label"
 import { EyeIcon, EyeOffIcon, UserIcon } from "lucide-react"
 import Link from "next/link"
 import axios from "axios"
+import { useAuth } from "@/hooks/useAuth"
 
 export default function Signin1Page() {
   const router = useRouter()
+  const { refreshUser } = useAuth()
   const [formData, setFormData] = useState({
     identifier: "",
     password: "",
@@ -51,6 +53,9 @@ export default function Signin1Page() {
           withCredentials: true,
         }
       );
+
+      await refreshUser();
+
       // Expecting role in response: { role: "brand" | "influencer" | "manager" }
       const role = res.data?.user?.role;
       if (role === "brand") router.push("/brand/dashboard");

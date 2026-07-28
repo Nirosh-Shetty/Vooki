@@ -20,16 +20,16 @@ const sidebarItems: WorkspaceNavItem[] = [
   { label: "Dashboard", href: "/brand/dashboard", icon: Home },
   { label: "Campaigns", href: "/brand/campaigns", icon: Target },
   { label: "Discover", href: "/brand/discover", icon: Search },
-  { label: "Collaborations", href: "/brand/influencers", icon: Users, mobileLabel: "Collabs" },
-  { label: "Analytics", href: "/brand/analytics", icon: BarChart3 },
+  { label: "My Network", href: "/brand/influencers", icon: Users, mobileLabel: "Network" },
   { label: "Messages", href: "/brand/messages", icon: MessageSquare },
-  { label: "Payments", href: "/brand/payments", icon: Wallet },
+  { label: "Reports", href: "/brand/analytics", icon: BarChart3 },
+  { label: "Finance", href: "/brand/payments", icon: Wallet },
 ];
 
 const mobilePrimary: WorkspaceNavItem[] = [
   { label: "Dashboard", href: "/brand/dashboard", icon: Home },
   { label: "Campaigns", href: "/brand/campaigns", icon: Target },
-  { label: "Discover", href: "/brand/discover", icon: Search },
+  { label: "Network", href: "/brand/influencers", icon: Users },
   { label: "Messages", href: "/brand/messages", icon: MessageSquare },
 ];
 
@@ -38,10 +38,10 @@ const routeTitle: Record<string, string> = {
   "/brand/campaigns": "Campaigns",
   "/brand/campaigns/new": "New Campaign",
   "/brand/discover": "Discover",
-  "/brand/influencers": "Collaborations",
-  "/brand/analytics": "Analytics",
+  "/brand/influencers": "My Network",
+  "/brand/analytics": "Reports",
   "/brand/messages": "Messages",
-  "/brand/payments": "Payments",
+  "/brand/payments": "Finance",
   "/brand/settings": "Settings",
 };
 

@@ -11,9 +11,11 @@ import { Input } from "@/components/ui/input"
 import { ArrowLeftIcon, CheckCircleIcon } from "lucide-react"
 import Link from "next/link"
 import axios from "axios"
+import { useAuth } from "@/hooks/useAuth"
 
 export default function VerifyPage() {
   const router = useRouter()
+  const { refreshUser } = useAuth()
   const [otp, setOtp] = useState(["", "", "", "", "", ""])
   const [email, setEmail] = useState("")
   const [countdown, setCountdown] = useState(60)
@@ -92,6 +94,8 @@ export default function VerifyPage() {
           withCredentials: true,
         }
       )
+
+      await refreshUser()
 
       // Get role from signupData
       const signupData = sessionStorage.getItem("signupData")

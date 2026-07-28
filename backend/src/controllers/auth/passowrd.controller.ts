@@ -126,8 +126,10 @@ export const resetPassword = async (
     // Hash & save new password
     const hashedPassword = await bcryptjs.hash(newPassword, 10);
     user.password = hashedPassword;
-    if (!user.linkedAccounts) user.linkedAccounts = [];
-    if (!user.linkedAccounts.includes("local")) user.linkedAccounts.push("local");
+    if (!user.oauthProviders) user.oauthProviders = [];
+    if (!user.oauthProviders.some((provider) => provider.provider === "local")) {
+      user.oauthProviders.push({ provider: "local" });
+    }
     await user.save();
 
     // Clean up
@@ -209,7 +211,7 @@ export const setPasswordForOAuth = async (
     }
 
     // Check if user has OAuth providers (security check)
-    if (!user.linkedAccounts || user.linkedAccounts.length === 0) {
+    if (!user.oauthProviders || user.oauthProviders.length === 0) {
       return res.status(400).json({
         message: "Only OAuth accounts can use this feature",
         errorIn: "account",
@@ -219,8 +221,8 @@ export const setPasswordForOAuth = async (
     // Hash & save new password
     const hashedPassword = await bcryptjs.hash(newPassword, 10);
     user.password = hashedPassword;
-    if (!user.linkedAccounts.includes("local")) {
-      user.linkedAccounts.push("local");
+    if (!user.oauthProviders.some((provider) => provider.provider === "local")) {
+      user.oauthProviders.push({ provider: "local" });
     }
     await user.save();
 

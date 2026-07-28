@@ -204,7 +204,7 @@ export default function LandingPage() {
                 asChild
                 className="rounded-full border border-[color:var(--vooki-accent-border)] bg-[color:var(--vooki-accent)] px-5 text-[color:var(--vooki-accent-text)] shadow-[var(--vooki-shadow-accent)] transition-transform hover:-translate-y-0.5 hover:bg-[color:var(--vooki-accent-strong)]"
               >
-                <Link href="/signup/role">Get started</Link>
+                <Link href="/signup/welcome">Get started</Link>
               </Button>
             </div>
           </div>
@@ -233,7 +233,7 @@ export default function LandingPage() {
                   size="lg"
                   className="h-12 rounded-full border border-[color:var(--vooki-accent-border)] bg-[color:var(--vooki-accent)] px-6 text-base text-[color:var(--vooki-accent-text)] shadow-[var(--vooki-shadow-accent)] transition-transform hover:-translate-y-0.5 hover:bg-[color:var(--vooki-accent-strong)]"
                 >
-                  <Link href="/signup/role">
+                  <Link href="/signup/welcome">
                     Start your workspace
                     <ArrowRight className="h-4 w-4" />
                   </Link>
@@ -646,9 +646,8 @@ export default function LandingPage() {
                           {faq.question}
                         </h3>
                         <ChevronDown
-                          className={`h-5 w-5 flex-shrink-0 text-[color:var(--vooki-home-text-subtle)] transition-transform ${
-                            openFaq === index ? "rotate-180" : ""
-                          }`}
+                          className={`h-5 w-5 flex-shrink-0 text-[color:var(--vooki-home-text-subtle)] transition-transform ${openFaq === index ? "rotate-180" : ""
+                            }`}
                         />
                       </CardContent>
                     </Card>
@@ -683,7 +682,7 @@ export default function LandingPage() {
                 Sign in
               </Link>
               <Link
-                href="/signup/role"
+                href="/signup/welcome"
                 className="transition-colors hover:text-[color:var(--vooki-home-text)]"
               >
                 Create account

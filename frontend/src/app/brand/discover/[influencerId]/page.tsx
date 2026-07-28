@@ -17,6 +17,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react"
+import { CreateInviteModal } from "@/components/collaboration/CreateInviteModal"
 
 type PublicProfile = {
   id: string
@@ -240,67 +241,7 @@ export default function DiscoverProfilePage() {
     loadCampaigns()
     return () => controller.abort()
   }, [])
-
-  const sendInvite = async () => {
-    if (!profile || !influencerId) return
-
-    if (isPreviewProfile) {
-      setActionMessage("Preview profile cannot receive live invites.")
-      return
-    }
-
-    if (inviteStatus === "pending") {
-      setActionMessage("Invite already pending for this creator.")
-      return
-    }
-    if (!selectedCampaignId) {
-      setActionMessage("Select a campaign before sending invite.")
-      return
-    }
-
-    setInviteBusy(true)
-    setActionMessage(null)
-
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/discover/invites`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          influencerIds: [influencerId],
-          campaignId: selectedCampaignId,
-          campaignLabel:
-            campaigns.find((campaign) => campaign.id === selectedCampaignId)?.name || "Profile Outreach",
-          note: `Invite sent from profile view (${profile.handle || profile.name}).`,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to send invite")
-      }
-
-      const data = await response.json()
-      const created = Array.isArray(data?.created) ? data.created : []
-      const skipped = Array.isArray(data?.skipped) ? data.skipped : []
-
-      if (created.length > 0) {
-        setInviteStatus("pending")
-        setActionMessage("Invite sent successfully.")
-        return
-      }
-
-      if (skipped.length > 0) {
-        setActionMessage("Invite already exists or creator is not eligible.")
-        return
-      }
-
-      setActionMessage("Invite request processed.")
-    } catch {
-      setActionMessage("Could not send invite right now.")
-    } finally {
-      setInviteBusy(false)
-    }
-  }
+  // We use CreateInviteModal now for detailed invites.
 
   const socialEntries = useMemo(
     () => Object.entries(profile?.socialLinks || {}).filter(([, value]) => Boolean(value)),
@@ -379,20 +320,25 @@ export default function DiscoverProfilePage() {
                       </option>
                     ))}
                   </select>
-                  <Button
-                    onClick={sendInvite}
-                    disabled={inviteBusy || inviteStatus === "pending"}
-                    className="bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-60 dark:bg-cyan-600 dark:hover:bg-cyan-700"
-                  >
-                    <HeartHandshake className="mr-2 h-4 w-4" />
-                    {inviteStatus === "pending"
-                      ? "Invite pending"
-                      : inviteBusy
-                        ? "Sending invite..."
-                        : inviteStatus === "accepted" || inviteStatus === "rejected" || inviteStatus === "expired"
-                          ? "Invite again"
-                          : "Invite to campaign"}
-                  </Button>
+                  <CreateInviteModal
+                    campaignId={selectedCampaignId}
+                    campaignName={campaigns.find((c) => c.id === selectedCampaignId)?.name || ""}
+                    preselectedInfluencerId={influencerId}
+                    onSuccess={() => setInviteStatus("pending")}
+                    trigger={
+                      <Button
+                        disabled={inviteBusy || inviteStatus === "pending" || !selectedCampaignId}
+                        className="bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] hover:bg-[color:var(--vooki-accent-strong)] disabled:opacity-60"
+                      >
+                        <HeartHandshake className="mr-2 h-4 w-4" />
+                        {inviteStatus === "pending"
+                          ? "Invite pending"
+                          : inviteStatus === "accepted" || inviteStatus === "rejected" || inviteStatus === "expired"
+                            ? "Invite again"
+                            : "Invite to campaign"}
+                      </Button>
+                    }
+                  />
                   <Button asChild variant="outline" className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
                     <Link href={`/brand/messages`}>
                       Message creator <ArrowUpRight className="ml-2 h-4 w-4" />

@@ -53,6 +53,7 @@ export interface Conversation {
   threadType: "direct" | "campaign" | "collaboration";
   campaignId?: string;
   promotionId?: string;
+  inviteId?: string;
   campaignTitle?: string;
   otherUser?: {
     name: string;

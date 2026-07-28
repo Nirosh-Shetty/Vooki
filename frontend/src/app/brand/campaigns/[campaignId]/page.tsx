@@ -1,152 +1,86 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
-import { useParams } from "next/navigation"
-import { ArrowLeft, CheckCircle2, DollarSign, Loader2 } from "lucide-react"
+import { useParams, useRouter } from "next/navigation"
+import { ArrowLeft, Loader2, Search, Calendar, Users, Target, Activity, MessageSquare, ChevronRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 type CampaignStatus = "draft" | "active" | "paused" | "completed" | "archived"
 type CampaignPriority = "low" | "medium" | "high"
-type PromotionStatus =
-  | "requested"
-  | "negotiating"
-  | "accepted"
-  | "content_in_progress"
-  | "posted"
-  | "metrics_submitted"
-  | "payment_pending"
-  | "completed"
-
-type Deliverable = {
-  platform: string
-  format: string
-  quantity: number
-}
+type PromotionStatus = "requested" | "negotiating" | "accepted" | "content_in_progress" | "posted" | "metrics_submitted" | "payment_pending" | "completed"
+type Deliverable = { platform: string; format: string; quantity: number }
 
 type Campaign = {
-  id: string
-  name: string
-  objective: string
-  niche: string
-  status: CampaignStatus
-  priority: CampaignPriority
-  budgetTotal: number
-  budgetSpent: number
-  roi: number
-  startDate: string
-  endDate: string
-  invitedCreators: number
-  acceptedCreators: number
-  deliverablesDone: number
-  deliverablesTotal: number
+  id: string; name: string; objective: string; niche: string; status: CampaignStatus; priority: CampaignPriority;
+  budgetTotal: number; budgetSpent: number; roi: number; startDate: string; endDate: string;
+  invitedCreators: number; acceptedCreators: number; deliverablesDone: number; deliverablesTotal: number;
 }
 
 type Promotion = {
-  id: string
-  campaignId: string
-  campaignTitle: string
-  influencerId: string
-  deliverables: Deliverable[]
-  status: PromotionStatus
-  paymentStatus: "pending" | "paid"
-  paymentAmount: number
-  paymentDueAt: string
-  performance: {
-    reach: number
-    views: number
-    engagement: number
-  }
+  id: string; campaignId: string; campaignTitle: string; influencerId: string; influencerName?: string; influencerHandle?: string;
+  deliverables: Deliverable[]; status: PromotionStatus; paymentStatus: "pending" | "paid"; paymentAmount: number; paymentDueAt: string;
+  performance: { reach: number; views: number; engagement: number }
 }
 
 type InviteStatus = "pending" | "accepted" | "rejected" | "expired"
 
 type CampaignInvite = {
-  id: string
-  influencerId: string
-  influencerName: string
-  influencerHandle: string
-  influencerNiche: string
-  campaignId: string
-  campaignLabel: string
-  note: string
-  status: InviteStatus
-  promotionId?: string
-  promotionStatus?: PromotionStatus | ""
-  createdAt: string
+  id: string; influencerId: string; influencerName: string; influencerHandle: string; influencerNiche: string;
+  campaignId: string; campaignLabel: string; note: string; status: InviteStatus;
+  promotionId?: string; promotionStatus?: PromotionStatus | ""; createdAt: string;
 }
 
 type CampaignResponse = { campaign?: Campaign }
 type PromotionListResponse = { items?: Promotion[] }
 type InviteListResponse = { items?: CampaignInvite[] }
 
-const formatMoney = (value: number) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value)
-
-const formatDate = (value: string) =>
-  new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })
-
-const formatLabel = (value: string) =>
-  value
-    .replaceAll("_", " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase())
+const formatMoney = (value: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value)
+const formatDate = (value: string) => {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "-"
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+}
+const formatLabel = (value: string) => value.replaceAll("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())
 
 const formatDeliverables = (deliverables: Deliverable[]) => {
-  if (!deliverables?.length) return "Deliverables to be confirmed"
-  return deliverables
-    .map((deliverable) => `${deliverable.quantity} x ${formatLabel(deliverable.platform)} ${formatLabel(deliverable.format)}`)
-    .join(", ")
+  if (!deliverables?.length) return "TBD"
+  return deliverables.map((d) => `${d.quantity}x ${formatLabel(d.format)}`).join(", ")
 }
 
 const statusPillClass: Record<CampaignStatus, string> = {
-  draft: "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200",
-  active: "bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300",
-  paused: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
-  completed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
-  archived: "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300",
+  draft: "bg-slate-100 text-slate-700 border-slate-200",
+  active: "bg-cyan-50 text-cyan-700 border-cyan-200",
+  paused: "bg-amber-50 text-amber-700 border-amber-200",
+  completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  archived: "bg-slate-100 text-slate-700 border-slate-200",
 }
 
 const promotionPillClass: Record<PromotionStatus, string> = {
-  requested: "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200",
-  negotiating: "bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300",
-  accepted: "bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300",
-  content_in_progress: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
-  posted: "bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300",
-  metrics_submitted: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
-  payment_pending: "bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300",
-  completed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
+  requested: "bg-slate-100 text-slate-700",
+  negotiating: "bg-violet-50 text-violet-700",
+  accepted: "bg-cyan-50 text-cyan-700",
+  content_in_progress: "bg-amber-50 text-amber-700",
+  posted: "bg-sky-50 text-sky-700",
+  metrics_submitted: "bg-emerald-50 text-emerald-700",
+  payment_pending: "bg-orange-50 text-orange-700",
+  completed: "bg-emerald-50 text-emerald-700",
 }
 
 const invitePillClass: Record<InviteStatus, string> = {
-  pending: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
-  accepted: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
-  rejected: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
-  expired: "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200",
-}
-
-const campaignStatusTransitions: Record<CampaignStatus, CampaignStatus[]> = {
-  draft: ["active", "archived"],
-  active: ["paused", "completed", "archived"],
-  paused: ["active", "completed", "archived"],
-  completed: ["archived"],
-  archived: [],
-}
-
-const promotionStatusTransitions: Record<PromotionStatus, PromotionStatus[]> = {
-  requested: ["negotiating"],
-  negotiating: ["requested"],
-  accepted: ["content_in_progress"],
-  content_in_progress: [],
-  posted: [],
-  metrics_submitted: ["payment_pending"],
-  payment_pending: ["completed"],
-  completed: [],
+  pending: "bg-amber-50 text-amber-700",
+  accepted: "bg-emerald-50 text-emerald-700",
+  rejected: "bg-rose-50 text-rose-700",
+  expired: "bg-slate-100 text-slate-700",
 }
 
 export default function CampaignDetailPage() {
   const params = useParams<{ campaignId: string }>()
+  const router = useRouter()
   const campaignId = params?.campaignId
 
   const [campaign, setCampaign] = useState<Campaign | null>(null)
@@ -154,42 +88,26 @@ export default function CampaignDetailPage() {
   const [promotions, setPromotions] = useState<Promotion[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [actionMessage, setActionMessage] = useState<string | null>(null)
-  const [campaignStatusDraft, setCampaignStatusDraft] = useState<CampaignStatus | "">("")
-  const [campaignStatusBusy, setCampaignStatusBusy] = useState(false)
-  const [statusBusyId, setStatusBusyId] = useState<string | null>(null)
-  const [payBusyId, setPayBusyId] = useState<string | null>(null)
-  const [statusDrafts, setStatusDrafts] = useState<Record<string, PromotionStatus>>({})
 
   const loadData = useCallback(async (signal?: AbortSignal) => {
     if (!campaignId) return
-
     setLoading(true)
     setError(null)
     try {
       const [campaignRes, invitesRes, promotionsRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/campaigns/${campaignId}`, {
-          credentials: "include",
-          signal,
-        }),
-        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/collaborations/invites?campaignId=${campaignId}&status=all&limit=50`, {
-          credentials: "include",
-          signal,
-        }),
-        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/promotions?campaignId=${campaignId}&status=all&limit=50`, {
-          credentials: "include",
-          signal,
-        }),
+        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/campaigns/${campaignId}`, { credentials: "include", signal }),
+        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/collaborations/invites?campaignId=${campaignId}&status=all&limit=50`, { credentials: "include", signal }),
+        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/promotions?campaignId=${campaignId}&status=all&limit=50`, { credentials: "include", signal }),
       ])
 
       if (!campaignRes.ok) throw new Error("Failed to load campaign")
 
       const campaignData: CampaignResponse = await campaignRes.json()
       setCampaign(campaignData?.campaign || null)
-      setCampaignStatusDraft(campaignData?.campaign?.status || "")
 
+      let invitesData: InviteListResponse = { items: [] }
       if (invitesRes.ok) {
-        const invitesData: InviteListResponse = await invitesRes.json()
+        invitesData = await invitesRes.json()
         setInvites(Array.isArray(invitesData?.items) ? invitesData.items : [])
       } else {
         setInvites([])
@@ -198,10 +116,17 @@ export default function CampaignDetailPage() {
       if (promotionsRes.ok) {
         const promotionsData: PromotionListResponse = await promotionsRes.json()
         const items = Array.isArray(promotionsData?.items) ? promotionsData.items : []
-        setPromotions(items)
-        setStatusDrafts(
-          Object.fromEntries(items.map((item) => [item.id, item.status]))
-        )
+        
+        const enrichedPromotions = items.map(p => {
+            const relatedInvite = invitesData?.items?.find(i => i.promotionId === p.id || i.influencerId === p.influencerId);
+            return {
+                ...p,
+                influencerName: p.influencerName || relatedInvite?.influencerName || "Influencer",
+                influencerHandle: p.influencerHandle || relatedInvite?.influencerHandle || ""
+            }
+        });
+        
+        setPromotions(enrichedPromotions)
       } else {
         setPromotions([])
       }
@@ -219,381 +144,281 @@ export default function CampaignDetailPage() {
     return () => controller.abort()
   }, [loadData])
 
-  const workspaceStats = useMemo(() => {
-    const pendingInvites = invites.filter((invite) => invite.status === "pending").length
-    const acceptedInvites = invites.filter((invite) => invite.status === "accepted").length
-    const livePromotions = promotions.filter((promotion) =>
-      ["negotiating", "accepted", "content_in_progress", "posted", "metrics_submitted", "payment_pending"].includes(promotion.status)
-    ).length
-    const completedPromotions = promotions.filter((promotion) => promotion.status === "completed").length
-
-    return {
-      pendingInvites,
-      acceptedInvites,
-      livePromotions,
-      completedPromotions,
-    }
-  }, [invites, promotions])
-
-  const updateCampaignStatus = async () => {
-    if (!campaign || !campaignStatusDraft || campaignStatusDraft === campaign.status) return
-    setCampaignStatusBusy(true)
-    setActionMessage(null)
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/campaigns/${campaign.id}/status`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: campaignStatusDraft }),
-      })
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(data?.message || "Failed to update campaign status")
-      setActionMessage(data?.message || "Campaign status updated.")
-      await loadData()
-    } catch (err: unknown) {
-      setActionMessage(err instanceof Error ? err.message : "Could not update campaign status.")
-    } finally {
-      setCampaignStatusBusy(false)
-    }
+  if (loading) {
+    return (
+      <div className="flex h-[400px] w-full flex-col items-center justify-center gap-3">
+        <Loader2 className="h-8 w-8 animate-spin text-[color:var(--vooki-accent)]" />
+        <p className="text-sm font-medium text-[color:var(--vooki-app-text-soft)]">Loading campaign...</p>
+      </div>
+    )
   }
 
-  const updatePromotionStatus = async (promotionId: string) => {
-    const nextStatus = statusDrafts[promotionId]
-    if (!nextStatus) return
-    setStatusBusyId(promotionId)
-    setActionMessage(null)
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/promotions/${promotionId}/status`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: nextStatus }),
-      })
-
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(data?.message || "Failed to update status")
-
-      setActionMessage("Promotion status updated.")
-      await loadData()
-    } catch (err: unknown) {
-      setActionMessage(err instanceof Error ? err.message : "Status update failed.")
-    } finally {
-      setStatusBusyId(null)
-    }
+  if (error || !campaign) {
+    return (
+      <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-8">
+        <Button asChild variant="outline"><Link href="/brand/campaigns"><ArrowLeft className="mr-2 h-4 w-4" />Back to campaigns</Link></Button>
+        <Card className="border-red-200 bg-red-50 text-red-800"><CardContent className="p-5">{error || "Campaign not found."}</CardContent></Card>
+      </div>
+    )
   }
 
-  const markPaid = async (promotionId: string) => {
-    setPayBusyId(promotionId)
-    setActionMessage(null)
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/promotions/${promotionId}/payment`, {
-        method: "PATCH",
-        credentials: "include",
-      })
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(data?.message || "Failed to mark paid")
-
-      setActionMessage("Payment marked as paid.")
-      await loadData()
-    } catch (err: unknown) {
-      setActionMessage(err instanceof Error ? err.message : "Payment update failed.")
-    } finally {
-      setPayBusyId(null)
-    }
-  }
+  const budgetPercentage = campaign.budgetTotal > 0 ? Math.min(100, Math.round((campaign.budgetSpent / campaign.budgetTotal) * 100)) : 0;
+  
+  const pendingInvitesCount = invites.filter((i) => i.status === "pending").length;
+  const acceptedInvitesCount = invites.filter((i) => i.status === "accepted").length;
+  const liveDealsCount = promotions.filter((p) => ["negotiating", "accepted", "content_in_progress", "posted", "metrics_submitted", "payment_pending"].includes(p.status)).length;
+  const completedDealsCount = promotions.filter((p) => p.status === "completed").length;
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-      <Button asChild variant="outline" className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
-        <Link href="/brand/campaigns">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to campaigns
-        </Link>
-      </Button>
-
-      {loading ? (
-        <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-          <CardContent className="p-5 text-sm text-slate-600 dark:text-slate-300">Loading campaign details...</CardContent>
-        </Card>
-      ) : null}
-
-      {error ? (
-        <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-          <CardContent className="p-5 text-sm text-rose-600 dark:text-rose-300">{error}</CardContent>
-        </Card>
-      ) : null}
-
-      {actionMessage ? (
-        <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-          <CardContent className="p-4 text-sm text-emerald-700 dark:text-emerald-300">{actionMessage}</CardContent>
-        </Card>
-      ) : null}
-
-      {!loading && campaign ? (
-        <>
-          <Card className="border-white/60 bg-white/85 shadow-xl shadow-cyan-100/40 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85">
-            <CardHeader>
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <CardTitle className="text-2xl text-slate-900 dark:text-slate-100">{campaign.name}</CardTitle>
-                  <CardDescription className="mt-1 text-slate-600 dark:text-slate-400">{campaign.objective}</CardDescription>
-                </div>
-                <div className="flex flex-col gap-3 sm:items-end">
-                  <div className="flex gap-2">
-                    <Badge className={`border-0 capitalize ${statusPillClass[campaign.status]}`}>{campaign.status}</Badge>
-                    <Badge className="border-0 bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200 capitalize">{campaign.priority}</Badge>
-                  </div>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <select
-                      value={campaignStatusDraft || campaign.status}
-                      onChange={(event) => setCampaignStatusDraft(event.target.value as CampaignStatus)}
-                      className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                    >
-                      {[campaign.status, ...campaignStatusTransitions[campaign.status]].map((status) => (
-                        <option key={status} value={status}>
-                          {formatLabel(status)}
-                        </option>
-                      ))}
-                    </select>
-                    <Button
-                      size="sm"
-                      onClick={updateCampaignStatus}
-                      disabled={campaignStatusBusy || !campaignStatusDraft || campaignStatusDraft === campaign.status}
-                      className="h-9 bg-slate-900 text-white hover:bg-slate-800 dark:bg-cyan-600 dark:hover:bg-cyan-700"
-                    >
-                      {campaignStatusBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                      Update campaign
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="grid gap-3 text-sm md:grid-cols-4">
-              <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-                <p className="text-xs text-slate-500 dark:text-slate-400">Budget</p>
-                <p className="font-semibold text-slate-900 dark:text-slate-100">
-                  {formatMoney(campaign.budgetSpent)} / {formatMoney(campaign.budgetTotal)}
-                </p>
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-                <p className="text-xs text-slate-500 dark:text-slate-400">Timeline</p>
-                <p className="font-semibold text-slate-900 dark:text-slate-100">
-                  {formatDate(campaign.startDate)} - {formatDate(campaign.endDate)}
-                </p>
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-                <p className="text-xs text-slate-500 dark:text-slate-400">Invited/Accepted</p>
-                <p className="font-semibold text-slate-900 dark:text-slate-100">
-                  {campaign.invitedCreators} / {campaign.acceptedCreators}
-                </p>
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-                <p className="text-xs text-slate-500 dark:text-slate-400">ROI</p>
-                <p className="font-semibold text-slate-900 dark:text-slate-100">{campaign.roi > 0 ? `${campaign.roi.toFixed(1)}x` : "Not started"}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-              <CardContent className="p-4">
-                <p className="text-xs text-slate-500 dark:text-slate-400">Pending invites</p>
-                <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{workspaceStats.pendingInvites}</p>
-              </CardContent>
-            </Card>
-            <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-              <CardContent className="p-4">
-                <p className="text-xs text-slate-500 dark:text-slate-400">Accepted invites</p>
-                <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{workspaceStats.acceptedInvites}</p>
-              </CardContent>
-            </Card>
-            <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-              <CardContent className="p-4">
-                <p className="text-xs text-slate-500 dark:text-slate-400">Live collaborations</p>
-                <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{workspaceStats.livePromotions}</p>
-              </CardContent>
-            </Card>
-            <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-              <CardContent className="p-4">
-                <p className="text-xs text-slate-500 dark:text-slate-400">Completed collaborations</p>
-                <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{workspaceStats.completedPromotions}</p>
-              </CardContent>
-            </Card>
+    <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-6 sm:px-6 lg:px-8">
+      
+      {/* UNIFIED HEADER */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between relative z-10">
+        <div>
+          <Button asChild variant="ghost" className="h-8 px-0 text-[color:var(--vooki-app-text-soft)] hover:bg-transparent hover:text-[color:var(--vooki-app-text-strong)] mb-2">
+            <Link href="/brand/campaigns"><ArrowLeft className="mr-2 h-4 w-4" />Campaigns</Link>
+          </Button>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight text-[color:var(--vooki-app-text-strong)]">{campaign.name}</h1>
+            <Badge variant="outline" className={`capitalize font-medium ${statusPillClass[campaign.status]}`}>
+              {campaign.status}
+            </Badge>
           </div>
+          <p className="mt-1 text-sm text-[color:var(--vooki-app-text-soft)]">{campaign.objective}</p>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <Button asChild className="bg-[color:var(--vooki-accent)] text-white hover:bg-[color:var(--vooki-accent-strong)] shadow-[var(--vooki-shadow-accent)] rounded-full px-6">
+            <Link href="/brand/discover">
+              <Search className="mr-2 h-4 w-4" /> Find Creators
+            </Link>
+          </Button>
+        </div>
+      </div>
 
-          <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-            <CardHeader>
-              <CardTitle className="text-slate-900 dark:text-slate-100">Campaign pipeline</CardTitle>
-              <CardDescription className="text-slate-600 dark:text-slate-400">
-                Track outreach and see which invites have turned into active collaborations.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {invites.length === 0 ? (
-                <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                  No invites have been sent for this campaign yet.
+      <Tabs defaultValue="overview" className="w-full">
+        {/* TAB NAVIGATION */}
+        <TabsList className="w-full justify-start bg-transparent border-b border-[color:var(--vooki-app-border)] rounded-none p-0 h-auto gap-6 mb-8">
+          <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-[color:var(--vooki-accent)] data-[state=active]:text-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-text-soft)] data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 font-semibold tracking-wide uppercase text-[11px]">
+             Overview
+          </TabsTrigger>
+          <TabsTrigger value="pipeline" className="rounded-none border-b-2 border-transparent data-[state=active]:border-[color:var(--vooki-accent)] data-[state=active]:text-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-text-soft)] data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 font-semibold tracking-wide uppercase text-[11px]">
+             Outreach Pipeline ({invites.length})
+          </TabsTrigger>
+          <TabsTrigger value="network" className="rounded-none border-b-2 border-transparent data-[state=active]:border-[color:var(--vooki-accent)] data-[state=active]:text-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-text-soft)] data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 font-semibold tracking-wide uppercase text-[11px]">
+             Active Network ({promotions.length})
+          </TabsTrigger>
+        </TabsList>
+
+        {/* TAB: OVERVIEW */}
+        <TabsContent value="overview" className="space-y-6 outline-none mt-0">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            
+            {/* Budget Card */}
+            <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl overflow-hidden lg:col-span-2">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest flex items-center">
+                    <Target className="mr-2 h-4 w-4" /> Budget Utilization
+                  </h3>
+                  <span className="text-sm font-medium text-[color:var(--vooki-app-text-strong)]">{budgetPercentage}%</span>
                 </div>
-              ) : (
-                invites.map((invite) => (
-                  <div
-                    key={invite.id}
-                    className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
-                  >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                            {invite.influencerName || invite.influencerHandle || "Influencer"}
-                          </p>
-                          <Badge className={`border-0 text-[10px] capitalize ${invitePillClass[invite.status]}`}>
-                            {invite.status}
-                          </Badge>
-                          {invite.promotionStatus ? (
-                            <Badge className={`border-0 text-[10px] capitalize ${promotionPillClass[invite.promotionStatus]}`}>
-                              deal {invite.promotionStatus.replaceAll("_", " ")}
-                            </Badge>
-                          ) : null}
-                        </div>
-                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                          {invite.influencerHandle || "No handle"}{invite.influencerNiche ? ` - ${invite.influencerNiche}` : ""}
-                        </p>
-                        <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
-                          {invite.note || "Invite sent from discover."}
-                        </p>
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          <Button asChild size="sm" variant="outline" className="h-8 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
-                            <Link href={`/brand/messages?otherUserId=${invite.influencerId}`}>Open chat</Link>
-                          </Button>
-                          {invite.promotionId ? (
-                            <Button asChild size="sm" className="h-8 bg-slate-900 text-white hover:bg-slate-800 dark:bg-cyan-600 dark:hover:bg-cyan-700">
-                              <Link href={`/brand/promotions/${invite.promotionId}`}>Open collaboration</Link>
-                            </Button>
-                          ) : null}
-                        </div>
-                      </div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">
-                        Sent {formatDate(invite.createdAt)}
-                      </div>
-                    </div>
+                
+                <div className="flex items-end justify-between mb-2">
+                  <div>
+                    <p className="text-3xl font-bold text-[color:var(--vooki-app-text-strong)]">{formatMoney(campaign.budgetSpent)}</p>
+                    <p className="text-sm text-[color:var(--vooki-app-text-soft)]">spent of {formatMoney(campaign.budgetTotal)}</p>
                   </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
+                  {campaign.roi > 0 && (
+                    <div className="text-right">
+                      <p className="text-xl font-bold text-emerald-600">{campaign.roi.toFixed(1)}x</p>
+                      <p className="text-xs text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider">Estimated ROI</p>
+                    </div>
+                  )}
+                </div>
+                
+                <Progress value={budgetPercentage} className="h-3 mt-4 rounded-full bg-[color:var(--vooki-app-border-strong)]" />
+              </CardContent>
+            </Card>
 
-          <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-            <CardHeader>
-              <CardTitle className="text-slate-900 dark:text-slate-100">Collaborations</CardTitle>
-              <CardDescription className="text-slate-600 dark:text-slate-400">
-                Move from outreach to agreement, delivery, and payment for this campaign.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/80 p-4 text-sm dark:border-slate-700 dark:bg-slate-900/60">
-                <p className="font-medium text-slate-900 dark:text-slate-100">Discover is the entry point</p>
-                <p className="mt-1 text-slate-600 dark:text-slate-300">
-                  We removed the manual collaboration creator from this page. The cleaner path is: invite from Discover, accept, discuss in chat, then continue execution here.
-                </p>
-                <Button asChild className="mt-3 bg-slate-900 text-white hover:bg-slate-800 dark:bg-cyan-600 dark:hover:bg-cyan-700">
-                  <Link href="/brand/discover">Go to Discover</Link>
-                </Button>
+            {/* Timeline Card */}
+            <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl overflow-hidden">
+              <CardContent className="p-6 h-full flex flex-col justify-center">
+                <h3 className="text-sm font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest flex items-center mb-6">
+                  <Calendar className="mr-2 h-4 w-4" /> Timeline
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] font-semibold">Start Date</p>
+                    <p className="text-base font-medium text-[color:var(--vooki-app-text-strong)]">{formatDate(campaign.startDate)}</p>
+                  </div>
+                  <div className="w-full h-px bg-[color:var(--vooki-app-border-strong)]" />
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] font-semibold">End Date</p>
+                    <p className="text-base font-medium text-[color:var(--vooki-app-text-strong)]">{formatDate(campaign.endDate)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Funnel Stats */}
+            <div className="lg:col-span-3 grid gap-6 grid-cols-2 md:grid-cols-4">
+              <div className="p-6 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-sm">
+                <p className="text-xs text-[color:var(--vooki-app-text-soft)] font-medium">Outreach</p>
+                <p className="mt-1 text-3xl font-bold">{pendingInvitesCount}</p>
+                <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider mt-1">Pending Invites</p>
               </div>
+              <div className="p-6 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-sm">
+                <p className="text-xs text-[color:var(--vooki-app-text-soft)] font-medium">Acquisition</p>
+                <p className="mt-1 text-3xl font-bold">{acceptedInvitesCount}</p>
+                <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider mt-1">Accepted Invites</p>
+              </div>
+              <div className="p-6 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-sm">
+                <p className="text-xs text-[color:var(--vooki-app-text-soft)] font-medium">Execution</p>
+                <p className="mt-1 text-3xl font-bold">{liveDealsCount}</p>
+                <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider mt-1">Live Deals</p>
+              </div>
+              <div className="p-6 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-sm">
+                <p className="text-xs text-[color:var(--vooki-app-text-soft)] font-medium">Completion</p>
+                <p className="mt-1 text-3xl font-bold">{completedDealsCount}</p>
+                <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider mt-1">Finished Deals</p>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
 
-              {promotions.map((promotion) => (
-                <div
-                  key={promotion.id}
-                  className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
-                >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{promotion.campaignTitle || "Collaboration"}</p>
-                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{formatDeliverables(promotion.deliverables)}</p>
-                      <div className="mt-1 flex flex-wrap items-center gap-2">
-                        <Badge className={`border-0 text-[10px] capitalize ${promotionPillClass[promotion.status]}`}>
-                          {promotion.status.replaceAll("_", " ")}
-                        </Badge>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Payment {promotion.paymentStatus}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{formatMoney(promotion.paymentAmount)} due {formatDate(promotion.paymentDueAt)}</p>
-                      </div>
+        {/* TAB: PIPELINE */}
+        <TabsContent value="pipeline" className="space-y-4 outline-none mt-0">
+          {invites.length === 0 ? (
+            <div className="text-center py-20 border-2 border-dashed border-[color:var(--vooki-app-border)] rounded-3xl bg-[color:var(--vooki-app-surface-strong)]/50">
+              <Users className="h-10 w-10 mx-auto text-[color:var(--vooki-app-text-soft)] opacity-50 mb-3" />
+              <p className="text-[color:var(--vooki-app-text-strong)] font-medium text-lg">Your pipeline is empty</p>
+              <p className="text-sm mt-1 text-[color:var(--vooki-app-text-soft)] mb-6">Find creators and send invites to start building your network.</p>
+              <Button asChild className="bg-[color:var(--vooki-accent)] text-white hover:bg-[color:var(--vooki-accent-strong)] rounded-full">
+                <Link href="/brand/discover">Discover Creators</Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {invites.map((invite) => (
+                <div key={invite.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] hover:border-[color:var(--vooki-accent-soft)] transition-colors gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-full bg-[color:var(--vooki-app-surface-strong)] flex items-center justify-center text-lg font-bold text-[color:var(--vooki-app-text-strong)] border border-[color:var(--vooki-app-border-strong)]">
+                       {(invite.influencerName || invite.influencerHandle || "U").charAt(0).toUpperCase()}
                     </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      <select
-                        value={statusDrafts[promotion.id] || promotion.status}
-                        onChange={(event) =>
-                          setStatusDrafts((prev) => ({
-                            ...prev,
-                            [promotion.id]: event.target.value as PromotionStatus,
-                          }))
-                        }
-                        className="h-8 rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                      >
-                        {[promotion.status, ...promotionStatusTransitions[promotion.status]].map((status) => (
-                          <option key={status} value={status}>
-                            {formatLabel(status)}
-                          </option>
-                        ))}
-                      </select>
-                      <Button
-                        asChild
-                        size="sm"
-                        variant="outline"
-                        className="h-8 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                      >
-                        <Link href={`/brand/messages?otherUserId=${promotion.influencerId}`}>Open chat</Link>
-                      </Button>
-                      <Button
-                        asChild
-                        size="sm"
-                        variant="outline"
-                        className="h-8 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                      >
-                        <Link href={`/brand/promotions/${promotion.id}`}>Open collaboration</Link>
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => updatePromotionStatus(promotion.id)}
-                        disabled={statusBusyId === promotion.id || (statusDrafts[promotion.id] || promotion.status) === promotion.status}
-                        className="h-8 bg-slate-900 text-white hover:bg-slate-800 dark:bg-cyan-600 dark:hover:bg-cyan-700"
-                      >
-                        {statusBusyId === promotion.id ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
-                        Update status
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => markPaid(promotion.id)}
-                        disabled={payBusyId === promotion.id || promotion.paymentStatus === "paid"}
-                        className="h-8 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                      >
-                        {payBusyId === promotion.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <>
-                            <DollarSign className="mr-1 h-3.5 w-3.5" />
-                            {promotion.paymentStatus === "paid" ? "Paid" : "Mark paid"}
-                          </>
-                        )}
-                      </Button>
+                    <div>
+                      <h4 className="font-semibold text-base text-[color:var(--vooki-app-text-strong)]">{invite.influencerName || invite.influencerHandle || "Influencer"}</h4>
+                      <p className="text-xs text-[color:var(--vooki-app-text-soft)]">
+                        {invite.influencerHandle ? `@${invite.influencerHandle}` : "No handle"} {invite.influencerNiche ? `• ${invite.influencerNiche}` : ""}
+                      </p>
+                      <p className="text-xs text-[color:var(--vooki-app-text-soft)] mt-1 truncate max-w-xs xl:max-w-md opacity-80">"{invite.note || "Invite sent from discover."}"</p>
                     </div>
                   </div>
-
-                  {(promotion.performance.reach || promotion.performance.views || promotion.performance.engagement) ? (
-                    <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-300">
-                      <CheckCircle2 className="mr-1 inline h-3.5 w-3.5 text-emerald-600" />
-                      Metrics: Reach {promotion.performance.reach}, Views {promotion.performance.views}, Engagement {promotion.performance.engagement}%
+                  
+                  <div className="flex items-center gap-4 sm:ml-auto w-full sm:w-auto">
+                    <div className="text-right hidden sm:block">
+                      <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider mb-1">Status</p>
+                      <Badge className={`border-0 text-xs capitalize ${invitePillClass[invite.status]}`}>{invite.status}</Badge>
                     </div>
-                  ) : null}
+                    
+                    <div className="flex gap-3 w-full sm:w-auto mt-2 sm:mt-0">
+                      <Button asChild variant="outline" className="flex-1 sm:flex-none rounded-full border-[color:var(--vooki-app-border-strong)] text-sm shadow-sm">
+                        <Link href={`/brand/messages?otherUserId=${invite.influencerId}`}>
+                          <MessageSquare className="mr-2 h-4 w-4" /> Message
+                        </Link>
+                      </Button>
+                      {invite.promotionId && (
+                        <Button asChild className="flex-1 sm:flex-none rounded-full bg-[color:var(--vooki-accent)] text-white hover:bg-[color:var(--vooki-accent-strong)] text-sm shadow-[var(--vooki-shadow-accent)]">
+                          <Link href={`/brand/promotions/${invite.promotionId}`}>
+                            Workspace <ChevronRight className="ml-1 h-4 w-4" />
+                          </Link>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               ))}
+            </div>
+          )}
+        </TabsContent>
 
-              {promotions.length === 0 ? (
-                <p className="text-sm text-slate-600 dark:text-slate-300">No collaborations in this campaign yet.</p>
-              ) : null}
-            </CardContent>
-          </Card>
-        </>
-      ) : null}
+        {/* TAB: NETWORK */}
+        <TabsContent value="network" className="space-y-4 outline-none mt-0">
+          {promotions.length === 0 ? (
+            <div className="text-center py-20 border-2 border-dashed border-[color:var(--vooki-app-border)] rounded-3xl bg-[color:var(--vooki-app-surface-strong)]/50">
+              <Activity className="h-10 w-10 mx-auto text-[color:var(--vooki-app-text-soft)] opacity-50 mb-3" />
+              <p className="text-[color:var(--vooki-app-text-strong)] font-medium text-lg">No active collaborations yet</p>
+              <p className="text-sm mt-1 text-[color:var(--vooki-app-text-soft)]">Once creators accept your invites, their workspaces will appear here.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {promotions.map((promotion) => (
+                <div 
+                  key={promotion.id} 
+                  onClick={() => router.push(`/brand/promotions/${promotion.id}`)}
+                  className="flex flex-col lg:flex-row lg:items-center justify-between p-5 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] hover:border-[color:var(--vooki-accent)] hover:shadow-md transition-all cursor-pointer group gap-4 lg:gap-8"
+                >
+                  
+                  {/* Creator Info */}
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[color:var(--vooki-violet)] to-[color:var(--vooki-accent)] flex items-center justify-center text-lg font-bold text-white shadow-inner">
+                       {(promotion.influencerName || promotion.influencerHandle || "U").charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-base text-[color:var(--vooki-app-text-strong)] group-hover:text-[color:var(--vooki-accent)] transition-colors">
+                        {promotion.influencerName || promotion.influencerHandle || "Influencer"}
+                      </h4>
+                      <p className="text-xs text-[color:var(--vooki-app-text-soft)] mt-0.5">
+                         {formatDeliverables(promotion.deliverables)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Status & Payment */}
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4 lg:gap-8 flex-1 lg:justify-end">
+                    
+                    <div className="flex flex-col lg:items-end">
+                      <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider mb-1">State</p>
+                      <Badge className={`border-0 text-xs capitalize whitespace-nowrap ${promotionPillClass[promotion.status]}`}>
+                        {promotion.status.replaceAll("_", " ")}
+                      </Badge>
+                    </div>
+
+                    <div className="flex flex-col lg:items-end w-24">
+                      <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider mb-1">Payout</p>
+                      <p className="text-sm font-semibold">{formatMoney(promotion.paymentAmount)}</p>
+                    </div>
+
+                    {/* Metrics Peek */}
+                    <div className="flex items-center gap-4 bg-[color:var(--vooki-app-surface-strong)] px-4 py-2 rounded-xl border border-[color:var(--vooki-app-border)] w-full sm:w-auto min-w-[120px] justify-center">
+                       {(promotion.performance.reach || promotion.performance.views || promotion.performance.engagement) ? (
+                         <>
+                           <div className="text-center">
+                             <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wide">Views</p>
+                             <p className="font-bold text-xs">{promotion.performance.views >= 1000 ? (promotion.performance.views / 1000).toFixed(1) + 'k' : promotion.performance.views}</p>
+                           </div>
+                           <div className="w-px h-6 bg-[color:var(--vooki-app-border-strong)]" />
+                           <div className="text-center">
+                             <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wide">Eng</p>
+                             <p className="font-bold text-xs text-emerald-600">{promotion.performance.engagement}%</p>
+                           </div>
+                         </>
+                       ) : (
+                         <span className="text-xs text-[color:var(--vooki-app-text-soft)] italic">Metrics pending</span>
+                       )}
+                    </div>
+
+                    <Button variant="ghost" size="icon" className="hidden lg:flex rounded-full h-8 w-8 text-[color:var(--vooki-app-text-soft)] group-hover:text-[color:var(--vooki-accent)] group-hover:bg-[color:var(--vooki-accent-soft)] transition-colors">
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
+
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

@@ -33,12 +33,11 @@ export const socketAuthMiddleware = (socket: any, next: any) => {
       process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET!
     ) as AccessTokenPayload;
 
-    // Canonical token field is `id`; `uid` remains as a legacy fallback.
-    socket.userId = decoded.id ?? decoded.uid;
+    socket.userId = decoded.uid;
     socket.userRole = decoded.role;
     socket.username = decoded.username || "";
 
-    console.log("✅ Socket auth successful:", { userId: socket.userId, role: socket.userRole });
+    // console.log("✅ Socket auth successful:", { userId: socket.userId, role: socket.userRole });
     next();
   } catch (err) {
     console.error("❌ Socket auth error:", err);

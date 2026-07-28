@@ -7,7 +7,7 @@ export interface AuthUser {
   name: string;
   email: string;
   username: string;
-  role: 'brand' | 'influencer';
+  role: 'brand' | 'influencer' | 'manager';
   profilePicture?: string;
   brandName?: string;
 }
