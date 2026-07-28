@@ -189,6 +189,73 @@ export const createCollaborationInvite = async (
 };
 
 /**
+ * BRAND: Get all invites sent for a brand (optionally filtered by campaign)
+ * GET /api/collaborations/invites
+ */
+export const getBrandInvites = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const requester = getRequestUser(req);
+    if (!requester?.id || requester.role !== "brand") {
+      return res.status(403).json({ message: "Only brands can view these invites" });
+    }
+
+    const { campaignId, status, limit } = req.query;
+
+    let query: any = { brandId: requester.id };
+    
+    if (campaignId) {
+      query.campaignId = String(campaignId);
+    }
+    
+    if (status && status !== "all") {
+      query.status = String(status);
+    }
+
+    let invitesQuery = DiscoverInviteModel.find(query).sort({ createdAt: -1 });
+    
+    if (limit) {
+      invitesQuery = invitesQuery.limit(Number(limit));
+    }
+
+    const invites = await invitesQuery.lean();
+
+    // Fetch influencer info for each invite
+    const invitesWithInfluencerInfo = await Promise.all(
+      invites.map(async (invite: any) => {
+        const influencer = await UserModel.findById(invite.influencerId).select(
+          "_id name handle niche avatar"
+        );
+
+        return {
+          id: invite._id,
+          influencerId: invite.influencerId,
+          influencerName: influencer?.name || "",
+          influencerHandle: influencer?.handle || "",
+          influencerNiche: influencer?.niche || "",
+          campaignId: invite.campaignId,
+          campaignLabel: invite.campaignTitle,
+          note: invite.brandMessage || "",
+          status: invite.status,
+          promotionId: invite.promotionId || "",
+          promotionStatus: "", // Can fetch promotion status if needed, but not strictly required
+          createdAt: invite.createdAt,
+        };
+      })
+    );
+
+    return res.status(200).json({
+      items: invitesWithInfluencerInfo,
+    });
+  } catch (error) {
+    console.error("Error fetching brand invites:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
  * CREATOR: Get all invites sent to them
  * GET /api/collaborations/invites/received
  */
