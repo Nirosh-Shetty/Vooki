@@ -18,40 +18,41 @@ import { WorkspaceShell, type WorkspaceNavItem } from "@/components/workspace/wo
 
 const sidebarItems: WorkspaceNavItem[] = [
   { label: "Dashboard", href: "/influencer/dashboard", icon: HomeIcon },
+  { label: "Opportunities", href: "/influencer/invites", icon: InboxIcon },
   {
-    label: "Collaborations",
+    label: "Active Collabs",
     href: "/influencer/my-collabs",
     icon: HandshakeIcon,
     mobileLabel: "Collabs",
   },
-  { label: "Analytics", href: "/influencer/analytics", icon: BarChart3Icon },
-  { label: "Contracts", href: "/influencer/contracts", icon: FileTextIcon },
-  { label: "Earnings", href: "/influencer/earnings", icon: DollarSignIcon },
   { label: "Messages", href: "/influencer/messages", icon: MessageSquareIcon },
-  { label: "Invites", href: "/influencer/invites", icon: InboxIcon },
+  { label: "Analytics", href: "/influencer/analytics", icon: BarChart3Icon },
+  { label: "Payouts", href: "/influencer/earnings", icon: DollarSignIcon },
+  { label: "Media Kit", href: "/influencer/profile", icon: FileTextIcon },
 ];
 
 const mobilePrimary: WorkspaceNavItem[] = [
   { label: "Dashboard", href: "/influencer/dashboard", icon: HomeIcon },
+  { label: "Opportunities", href: "/influencer/invites", icon: InboxIcon },
   {
-    label: "Collaborations",
+    label: "Active Collabs",
     href: "/influencer/my-collabs",
     icon: HandshakeIcon,
     mobileLabel: "Collabs",
   },
-  { label: "Invites", href: "/influencer/invites", icon: InboxIcon },
   { label: "Messages", href: "/influencer/messages", icon: MessageSquareIcon },
 ];
 
 const routeTitle: Record<string, string> = {
   "/influencer/dashboard": "Dashboard",
-  "/influencer/my-collabs": "Collaborations",
+  "/influencer/my-collabs": "Active Collabs",
   "/influencer/analytics": "Analytics",
   "/influencer/contracts": "Contracts",
-  "/influencer/earnings": "Earnings",
+  "/influencer/earnings": "Payouts",
   "/influencer/messages": "Messages",
-  "/influencer/invites": "Invites",
+  "/influencer/invites": "Opportunities",
   "/influencer/settings": "Settings",
+  "/influencer/profile": "Media Kit",
 };
 
 export default function InfluencerLayout({ children }: { children: React.ReactNode }) {
