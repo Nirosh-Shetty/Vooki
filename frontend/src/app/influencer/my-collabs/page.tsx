@@ -53,30 +53,30 @@ type PromotionResponse = {
   items?: Promotion[];
 };
 
-const seedPromotions: Promotion[] = [
-  {
-    id: "seed_p_1",
-    campaignTitle: "Spring Launch Burst",
-    status: "content_in_progress",
-    paymentStatus: "pending",
-    paymentAmount: 1200,
-    paymentDueAt: "2026-03-01",
-    performance: { reach: 0, views: 0, engagement: 0 },
-    createdAt: "2026-02-01T00:00:00.000Z",
-    brandName: "TechCorp",
-  },
-  {
-    id: "seed_p_2",
-    campaignTitle: "Creator Testimonial Series",
-    status: "metrics_submitted",
-    paymentStatus: "pending",
-    paymentAmount: 1100,
-    paymentDueAt: "2026-02-26",
-    performance: { reach: 74000, views: 61500, engagement: 8.1 },
-    createdAt: "2026-02-05T00:00:00.000Z",
-    brandName: "HealthBrand",
-  },
-];
+// const seedPromotions: Promotion[] = [
+//   {
+//     id: "seed_p_1",
+//     campaignTitle: "Spring Launch Burst",
+//     status: "content_in_progress",
+//     paymentStatus: "pending",
+//     paymentAmount: 1200,
+//     paymentDueAt: "2026-03-01",
+//     performance: { reach: 0, views: 0, engagement: 0 },
+//     createdAt: "2026-02-01T00:00:00.000Z",
+//     brandName: "TechCorp",
+//   },
+//   {
+//     id: "seed_p_2",
+//     campaignTitle: "Creator Testimonial Series",
+//     status: "metrics_submitted",
+//     paymentStatus: "pending",
+//     paymentAmount: 1100,
+//     paymentDueAt: "2026-02-26",
+//     performance: { reach: 74000, views: 61500, engagement: 8.1 },
+//     createdAt: "2026-02-05T00:00:00.000Z",
+//     brandName: "HealthBrand",
+//   },
+// ];
 
 const tabs: {
   value: "all" | "active" | "review" | "completed" | "pending";
@@ -175,7 +175,7 @@ export default function MyCollaborations() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]["value"]>("all");
-  const [promotions, setPromotions] = useState<Promotion[]>(seedPromotions);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -206,7 +206,7 @@ export default function MyCollaborations() {
         }
       } catch (err: unknown) {
         if (err instanceof DOMException && err.name === "AbortError") return;
-        setPromotions(seedPromotions);
+        setPromotions([]);
         setError("Showing preview data while we reconnect live collaboration updates.");
       } finally {
         setLoading(false);

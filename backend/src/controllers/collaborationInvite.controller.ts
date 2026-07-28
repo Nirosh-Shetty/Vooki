@@ -126,12 +126,18 @@ export const createCollaborationInvite = async (
         .json({ message: "At least one deliverable is required" });
     }
 
-    // Validate timeline
-    if (!timeline || !timeline.responseDeadline) {
-      return res
-        .status(400)
-        .json({ message: "Timeline with responseDeadline is required" });
-    }
+    // Process timeline with sensible defaults
+    const now = new Date();
+    const defaultStart = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+    const defaultEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+    const defaultDeadline = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    const processedTimeline = {
+      postingStartDate: timeline?.postingStartDate ? new Date(timeline.postingStartDate) : defaultStart,
+      postingEndDate: timeline?.postingEndDate ? new Date(timeline.postingEndDate) : defaultEnd,
+      draftDueDate: timeline?.draftDueDate ? new Date(timeline.draftDueDate) : undefined,
+      responseDeadline: timeline?.responseDeadline ? new Date(timeline.responseDeadline) : defaultDeadline,
+    };
 
     // Create invite
     const newInvite = await DiscoverInviteModel.create({
@@ -141,7 +147,7 @@ export const createCollaborationInvite = async (
       campaignTitle: String(campaign.name),
       collaborationType,
       deliverables,
-      timeline,
+      timeline: processedTimeline,
       compensation,
       brandMessage: String(brandMessage || "").trim(),
       status: "pending",
@@ -300,11 +306,16 @@ export const acceptInvite = async (
       { $inc: { acceptedCreators: 1 } }
     );
 
-    // Update invite
+    // Update invite & conversation
     invite.status = "accepted";
     invite.conversationId = String(conversation._id);
     invite.promotionId = String(promotion._id);
     await invite.save();
+
+    await ConversationModel.updateOne(
+      { _id: conversation._id },
+      { promotionId: String(promotion._id), threadType: "collaboration" }
+    );
 
     // Send system message in chat
     await MessageModel.create({
@@ -632,10 +643,17 @@ export const acceptCounterOffer = async (
       { $inc: { acceptedCreators: 1 } }
     );
 
-    // Update invite
+    // Update invite & conversation
     invite.status = "accepted";
     invite.promotionId = String(promotion._id);
     await invite.save();
+
+    if (invite.conversationId) {
+      await ConversationModel.updateOne(
+        { _id: invite.conversationId },
+        { promotionId: String(promotion._id), threadType: "collaboration" }
+      );
+    }
 
     // Send system message
     await MessageModel.create({

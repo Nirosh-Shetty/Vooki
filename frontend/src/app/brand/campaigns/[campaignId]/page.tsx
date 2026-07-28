@@ -560,25 +560,6 @@ export default function CampaignDetailPage() {
                         {statusBusyId === promotion.id ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
                         Update status
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          markPaid(promotion.id)
-                        }}
-                        disabled={payBusyId === promotion.id || promotion.paymentStatus === "paid"}
-                        className="h-8 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                      >
-                        {payBusyId === promotion.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <>
-                            <DollarSign className="mr-1 h-3.5 w-3.5" />
-                            {promotion.paymentStatus === "paid" ? "Paid" : "Mark paid"}
-                          </>
-                        )}
-                      </Button>
                     </div>
                   </div>
 

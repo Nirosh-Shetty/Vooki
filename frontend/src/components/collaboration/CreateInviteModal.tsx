@@ -109,12 +109,7 @@ export function CreateInviteModal({
       return
     }
     if (!collaborationType) {
-      setError("Please select collaboration type")
-      return
-    }
-    if (!postingStartDate || !postingEndDate || !responseDeadline) {
-      setError("Please set all required dates")
-      return
+      setCollaborationType("sponsored_post")
     }
     if (
       compensationType === "fixed" &&
@@ -134,16 +129,21 @@ export function CreateInviteModal({
     setLoading(true)
 
     try {
+      const now = new Date()
+      const defaultStart = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000)
+      const defaultEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000)
+      const defaultDeadline = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+
       const payload = {
         influencerId,
         campaignId,
-        collaborationType,
+        collaborationType: collaborationType || "sponsored_post",
         deliverables,
         timeline: {
-          postingStartDate: new Date(postingStartDate),
-          postingEndDate: new Date(postingEndDate),
+          postingStartDate: postingStartDate ? new Date(postingStartDate) : defaultStart,
+          postingEndDate: postingEndDate ? new Date(postingEndDate) : defaultEnd,
           draftDueDate: draftDueDate ? new Date(draftDueDate) : undefined,
-          responseDeadline: new Date(responseDeadline),
+          responseDeadline: responseDeadline ? new Date(responseDeadline) : defaultDeadline,
         },
         compensation: {
           type: compensationType,

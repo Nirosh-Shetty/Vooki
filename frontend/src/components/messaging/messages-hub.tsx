@@ -487,8 +487,9 @@ export function MessagesHub({
                     );
                     const isIncoming = message.sender === "other";
                     const showAcceptRejectActions =
-                      (role === "influencer" && isIncoming && (message.messageType === "offer" || message.messageType === "counter_offer")) ||
-                      (role === "brand" && isIncoming && message.messageType === "counter_offer");
+                      !selectedConversation?.promotionId &&
+                      ((role === "influencer" && isIncoming && (message.messageType === "offer" || message.messageType === "counter_offer")) ||
+                      (role === "brand" && isIncoming && message.messageType === "counter_offer"));
 
                     const actions =
                       isStructured && isIncoming ? (

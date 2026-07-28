@@ -252,7 +252,6 @@ const getAllowedNextStatuses = (role: UserRole, current: PromotionStatus): Promo
     if (current === "negotiating") return ["requested"]
     if (current === "accepted") return ["content_in_progress"]
     if (current === "metrics_submitted") return ["payment_pending"]
-    if (current === "payment_pending") return ["completed"]
     return []
   }
 
@@ -299,6 +298,7 @@ export function PromotionWorkspace({
   const [updatingStatus, setUpdatingStatus] = useState(false)
   const [submittingMetrics, setSubmittingMetrics] = useState(false)
   const [markingPaid, setMarkingPaid] = useState(false)
+  const [confirmingPayment, setConfirmingPayment] = useState(false)
   const [submittingDelivery, setSubmittingDelivery] = useState(false)
   const [reviewingDelivery, setReviewingDelivery] = useState(false)
   const [statusAction, setStatusAction] = useState<PromotionStatus | null>(null)
@@ -645,6 +645,26 @@ export function PromotionWorkspace({
     }
   }
 
+  const confirmPayment = async () => {
+    if (!promotion) return
+    setConfirmingPayment(true)
+    setMessage(null)
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/promotions/${promotion.id}/payment/confirm`, {
+        method: "PATCH",
+        credentials: "include",
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data?.message || "Failed to confirm payment")
+      setMessage(data?.message || "Payment confirmed.")
+      await loadPromotion()
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to confirm payment")
+    } finally {
+      setConfirmingPayment(false)
+    }
+  }
+
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <Button asChild variant="outline" className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
@@ -789,16 +809,34 @@ export function PromotionWorkspace({
                       </div>
                     )}
 
-                    {role === "brand" ? (
+                    {role === "brand" && promotion.status === "payment_pending" ? (
+                      promotion.paymentStatus === "paid" ? (
+                         <div className="rounded-2xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] px-4 py-3 text-center text-sm text-[color:var(--vooki-app-text-soft)]">
+                          Payment marked as sent. Waiting for creator to confirm receipt.
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          onClick={markPaid}
+                          disabled={markingPaid}
+                          className="w-full rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900/50 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20"
+                        >
+                          {markingPaid ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <DollarSign className="mr-2 h-4 w-4" />}
+                          Mark as Paid
+                        </Button>
+                      )
+                    ) : null}
+
+                    {role === "influencer" && promotion.status === "payment_pending" && promotion.paymentStatus === "paid" ? (
                       <Button
-                        variant="outline"
-                        onClick={markPaid}
-                        disabled={markingPaid || promotion.paymentStatus === "paid"}
-                        className="w-full rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900/50 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20"
-                      >
-                        {markingPaid ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <DollarSign className="mr-2 h-4 w-4" />}
-                        {promotion.paymentStatus === "paid" ? "Payment recorded" : "Record payment & complete"}
-                      </Button>
+                          variant="outline"
+                          onClick={confirmPayment}
+                          disabled={confirmingPayment}
+                          className="w-full rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900/50 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20"
+                        >
+                          {confirmingPayment ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                          Confirm Payment Received
+                        </Button>
                     ) : null}
                   </CardContent>
                 </Card>
@@ -1095,7 +1133,18 @@ export function PromotionWorkspace({
               {role === "brand" ? (
                 <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
                   <CardHeader>
-                    <CardTitle className="text-slate-900 dark:text-slate-100">Review creator submission</CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-slate-900 dark:text-slate-100">Review creator submission</CardTitle>
+                      {deliveryReviewStatus === "approved" ? (
+                        <Badge className="border-0 bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 font-medium">
+                          ✓ Submission Approved
+                        </Badge>
+                      ) : deliveryReviewStatus === "changes_requested" ? (
+                        <Badge className="border-0 bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 font-medium">
+                          Changes Requested
+                        </Badge>
+                      ) : null}
+                    </div>
                     <CardDescription className="text-slate-600 dark:text-slate-400">
                       Keep review lightweight: approve what works, or send feedback and continue the discussion in chat.
                     </CardDescription>
@@ -1104,7 +1153,18 @@ export function PromotionWorkspace({
                     <div className="rounded-xl border border-slate-200 bg-white p-3 text-sm dark:border-slate-700 dark:bg-slate-900">
                       <p className="font-medium text-slate-900 dark:text-slate-100">Proof URL</p>
                       <p className="mt-1 break-all text-xs text-slate-600 dark:text-slate-300">
-                        {promotion.deliverySubmission?.proofUrl || "No proof submitted yet."}
+                        {promotion.deliverySubmission?.proofUrl ? (
+                          <a
+                            href={promotion.deliverySubmission.proofUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-cyan-600 underline dark:text-cyan-400"
+                          >
+                            {promotion.deliverySubmission.proofUrl}
+                          </a>
+                        ) : (
+                          "No proof submitted yet."
+                        )}
                       </p>
                     </div>
                     <div className="rounded-xl border border-slate-200 bg-white p-3 text-sm dark:border-slate-700 dark:bg-slate-900">
@@ -1113,33 +1173,46 @@ export function PromotionWorkspace({
                         {promotion.deliverySubmission?.notes || "No notes submitted yet."}
                       </p>
                     </div>
-                    <div>
-                      <Label>Feedback</Label>
-                      <Textarea value={reviewFeedback} onChange={(e) => setReviewFeedback(e.target.value)} />
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => reviewDeliveryProof("approved")}
-                        disabled={reviewingDelivery || !promotion.deliverySubmission?.submittedAt}
-                        className="flex-1 bg-slate-900 text-white hover:bg-slate-800 dark:bg-cyan-600 dark:hover:bg-cyan-700"
-                      >
-                        {reviewingDelivery ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        Approve submission
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => reviewDeliveryProof("changes_requested")}
-                        disabled={reviewingDelivery || !promotion.deliverySubmission?.submittedAt}
-                        className="flex-1 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                      >
-                        Request changes
-                      </Button>
-                    </div>
-                    {deliveryReviewStatus ? (
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Current review: {deliveryReviewStatus.replaceAll("_", " ")}
-                      </p>
-                    ) : null}
+
+                    {deliveryReviewStatus === "approved" ? (
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-300">
+                        <p className="font-semibold">Review complete</p>
+                        <p className="mt-1">
+                          You have approved this submission.
+                          {promotion.deliverySubmission?.reviewFeedback ? ` Feedback: "${promotion.deliverySubmission.reviewFeedback}"` : ""}
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div>
+                          <Label>Feedback</Label>
+                          <Textarea
+                            value={reviewFeedback}
+                            onChange={(e) => setReviewFeedback(e.target.value)}
+                            placeholder="Optional feedback for the creator..."
+                            disabled={!promotion.deliverySubmission?.submittedAt}
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => reviewDeliveryProof("approved")}
+                            disabled={reviewingDelivery || !promotion.deliverySubmission?.submittedAt}
+                            className="flex-1 bg-slate-900 text-white hover:bg-slate-800 dark:bg-cyan-600 dark:hover:bg-cyan-700"
+                          >
+                            {reviewingDelivery ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                            Approve submission
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => reviewDeliveryProof("changes_requested")}
+                            disabled={reviewingDelivery || !promotion.deliverySubmission?.submittedAt}
+                            className="flex-1 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                          >
+                            Request changes
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
               ) : null}

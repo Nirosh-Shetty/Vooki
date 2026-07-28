@@ -165,18 +165,26 @@ export function MessagesHubProvider({
   );
 
   const messagesByConversation = {
-    [selectedConversationId || ""]: messages.map((msg) => ({
-      id: msg.id,
-      sender: msg.senderId === userId ? ("me" as const) : ("other" as const),
-      text: msg.text || "",
-      messageType: msg.messageType || "text",
-      offerData: msg.offerData || null,
-      timestamp: new Date(msg.createdAt).toLocaleTimeString([], {
-        hour: "numeric",
-        minute: "2-digit",
-      }),
-      read: msg.read,
-    })),
+    [selectedConversationId || ""]: messages.map((msg: any) => {
+      const msgSenderId = String(msg.senderId || (typeof msg.sender === "object" ? (msg.sender?._id || msg.sender?.id) : msg.sender) || "");
+      const currentUserIdStr = String(userId || "");
+      const isMe = currentUserIdStr ? msgSenderId === currentUserIdStr : false;
+
+      return {
+        id: msg.id || msg._id,
+        sender: isMe ? ("me" as const) : ("other" as const),
+        text: msg.text || "",
+        messageType: msg.messageType || "text",
+        offerData: msg.offerData || null,
+        timestamp: msg.createdAt
+          ? new Date(msg.createdAt).toLocaleTimeString([], {
+              hour: "numeric",
+              minute: "2-digit",
+            })
+          : "Now",
+        read: Boolean(msg.read),
+      };
+    }),
   };
 
   const transformedConversations: HubConversation[] = conversations.map((conv) => ({

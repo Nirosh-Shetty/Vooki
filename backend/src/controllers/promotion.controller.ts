@@ -658,8 +658,8 @@ export const submitPromotionDelivery = async (
       reviewFeedback: "",
     };
 
-    if (promotion.status === "accepted") {
-      promotion.status = "content_in_progress";
+    if (["accepted", "content_in_progress"].includes(promotion.status)) {
+      promotion.status = "posted";
     }
 
     await promotion.save();
@@ -750,9 +750,9 @@ export const markPromotionPaid = async (
     if (!promotion || !canAccessPromotion(promotion, requester)) {
       return res.status(404).json({ message: "Promotion not found" });
     }
-    if (!["metrics_submitted", "payment_pending", "completed"].includes(promotion.status)) {
+    if (promotion.status !== "payment_pending") {
       return res.status(409).json({
-        message: "Payment can only be recorded after performance is submitted.",
+        message: "Payment can only be recorded when status is payment_pending.",
       });
     }
 
@@ -762,12 +762,7 @@ export const markPromotionPaid = async (
     }
 
     promotion.paymentStatus = "paid";
-    if (
-      promotion.status === "metrics_submitted" ||
-      promotion.status === "payment_pending"
-    ) {
-      promotion.status = "completed";
-    } else if (promotion.status !== "completed") {
+    if (promotion.status !== "completed") {
       promotion.status = "payment_pending";
     }
     await promotion.save();
@@ -779,6 +774,44 @@ export const markPromotionPaid = async (
     });
   } catch (error) {
     console.error("Error marking promotion as paid:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const confirmPaymentReceived = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const requester = getRequester(req);
+    if (!requester?.id) return res.status(401).json({ message: "Unauthorized" });
+    if (requester.role !== "influencer") {
+      return res.status(403).json({ message: "Only influencers can confirm payment receipt" });
+    }
+
+    const { promotionId } = req.params;
+    if (!promotionId || !isValidObjectId(promotionId)) {
+      return res.status(404).json({ message: "Promotion not found" });
+    }
+
+    const promotion = await PromotionModel.findById(promotionId);
+    if (!promotion || !canAccessPromotion(promotion, requester)) {
+      return res.status(404).json({ message: "Promotion not found" });
+    }
+    
+    if (promotion.status !== "payment_pending" || promotion.paymentStatus !== "paid") {
+      return res.status(409).json({ message: "Payment must be marked as paid by the brand before it can be confirmed." });
+    }
+
+    promotion.status = "completed";
+    await promotion.save();
+
+    return res.status(200).json({
+      message: "Payment receipt confirmed and collaboration completed",
+      promotion: formatPromotion(promotion),
+    });
+  } catch (error) {
+    console.error("Error confirming payment receipt:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
