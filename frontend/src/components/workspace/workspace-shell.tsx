@@ -144,14 +144,14 @@ export function WorkspaceShell({
 
   return (
     <TooltipProvider>
-      <div className="relative min-h-screen overflow-hidden bg-[color:var(--vooki-app-bg)] text-[color:var(--vooki-app-text)]">
+      <div className="relative h-screen w-full overflow-hidden bg-[color:var(--vooki-app-bg)] text-[color:var(--vooki-app-text)]">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute left-[-8rem] top-[-6rem] h-72 w-72 rounded-full bg-[color:var(--vooki-app-glow-green)] blur-3xl" />
           <div className="absolute right-[-6rem] top-24 h-80 w-80 rounded-full bg-[color:var(--vooki-app-glow-violet)] blur-3xl" />
           <div className="absolute bottom-0 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-[color:var(--vooki-app-glow-blue)] blur-3xl" />
         </div>
 
-        <div className="relative flex min-h-screen">
+        <div className="relative flex h-full">
           <aside
             className={cn(
               "hidden border-r border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface)] backdrop-blur-xl lg:flex lg:flex-col",
