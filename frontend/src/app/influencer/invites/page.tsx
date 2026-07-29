@@ -63,81 +63,66 @@ export default function InfluencerInvitesPage() {
   );
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:space-y-8 lg:px-8">
-      <Card className="rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
-        <CardContent className="space-y-4 p-5 sm:p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-sm uppercase tracking-[0.24em] text-[color:var(--vooki-app-text-muted)]">
-                Collaboration invites
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)]">
-                Decide what enters your creator pipeline.
-              </h2>
-              <p className="mt-1 text-sm leading-6 text-[color:var(--vooki-app-text-soft)]">
-                {filteredInvites.length}{" "}
-                {activeTab === "all" ? "total" : activeTab.replace("_", " ")} invite
-                {filteredInvites.length !== 1 ? "s" : ""}
-              </p>
-            </div>
+    <div className="mx-auto w-full max-w-5xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+      {/* Compact Header: Tabs and Refresh */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {/* Modern Tabs */}
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as InviteStatus | "all")}
+          className="w-full sm:w-auto overflow-x-auto hide-scrollbar"
+        >
+          <TabsList className="flex h-auto w-max items-center justify-start gap-1 rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] p-1 shadow-inner">
+            {tabs.map((tab) => (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className="rounded-xl px-4 py-1.5 text-sm font-medium text-[color:var(--vooki-app-text-soft)] transition-all data-[state=active]:bg-[color:var(--vooki-app-active-bg)] data-[state=active]:text-[color:var(--vooki-app-active-text)] data-[state=active]:shadow-sm"
+              >
+                {tab.label}
+                <span className="ml-2 rounded-full bg-[color:var(--vooki-app-bg)] px-2 py-0.5 text-xs opacity-70">
+                  {counts[tab.value]}
+                </span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
 
-            <Button
-              variant="ghost"
-              onClick={loadInvites}
-              disabled={loading}
-              className="h-11 rounded-full border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] px-4 text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-hover)]"
-            >
-              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
+        <Button
+          variant="outline"
+          onClick={loadInvites}
+          disabled={loading}
+          className="h-9 shrink-0 rounded-xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] px-4 text-xs font-semibold text-[color:var(--vooki-app-text-strong)] shadow-sm hover:bg-[color:var(--vooki-app-surface-hover)]"
+        >
+          <RefreshCw className={`mr-2 h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
+      </div>
+
+      {/* Loading State */}
+      {loading && (
+        <div className="flex h-32 items-center justify-center rounded-[32px] border border-dashed border-[color:var(--vooki-app-border)]">
+          <div className="flex items-center gap-3 text-sm font-medium text-[color:var(--vooki-app-text-muted)]">
+            <RefreshCw className="h-5 w-5 animate-spin" />
+            Loading your invites...
           </div>
+        </div>
+      )}
 
-          <Tabs
-            value={activeTab}
-            onValueChange={(value) => setActiveTab(value as InviteStatus | "all")}
-          >
-            <TabsList className="grid h-auto w-full grid-cols-5 rounded-[20px] border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] p-1">
-              {tabs.map((tab) => (
-                <TabsTrigger
-                  key={tab.value}
-                  value={tab.value}
-                  className="rounded-2xl text-xs text-[color:var(--vooki-app-text-soft)] data-[state=active]:bg-[color:var(--vooki-app-active-bg)] data-[state=active]:text-[color:var(--vooki-app-active-text)] sm:text-sm"
-                >
-                  {tab.label} ({counts[tab.value]})
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        </CardContent>
-      </Card>
-
-      {loading ? (
-        <Card className="rounded-[28px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app-soft)]">
-          <CardContent className="p-6 text-sm text-[color:var(--vooki-app-text-soft)]">
-            Loading invites...
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {!loading && filteredInvites.length === 0 ? (
-        <Card className="rounded-[28px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app-soft)]">
-          <CardContent className="flex flex-col items-center px-4 py-14 text-center">
-            <div className="rounded-full bg-[color:var(--vooki-app-surface-strong)] p-3 text-[color:var(--vooki-app-text-soft)]">
-              <Inbox className="h-6 w-6" />
-            </div>
-            <h3 className="mt-3 text-lg font-semibold text-[color:var(--vooki-app-text-strong)]">
-              No invites here yet
-            </h3>
-            <p className="mt-1 max-w-md text-sm leading-6 text-[color:var(--vooki-app-text-soft)]">
-              New brand opportunities will appear here with clear terms, response deadlines, and a
-              simple next step.
-            </p>
-            <Badge className="mt-4 border-0 bg-[color:var(--vooki-violet-soft)] text-[color:var(--vooki-violet)] hover:bg-[color:var(--vooki-violet-soft)]">
-              Structured before chat gets messy
-            </Badge>
-          </CardContent>
-        </Card>
-      ) : null}
+      {/* Empty State */}
+      {!loading && filteredInvites.length === 0 && (
+        <div className="flex flex-col items-center justify-center rounded-[32px] border border-dashed border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface)]/50 px-6 py-20 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[color:var(--vooki-app-surface-strong)] shadow-inner">
+            <Inbox className="h-8 w-8 text-[color:var(--vooki-app-text-muted)]" />
+          </div>
+          <h3 className="mt-6 text-xl font-semibold text-[color:var(--vooki-app-text-strong)]">
+            No {activeTab !== "all" ? activeTab.replace("_", " ") : ""} invites found
+          </h3>
+          <p className="mt-2 max-w-md text-sm text-[color:var(--vooki-app-text-soft)]">
+            When brands reach out with new collaboration opportunities, they will appear here nicely formatted and ready for your decision.
+          </p>
+        </div>
+      )}
 
       <div className="grid gap-4">
         {filteredInvites.map((invite) => (

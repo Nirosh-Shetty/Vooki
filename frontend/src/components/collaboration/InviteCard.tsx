@@ -96,135 +96,212 @@ export function InviteCard({ invite, brand, onAction }: InviteCardProps) {
 
   return (
     <>
-      <Card className="rounded-[30px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] transition-transform hover:-translate-y-0.5">
-        <CardContent className="p-5 sm:p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex min-w-0 flex-1 items-start gap-3">
-              <Avatar className="h-11 w-11 border border-[color:var(--vooki-app-border)]">
+      <Card
+        className={`relative overflow-hidden rounded-[20px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] transition-all duration-200 hover:shadow-sm ${
+          invite.status === "pending"
+            ? "ring-1 ring-[color:var(--vooki-app-glow-green)] shadow-[var(--vooki-shadow-accent)]"
+            : ""
+        }`}
+      >
+        {invite.status === "pending" && (
+          <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-[color:var(--vooki-app-glow-green)]/10 to-transparent opacity-50 blur-xl" />
+        )}
+        <CardContent className="p-4 sm:p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            {/* Left: Brand Identity & Campaign Title */}
+            <div className="flex flex-1 items-center gap-3">
+              <Avatar className="h-10 w-10 border border-[color:var(--vooki-app-border)]">
                 <AvatarImage src={brand.profilePicture} />
-                <AvatarFallback className="bg-[color:var(--vooki-violet-soft)] text-[color:var(--vooki-violet)]">
+                <AvatarFallback className="bg-[color:var(--vooki-violet-soft)] text-sm font-semibold text-[color:var(--vooki-violet)]">
                   {(brand.brandName || brand.name || "B").slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
 
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="truncate text-lg font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)]">
-                    {invite.campaignTitle || "Collaboration invite"}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="truncate text-base font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)]">
+                    {invite.campaignTitle || "Collaboration Invite"}
                   </h3>
-                  <Badge className={`border-0 hover:opacity-100 ${statusBadgeStyle}`}>
+                  <Badge className={`border-0 font-medium px-2 py-0.5 text-[10px] shadow-none ${statusBadgeStyle}`}>
                     {statusLabel}
                   </Badge>
                 </div>
-                <p className="mt-1 text-sm text-[color:var(--vooki-app-text-soft)]">
+                <p className="text-xs text-[color:var(--vooki-app-text-soft)] mt-0.5">
                   {brand.brandName || brand.name || "Brand"}
                 </p>
               </div>
             </div>
 
-            <div className="sm:text-right">
-              <p className="text-xl font-semibold text-[color:var(--vooki-app-text-strong)]">
-                {compensationText}
-              </p>
-              <p className="mt-1 text-sm text-[color:var(--vooki-app-text-soft)]">
-                {collaborationTypeText}
-              </p>
+            {/* Right: Compensation & Actions */}
+            <div className="flex items-center justify-between lg:justify-end gap-6 mt-2 lg:mt-0">
+              <div className="flex flex-col items-start lg:items-end">
+                <p className="text-lg font-bold tracking-tight text-[color:var(--vooki-app-text-strong)]">
+                  {compensationText}
+                </p>
+                <p className="text-[10px] font-medium text-[color:var(--vooki-app-text-muted)] uppercase tracking-wider">
+                  {collaborationTypeText}
+                </p>
+              </div>
+
+              {/* Quick Stats (Desktop) */}
+              <div className="hidden xl:flex items-center gap-4 border-l border-[color:var(--vooki-app-border)] pl-4">
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-[color:var(--vooki-app-text-muted)]">
+                    Deliverables
+                  </span>
+                  <span className="text-xs font-semibold text-[color:var(--vooki-app-text-strong)]">
+                    {totalDeliverables} items
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-[color:var(--vooki-app-text-muted)]">
+                    Deadline
+                  </span>
+                  <span className="text-xs font-semibold text-[color:var(--vooki-app-text-strong)]">
+                    {responseDeadline}
+                  </span>
+                </div>
+              </div>
+
+              {/* Primary Actions (Desktop) */}
+              <div className="hidden lg:flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  className="h-8 w-8 rounded-full p-0 text-[color:var(--vooki-app-text-soft)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)]"
+                  onClick={() => setExpandedDetails(!expandedDetails)}
+                >
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform duration-200 ${expandedDetails ? "rotate-180" : ""}`}
+                  />
+                </Button>
+              </div>
             </div>
           </div>
 
-          {invite.brandMessage ? (
-            <div className="mt-5 rounded-[24px] border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4 text-sm leading-6 text-[color:var(--vooki-app-text-soft)]">
+          {/* Quick Stats (Mobile) */}
+          <div className="mt-4 flex xl:hidden items-center gap-4 rounded-xl bg-[color:var(--vooki-app-surface-strong)]/50 border border-[color:var(--vooki-app-border)]/50 px-4 py-2">
+            <div className="flex flex-col">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-[color:var(--vooki-app-text-muted)]">
+                Deliverables
+              </span>
+              <span className="text-xs font-semibold text-[color:var(--vooki-app-text-strong)]">
+                {totalDeliverables} items
+              </span>
+            </div>
+            <div className="h-6 w-px bg-[color:var(--vooki-app-border)]" />
+            <div className="flex flex-col">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-[color:var(--vooki-app-text-muted)]">
+                Deadline
+              </span>
+              <span className="text-xs font-semibold text-[color:var(--vooki-app-text-strong)]">
+                {responseDeadline}
+              </span>
+            </div>
+          </div>
+
+          {invite.brandMessage && (
+            <div className="mt-4 rounded-xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-3 text-xs leading-relaxed text-[color:var(--vooki-app-text-soft)]">
+              <strong className="text-[color:var(--vooki-app-text-strong)]">{brand.brandName || brand.name}: </strong>
               {invite.brandMessage}
             </div>
-          ) : null}
+          )}
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <InfoBlock label="Deliverables" value={`${totalDeliverables} items`} />
-            <InfoBlock label="Response deadline" value={responseDeadline} />
-          </div>
-
-          {expandedDetails ? (
-            <div className="mt-5 space-y-4 rounded-[24px] border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4">
+          {expandedDetails && (
+            <div className="mt-4 grid gap-4 lg:grid-cols-2 rounded-xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)]/30 p-4 animate-in slide-in-from-top-2 fade-in duration-200">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--vooki-app-text-muted)]">
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[color:var(--vooki-app-text-strong)] border-b border-[color:var(--vooki-app-border)] pb-1">
                   Deliverables
                 </p>
-                <div className="mt-3 space-y-2">
+                <div className="space-y-2">
                   {deliveryItems.length > 0 ? (
                     deliveryItems.map((deliverable: any, index: number) => (
                       <div
                         key={index}
-                        className="text-sm leading-6 text-[color:var(--vooki-app-text-soft)]"
+                        className="flex items-start gap-2 rounded-lg bg-[color:var(--vooki-app-surface-card)] p-2 border border-[color:var(--vooki-app-border)]/50"
                       >
-                        {deliverable.quantity}x {deliverable.format} ({deliverable.platform})
-                        {deliverable.description ? ` - ${deliverable.description}` : ""}
+                        <Badge variant="outline" className="shrink-0 bg-[color:var(--vooki-app-surface-strong)] border-0 text-[10px] px-1.5 py-0">
+                          {deliverable.quantity}x
+                        </Badge>
+                        <div className="text-xs">
+                          <p className="font-semibold text-[color:var(--vooki-app-text-strong)]">{deliverable.format} <span className="text-[color:var(--vooki-app-text-muted)] font-normal">on</span> {deliverable.platform}</p>
+                          {deliverable.description && <p className="mt-0.5 text-[color:var(--vooki-app-text-soft)]">{deliverable.description}</p>}
+                        </div>
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-[color:var(--vooki-app-text-soft)]">
-                      No deliverables specified
+                    <p className="text-xs text-[color:var(--vooki-app-text-soft)] italic">
+                      No specific deliverables listed.
                     </p>
                   )}
                 </div>
               </div>
 
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--vooki-app-text-muted)]">
-                  Timeline
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[color:var(--vooki-app-text-strong)] border-b border-[color:var(--vooki-app-border)] pb-1">
+                  Key Dates
                 </p>
-                <div className="mt-3 space-y-1 text-sm text-[color:var(--vooki-app-text-soft)]">
-                  <p>Post by: {postingEndDate || "TBD"}</p>
-                  {draftDueDate ? <p>Draft due: {draftDueDate}</p> : null}
+                <div className="space-y-2">
+                  <div className="flex justify-between rounded-lg bg-[color:var(--vooki-app-surface-card)] p-2 border border-[color:var(--vooki-app-border)]/50">
+                    <span className="text-xs text-[color:var(--vooki-app-text-soft)]">Post by</span>
+                    <span className="text-xs font-semibold text-[color:var(--vooki-app-text-strong)]">{postingEndDate || "TBD"}</span>
+                  </div>
+                  {draftDueDate && (
+                    <div className="flex justify-between rounded-lg bg-[color:var(--vooki-app-surface-card)] p-2 border border-[color:var(--vooki-app-border)]/50">
+                      <span className="text-xs text-[color:var(--vooki-app-text-soft)]">Draft due</span>
+                      <span className="text-xs font-semibold text-[color:var(--vooki-app-text-strong)]">{draftDueDate}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-          ) : null}
+          )}
 
-          <Button
-            variant="ghost"
-            className="mt-4 h-10 w-full rounded-full text-[color:var(--vooki-app-text-soft)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)]"
-            onClick={() => setExpandedDetails(!expandedDetails)}
-          >
-            <ChevronDown
-              className={`h-4 w-4 transition-transform ${expandedDetails ? "rotate-180" : ""}`}
-            />
-          </Button>
+          {/* Action Buttons */}
+          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[color:var(--vooki-app-border)]/50 pt-4">
+            <Button
+              variant="ghost"
+              className="lg:hidden h-8 w-8 rounded-full p-0 text-[color:var(--vooki-app-text-soft)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)] shrink-0"
+              onClick={() => setExpandedDetails(!expandedDetails)}
+            >
+              <ChevronDown
+                className={`h-4 w-4 transition-transform duration-200 ${expandedDetails ? "rotate-180" : ""}`}
+              />
+            </Button>
 
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             {invite.status === "pending" || (invite.status === "counter_offered" && !isWaitingForBrand) ? (
-              <>
+              <div className="flex flex-wrap flex-1 gap-2 justify-end lg:justify-start w-full">
                 <Button
-                  className="rounded-full border border-[color:var(--vooki-accent-border)] bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] shadow-[var(--vooki-shadow-accent)] hover:bg-[color:var(--vooki-accent-strong)]"
+                  className="h-9 rounded-xl border border-[color:var(--vooki-accent-border)] bg-[color:var(--vooki-accent)] px-5 text-sm font-semibold text-[color:var(--vooki-accent-text)] shadow-sm hover:bg-[color:var(--vooki-accent-strong)] hover:-translate-y-0.5 transition-transform"
                   onClick={handleAccept}
                   disabled={loading}
                 >
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Accept
+                  <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+                  Accept Invite
                 </Button>
 
                 <Button
-                  variant="ghost"
-                  className="rounded-full border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-hover)]"
+                  variant="outline"
+                  className="h-9 rounded-xl border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-card)] px-4 text-sm font-semibold text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]"
                   onClick={() => setShowCounter(true)}
                 >
-                  <ThumbsUp className="mr-2 h-4 w-4" />
-                  Counter
+                  <ThumbsUp className="mr-1.5 h-3.5 w-3.5" />
+                  Counter Offer
                 </Button>
 
                 <Button
                   variant="ghost"
-                  className="rounded-full text-[color:var(--vooki-warm)] hover:bg-[color:var(--vooki-warm-soft)] hover:text-[color:var(--vooki-warm)]"
+                  className="h-9 rounded-xl px-4 text-sm font-semibold text-[color:var(--vooki-warm)] hover:bg-[color:var(--vooki-warm-soft)] hover:text-[color:var(--vooki-warm)] ml-auto sm:ml-0"
                   onClick={() => setShowDecline(true)}
                 >
-                  <XCircle className="mr-2 h-4 w-4" />
+                  <XCircle className="mr-1.5 h-3.5 w-3.5" />
                   Decline
                 </Button>
-              </>
+              </div>
             ) : (
-              <p className="w-full rounded-2xl bg-[color:var(--vooki-app-surface-strong)] px-4 py-3 text-center text-sm text-[color:var(--vooki-app-text-soft)]">
-                {invite.status === "accepted" && "You accepted this invite"}
-                {invite.status === "declined" && "You declined this invite"}
-                {isWaitingForBrand && "Waiting for the brand to review your counter offer"}
+              <p className="flex-1 rounded-xl bg-[color:var(--vooki-app-surface-strong)] px-4 py-2 text-xs font-medium text-[color:var(--vooki-app-text-soft)] border border-[color:var(--vooki-app-border)]/50">
+                {invite.status === "accepted" && "✅ You accepted this invite."}
+                {invite.status === "declined" && "❌ You declined this invite."}
+                {isWaitingForBrand && "⏳ Waiting for brand approval on counter offer."}
               </p>
             )}
           </div>
@@ -245,16 +322,5 @@ export function InviteCard({ invite, brand, onAction }: InviteCardProps) {
         onSuccess={onAction}
       />
     </>
-  );
-}
-
-function InfoBlock({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] px-4 py-3">
-      <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--vooki-app-text-muted)]">
-        {label}
-      </p>
-      <p className="mt-2 text-sm font-medium text-[color:var(--vooki-app-text-strong)]">{value}</p>
-    </div>
   );
 }

@@ -226,15 +226,15 @@ export const getBrandInvites = async (
     const invitesWithInfluencerInfo = await Promise.all(
       invites.map(async (invite: any) => {
         const influencer = await UserModel.findById(invite.influencerId).select(
-          "_id name handle niche avatar"
+          "_id name username influencerProfile.niche avatar"
         );
 
         return {
           id: invite._id,
           influencerId: invite.influencerId,
           influencerName: influencer?.name || "",
-          influencerHandle: influencer?.handle || "",
-          influencerNiche: influencer?.niche || "",
+          influencerHandle: influencer?.username || "",
+          influencerNiche: influencer?.influencerProfile?.niche || "",
           campaignId: invite.campaignId,
           campaignLabel: invite.campaignTitle,
           note: invite.brandMessage || "",
