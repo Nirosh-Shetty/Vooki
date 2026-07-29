@@ -16,6 +16,13 @@ import {
   Star,
   TrendingUp,
   Users,
+  Sparkles,
+  Instagram,
+  Youtube,
+  BarChart3,
+  Eye,
+  Activity,
+  DollarSign
 } from "lucide-react"
 import { CreateInviteModal } from "@/components/collaboration/CreateInviteModal"
 
@@ -180,7 +187,7 @@ export default function DiscoverProfilePage() {
   }, [influencerId])
 
   useEffect(() => {
-    if (!influencerId || isPreviewProfile || !selectedCampaignId) {
+    if (!influencerId || isPreviewProfile) {
       setInviteStatus(null)
       return
     }
@@ -203,8 +210,7 @@ export default function DiscoverProfilePage() {
         const items = Array.isArray(data?.items) ? data.items : []
         const currentInvite = items.find(
           (item) =>
-            String(item?.influencerId) === String(influencerId) &&
-            String(item?.campaignId) === String(selectedCampaignId)
+            String(item?.influencerId) === String(influencerId)
         )
         setInviteStatus(currentInvite?.status || null)
       } catch {
@@ -214,7 +220,7 @@ export default function DiscoverProfilePage() {
 
     loadInviteStatus()
     return () => controller.abort()
-  }, [influencerId, isPreviewProfile, selectedCampaignId])
+  }, [influencerId, isPreviewProfile])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -249,9 +255,9 @@ export default function DiscoverProfilePage() {
   )
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8 text-[color:var(--vooki-app-text-strong)]">
       <div className="flex items-center gap-3">
-        <Button asChild variant="outline" className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
+        <Button asChild variant="outline" className="h-9 rounded-full border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] text-[color:var(--vooki-app-text-strong)] hover:border-[color:var(--vooki-accent)] hover:text-[color:var(--vooki-app-text-strong)] transition-all">
           <Link href="/brand/discover">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to discover
@@ -259,79 +265,72 @@ export default function DiscoverProfilePage() {
         </Button>
       </div>
 
-      {loading ? (
-        <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-          <CardContent className="p-6 text-sm text-slate-600 dark:text-slate-300">Loading profile...</CardContent>
-        </Card>
-      ) : null}
+      {loading && (
+        <div className="rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-8 text-center text-sm text-[color:var(--vooki-app-text-soft)]">
+          Loading profile...
+        </div>
+      )}
 
-      {error ? (
-        <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-          <CardContent className="p-6 text-sm text-rose-600 dark:text-rose-300">{error}</CardContent>
-        </Card>
-      ) : null}
-      {actionMessage ? (
-        <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-          <CardContent className="p-4 text-sm text-emerald-700 dark:text-emerald-300">{actionMessage}</CardContent>
-        </Card>
-      ) : null}
+      {error && (
+        <div className="rounded-3xl border border-red-500/20 bg-red-500/10 p-6 text-sm text-red-500 text-center">
+          {error}
+        </div>
+      )}
 
-      {!loading && profile ? (
+      {actionMessage && (
+        <div className="rounded-3xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-500 text-center">
+          {actionMessage}
+        </div>
+      )}
+
+      {!loading && profile && (
         <>
-          <Card className="border-white/60 bg-white/85 shadow-xl shadow-cyan-100/40 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-cyan-900/10">
-            <CardContent className="space-y-5 p-6">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-emerald-500 text-lg font-semibold text-white">
-                    {profile.name
-                      .split(" ")
-                      .map((part) => part[0])
-                      .join("")}
+          <div className="overflow-hidden rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
+            {/* Banner/Cover Photo */}
+            <div className="h-32 w-full bg-gradient-to-r from-cyan-500/20 via-emerald-500/20 to-cyan-500/20" />
+            
+            <div className="px-6 sm:px-10 pb-8">
+              <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between relative -mt-12">
+                
+                {/* Identity */}
+                <div className="flex flex-col sm:flex-row sm:items-end gap-5">
+                  <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-4 border-[color:var(--vooki-app-surface-card)] bg-gradient-to-br from-cyan-400 to-[color:var(--vooki-accent)] text-3xl font-bold text-[color:var(--vooki-accent-text)] shadow-inner">
+                    {profile.name.charAt(0)}
                   </div>
-                  <div>
+                  <div className="pb-2">
                     <div className="flex items-center gap-2">
-                      <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+                      <h1 className="text-3xl font-bold tracking-tight text-[color:var(--vooki-app-text-strong)]">
                         {profile.name}
                       </h1>
-                      {profile.verified ? (
-                        <Badge className="border-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
-                          Verified
-                        </Badge>
-                      ) : null}
+                      {profile.verified && (
+                         <Sparkles className="h-5 w-5 text-[color:var(--vooki-accent)] shrink-0" />
+                      )}
                     </div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">{profile.handle}</p>
-                    <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{profile.niche}</p>
-                    <p className="mt-1 inline-flex items-center text-xs text-slate-500 dark:text-slate-400">
-                      <MapPin className="mr-1 h-3.5 w-3.5" />
-                      Location data not provided
-                    </p>
+                    {profile.handle.replace(/^@/, "") !== profile.name && (
+                      <p className="text-sm font-medium text-[color:var(--vooki-app-text-soft)] mt-0.5">{profile.handle}</p>
+                    )}
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px] text-[color:var(--vooki-app-text-subtle)]">
+                      <span>{profile.niche}</span>
+                      <span className="w-1.5 h-1.5 shrink-0 rounded-full bg-[color:var(--vooki-app-border-strong)]" />
+                      <span className="flex items-center whitespace-nowrap"><MapPin className="mr-1 h-3.5 w-3.5" /> Location not provided</span>
+                    </div>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <select
-                    value={selectedCampaignId}
-                    onChange={(event) => setSelectedCampaignId(event.target.value)}
-                    className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                  >
-                    <option value="">Select campaign</option>
-                    {campaigns.map((campaign) => (
-                      <option key={campaign.id} value={campaign.id}>
-                        {campaign.name}
-                      </option>
-                    ))}
-                  </select>
+                {/* Actions */}
+                <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 sm:mt-14 shrink-0">
                   <CreateInviteModal
-                    campaignId={selectedCampaignId}
-                    campaignName={campaigns.find((c) => c.id === selectedCampaignId)?.name || ""}
+                    campaigns={campaigns}
                     preselectedInfluencerId={influencerId}
                     onSuccess={() => setInviteStatus("pending")}
                     trigger={
                       <Button
-                        disabled={inviteBusy || inviteStatus === "pending" || !selectedCampaignId}
-                        className="bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] hover:bg-[color:var(--vooki-accent-strong)] disabled:opacity-60"
+                        disabled={inviteBusy || inviteStatus === "pending" || campaigns.length === 0}
+                        className="h-10 rounded-full bg-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-bg)] hover:bg-[color:var(--vooki-app-text)] shadow-sm px-6 font-semibold"
                       >
                         <HeartHandshake className="mr-2 h-4 w-4" />
-                        {inviteStatus === "pending"
+                        {campaigns.length === 0
+                          ? "No Campaigns"
+                          : inviteStatus === "pending"
                           ? "Invite pending"
                           : inviteStatus === "accepted" || inviteStatus === "rejected" || inviteStatus === "expired"
                             ? "Invite again"
@@ -339,113 +338,138 @@ export default function DiscoverProfilePage() {
                       </Button>
                     }
                   />
-                  <Button asChild variant="outline" className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
+                  <Button asChild variant="outline" className="h-10 rounded-full border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-strong)] hover:border-[color:var(--vooki-accent)] shadow-sm">
                     <Link href={`/brand/messages`}>
-                      Message creator <ArrowUpRight className="ml-2 h-4 w-4" />
+                      Message <ArrowUpRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-4">
-                <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Followers</p>
-                  <p className="font-semibold text-slate-900 dark:text-slate-100">{formatCompact(profile.followers)}</p>
+              {/* Core Metrics */}
+              <div className="grid gap-4 sm:grid-cols-4 mt-6 pt-8 border-t border-[color:var(--vooki-app-border)]">
+                <div className="rounded-2xl bg-[color:var(--vooki-app-surface-strong)]/50 p-4 border border-[color:var(--vooki-app-border)]/50 flex flex-col gap-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Users className="h-4 w-4 text-[color:var(--vooki-app-text-soft)]" />
+                    <p className="text-[11px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold">Total Audience</p>
+                  </div>
+                  <p className="font-bold text-2xl text-[color:var(--vooki-app-text-strong)]">{formatCompact(profile.followers)}</p>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Engagement</p>
-                  <p className="font-semibold text-slate-900 dark:text-slate-100">{profile.metrics.engagementRate}%</p>
+                <div className="rounded-2xl bg-[color:var(--vooki-app-surface-strong)]/50 p-4 border border-[color:var(--vooki-app-border)]/50 flex flex-col gap-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Activity className="h-4 w-4 text-[color:var(--vooki-app-text-soft)]" />
+                    <p className="text-[11px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold">Engagement</p>
+                  </div>
+                  <p className="font-bold text-2xl text-emerald-500">{profile.metrics.engagementRate}%</p>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Avg Views</p>
-                  <p className="font-semibold text-slate-900 dark:text-slate-100">{formatCompact(profile.metrics.avgViews)}</p>
+                <div className="rounded-2xl bg-[color:var(--vooki-app-surface-strong)]/50 p-4 border border-[color:var(--vooki-app-border)]/50 flex flex-col gap-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Eye className="h-4 w-4 text-[color:var(--vooki-app-text-soft)]" />
+                    <p className="text-[11px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold">Avg Views</p>
+                  </div>
+                  <p className="font-bold text-2xl text-[color:var(--vooki-app-text-strong)]">{formatCompact(profile.metrics.avgViews)}</p>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Est CPV</p>
-                  <p className="font-semibold text-slate-900 dark:text-slate-100">${profile.metrics.estCpv.toFixed(2)}</p>
+                <div className="rounded-2xl bg-[color:var(--vooki-app-surface-strong)]/50 p-4 border border-[color:var(--vooki-app-border)]/50 flex flex-col gap-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <DollarSign className="h-4 w-4 text-[color:var(--vooki-app-text-soft)]" />
+                    <p className="text-[11px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold">Est CPV</p>
+                  </div>
+                  <p className="font-bold text-2xl text-[color:var(--vooki-app-text-strong)]">${profile.metrics.estCpv.toFixed(2)}</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <div className="grid gap-4 lg:grid-cols-3">
-            <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85 lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="text-slate-900 dark:text-slate-100">Performance Snapshot</CardTitle>
-                <CardDescription className="text-slate-600 dark:text-slate-400">
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Performance Snapshot */}
+            <div className="rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-6 lg:col-span-2 shadow-[var(--vooki-shadow-app)]">
+              <div className="mb-6">
+                <h3 className="text-xl font-bold text-[color:var(--vooki-app-text-strong)]">Performance Snapshot</h3>
+                <p className="text-sm text-[color:var(--vooki-app-text-soft)]">
                   Quick signals for collaboration fit and campaign outcome quality.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-                  <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                    <TrendingUp className="h-4 w-4 text-emerald-600" />
-                    Fit score: <span className="font-semibold">{profile.metrics.fitScore}%</span>
+                </p>
+              </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)]/30 p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <TrendingUp className="h-5 w-5 text-emerald-500" />
+                      <span className="text-sm font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider">Fit Score</span>
+                    </div>
+                    <span className="text-xl font-bold text-[color:var(--vooki-app-text-strong)]">{profile.metrics.fitScore}%</span>
+                  </div>
+                  <div className="rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)]/30 p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Star className="h-5 w-5 text-amber-500 fill-current" />
+                      <span className="text-sm font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider">Rating</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xl font-bold text-[color:var(--vooki-app-text-strong)]">{profile.rating.toFixed(1)}</span>
+                      <p className="text-[10px] text-[color:var(--vooki-app-text-subtle)]">({profile.totalReviews} reviews)</p>
+                    </div>
                   </div>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-                  <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                    <Star className="h-4 w-4 text-amber-500" />
-                    Rating: <span className="font-semibold">{profile.rating.toFixed(1)}</span>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                      ({profile.totalReviews} reviews)
-                    </span>
-                  </div>
-                </div>
-                <div className="space-y-2">
+                
+                <div className="space-y-2 mt-2">
                   {profile.highlights.map((highlight) => (
                     <div
                       key={highlight}
-                      className="flex items-start gap-2 rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                      className="flex items-start gap-3 rounded-2xl border border-[color:var(--vooki-app-border)]/50 bg-[color:var(--vooki-app-surface-strong)]/20 p-4 text-sm text-[color:var(--vooki-app-text-strong)]"
                     >
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-cyan-600" />
-                      <span>{highlight}</span>
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[color:var(--vooki-accent)]" />
+                      <span className="leading-relaxed">{highlight}</span>
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-              <CardHeader>
-                <CardTitle className="text-slate-900 dark:text-slate-100">Social Links</CardTitle>
-                <CardDescription className="text-slate-600 dark:text-slate-400">
-                  Connected channels for this creator.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
+            {/* Social Links */}
+            <div className="rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-6 shadow-[var(--vooki-shadow-app)]">
+              <div className="mb-6">
+                <h3 className="text-xl font-bold text-[color:var(--vooki-app-text-strong)]">Social Channels</h3>
+                <p className="text-sm text-[color:var(--vooki-app-text-soft)]">
+                  Connected platforms.
+                </p>
+              </div>
+              <div className="space-y-3">
                 {socialEntries.length === 0 ? (
-                  <div className="rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                  <div className="rounded-2xl border border-[color:var(--vooki-app-border)]/50 bg-[color:var(--vooki-app-surface-strong)]/20 p-4 text-sm text-[color:var(--vooki-app-text-soft)] text-center">
                     No social links shared yet.
                   </div>
                 ) : (
-                  socialEntries.map(([platform, value]) => (
-                    <a
-                      key={platform}
-                      href={value}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-                    >
-                      <span className="inline-flex items-center gap-2">
-                        <Globe className="h-4 w-4 text-cyan-600" />
-                        {platform}
-                      </span>
-                      <ArrowUpRight className="h-4 w-4" />
-                    </a>
-                  ))
+                  socialEntries.map(([platform, value]) => {
+                    const isInsta = platform.toLowerCase() === 'instagram'
+                    const isYT = platform.toLowerCase() === 'youtube'
+                    
+                    return (
+                      <a
+                        key={platform}
+                        href={value}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="group flex items-center justify-between rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)]/30 p-4 text-sm text-[color:var(--vooki-app-text-strong)] hover:border-[color:var(--vooki-accent)] hover:bg-[color:var(--vooki-app-surface-strong)] transition-all"
+                      >
+                        <span className="flex items-center gap-3 font-medium capitalize">
+                          {isInsta ? <Instagram className="h-5 w-5 text-pink-500" /> : isYT ? <Youtube className="h-5 w-5 text-red-500" /> : <Globe className="h-5 w-5 text-[color:var(--vooki-accent)]" />}
+                          {platform}
+                        </span>
+                        <ArrowUpRight className="h-4 w-4 opacity-50 group-hover:opacity-100 group-hover:text-[color:var(--vooki-accent)] transition-all" />
+                      </a>
+                    )
+                  })
                 )}
-                <div className="rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                  <div className="inline-flex items-center gap-2">
-                    <Users className="h-4 w-4 text-emerald-600" />
-                    Audience data enrichment can be connected next.
+                <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-emerald-600 dark:text-emerald-400">
+                  <div className="flex items-start gap-3">
+                    <Users className="h-5 w-5 shrink-0" />
+                    <span className="leading-relaxed font-medium">Audience data enrichment active.</span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         </>
-      ) : null}
+      )}
     </div>
   )
 }
