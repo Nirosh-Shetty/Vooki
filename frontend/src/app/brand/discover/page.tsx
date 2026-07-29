@@ -8,6 +8,13 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   ArrowUpRight,
   Bookmark,
   BookmarkPlus,
@@ -280,9 +287,9 @@ export default function DiscoverPage() {
       if (!response.ok) throw new Error("Failed to send invites")
       await fetchSentInvites()
       if (targetId === "bulk") {
-         alert("Bulk invites sent successfully!")
+        alert("Bulk invites sent successfully!")
       } else {
-         alert("Invite sent successfully!")
+        alert("Invite sent successfully!")
       }
     } catch {
       alert("Failed to send invites")
@@ -313,24 +320,23 @@ export default function DiscoverPage() {
                 className="h-11 rounded-full border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] pl-11 text-sm text-[color:var(--vooki-app-text-strong)] focus-visible:ring-[color:var(--vooki-accent)]"
               />
             </div>
-            
-            <div className="relative w-full sm:w-64 shrink-0">
-              <select
+
+            <div className="w-full sm:w-64 shrink-0">
+              <Select
                 value={inviteCampaignId}
-                onChange={(e) => setInviteCampaignId(e.target.value)}
-                className="w-full h-11 rounded-full border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] px-4 text-sm text-[color:var(--vooki-app-text-strong)] focus:outline-none focus:ring-2 focus:ring-[color:var(--vooki-accent)] appearance-none cursor-pointer"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                  backgroundPosition: "right 1rem center",
-                  backgroundRepeat: "no-repeat",
-                  backgroundSize: "1.5em 1.5em",
-                }}
+                onValueChange={setInviteCampaignId}
               >
-                <option value="" disabled>Select Target Campaign...</option>
-                {campaigns.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+                <SelectTrigger className="h-11 w-full rounded-full border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] text-sm font-medium text-[color:var(--vooki-app-text-strong)] focus:ring-[color:var(--vooki-accent)]">
+                  <SelectValue placeholder="Select Target Campaign..." />
+                </SelectTrigger>
+                <SelectContent className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] text-[color:var(--vooki-app-text-strong)] shadow-2xl rounded-2xl">
+                  {campaigns.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
@@ -442,7 +448,7 @@ export default function DiscoverPage() {
               >
                 {/* Top Row: Identity & Actions */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
-                  
+
                   {/* Creator Identity */}
                   <div className="flex items-center gap-4 min-w-0">
                     <Link href={`/brand/discover/${creator.id}`} className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-[color:var(--vooki-accent)] text-xl font-bold text-[color:var(--vooki-accent-text)] shadow-inner transition-transform hover:scale-105">
@@ -512,11 +518,11 @@ export default function DiscoverPage() {
                 {/* Bottom Row: Stats */}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 rounded-2xl bg-[color:var(--vooki-app-surface-strong)]/30 p-4 border border-[color:var(--vooki-app-border)]/50 mt-1">
                   <div className="flex flex-col gap-1 shrink-0">
-                     <span className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold">Platforms</span>
-                     <div className="flex items-center gap-2">
-                       <Instagram className="h-4 w-4 text-pink-500 opacity-80" />
-                       <Youtube className="h-4 w-4 text-red-500 opacity-80" />
-                     </div>
+                    <span className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold">Platforms</span>
+                    <div className="flex items-center gap-2">
+                      <Instagram className="h-4 w-4 text-pink-500 opacity-80" />
+                      <Youtube className="h-4 w-4 text-red-500 opacity-80" />
+                    </div>
                   </div>
                   <div className="grid grid-cols-4 gap-3 sm:gap-6 flex-1 w-full">
                     <div>
