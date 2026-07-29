@@ -1,7 +1,7 @@
-# Graph Report - collaber  (2026-07-27)
+# Graph Report - collaber  (2026-07-29)
 
 ## Corpus Check
-- 188 files · ~87,567 words
+- 188 files · ~86,231 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `0e2462f4`
+- Built from commit: `a5a55656`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -285,7 +285,7 @@ Cohesion: 0.20
 Nodes (9): Backend-specific guidance, Behavior, Examples of useful prompts, Formatting and tooling, Frontend-specific guidance, graphify, Important conventions, Notes for maintainers (+1 more)
 
 ## Knowledge Gaps
-- **407 isolated node(s):** `name`, `version`, `description`, `main`, `start` (+402 more)
+- **407 isolated node(s):** `CollaborationType`, `CompensationType`, `Deliverable`, `CreateInviteModalProps`, `WorkspaceMenuLink` (+402 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **9 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -293,12 +293,12 @@ Nodes (9): Backend-specific guidance, Behavior, Examples of useful prompts, Form
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `cn()` connect `Community 26` to `Community 32`, `Community 5`, `Community 7`, `Community 41`, `Community 10`, `Community 14`, `Community 15`, `Community 16`, `Community 19`, `Community 20`?**
-  _High betweenness centrality (0.029) - this node is a cross-community bridge._
+  _High betweenness centrality (0.036) - this node is a cross-community bridge._
 - **Why does `Button()` connect `Community 5` to `Community 33`, `Community 34`, `Community 35`, `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 13`, `Community 14`, `Community 15`, `Community 16`, `Community 17`, `Community 20`, `Community 26`, `Community 27`, `Community 30`, `Community 31`?**
-  _High betweenness centrality (0.024) - this node is a cross-community bridge._
+  _High betweenness centrality (0.026) - this node is a cross-community bridge._
 - **Why does `getRequestUser()` connect `Community 0` to `Community 1`, `Community 3`, `Community 4`, `Community 6`, `Community 21`?**
-  _High betweenness centrality (0.015) - this node is a cross-community bridge._
-- **What connects `name`, `version`, `description` to the rest of the system?**
+  _High betweenness centrality (0.016) - this node is a cross-community bridge._
+- **What connects `CollaborationType`, `CompensationType`, `Deliverable` to the rest of the system?**
   _407 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
   _Cohesion score 0.056943056943056944 - nodes in this community are weakly interconnected._
