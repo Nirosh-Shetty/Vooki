@@ -71,8 +71,6 @@ type StructuredMessageAction = "accept_offer" | "request_changes";
 
 interface MessagesHubProps {
   role: RoleVariant;
-  heading: string;
-  subheading: string;
   composerPlaceholder: string;
   conversations: HubConversation[];
   messagesByConversation: Record<string, HubMessage[]>;
@@ -87,12 +85,6 @@ interface MessagesHubProps {
   isLoading?: boolean;
   initialDraft?: string;
 }
-
-const roleBadgeStyles: Record<RoleVariant, string> = {
-  influencer: "bg-[color:var(--vooki-violet-soft)] text-[color:var(--vooki-violet)]",
-  brand: "bg-[color:var(--vooki-warm-soft)] text-[color:var(--vooki-warm)]",
-  manager: "bg-[color:var(--vooki-accent-soft)] text-[color:var(--vooki-accent-strong)]",
-};
 
 const statusDotStyles: Record<HubConversation["status"], string> = {
   active: "text-[color:var(--vooki-accent-strong)]",
@@ -208,8 +200,6 @@ function StructuredOfferCard({ message, actions }: { message: HubMessage; action
 
 export function MessagesHub({
   role,
-  heading,
-  subheading,
   composerPlaceholder,
   conversations,
   messagesByConversation,
@@ -305,30 +295,8 @@ export function MessagesHub({
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-      <Card className="rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
-        <CardContent className="flex flex-col gap-4 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <Badge className={`border-0 hover:opacity-100 ${roleBadgeStyles[role]}`}>{role}</Badge>
-            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)]">
-              {heading}
-            </h2>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-[color:var(--vooki-app-text-soft)]">
-              {subheading}
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            onClick={() => setSearchDialogOpen(true)}
-            className="h-11 rounded-full border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] px-4 text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-hover)]"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            New thread
-          </Button>
-        </CardContent>
-      </Card>
-
-      <div className="grid h-[calc(100vh-22.5rem)] min-h-[560px] gap-4 lg:grid-cols-[360px_1fr]">
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-4 sm:px-6 lg:px-8">
+      <div className="grid h-[calc(100vh-9rem)] min-h-[580px] gap-4 lg:grid-cols-[360px_1fr]">
         <Card
           className={`${mobileChatOpen ? "hidden lg:flex" : "flex"} rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]`}
         >

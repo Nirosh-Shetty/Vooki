@@ -10,9 +10,7 @@ export default function ManagerMessagesPage() {
     <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><p>Loading messages...</p></div>}>
       <MessagesHubProvider
         role="manager"
-        heading="Messages"
-        subheading="Handle brand and creator threads in one operational inbox."
-        composerPlaceholder="Send update..."
+        composerPlaceholder="Message your influencers..."
       />
     </Suspense>
   )

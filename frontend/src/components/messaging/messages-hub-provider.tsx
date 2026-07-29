@@ -13,8 +13,6 @@ import { messagingAPI } from "@/lib/socket/messaging-api";
 
 interface MessagesHubProviderProps {
   role: RoleVariant;
-  heading: string;
-  subheading: string;
   composerPlaceholder: string;
 }
 
@@ -22,8 +20,6 @@ type StructuredMessageAction = "accept_offer" | "request_changes";
 
 export function MessagesHubProvider({
   role,
-  heading,
-  subheading,
   composerPlaceholder,
 }: MessagesHubProviderProps) {
   const searchParams = useSearchParams();
@@ -254,8 +250,6 @@ export function MessagesHubProvider({
   return (
     <MessagesHub
       role={role}
-      heading={heading}
-      subheading={subheading}
       composerPlaceholder={composerPlaceholder}
       conversations={transformedConversations}
       messagesByConversation={messagesByConversation}

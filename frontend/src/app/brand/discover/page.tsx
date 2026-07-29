@@ -18,7 +18,9 @@ import {
   Users,
   Send,
   Loader2,
-  Trash2
+  Trash2,
+  Instagram,
+  Youtube
 } from "lucide-react"
 
 type Creator = {
@@ -66,36 +68,36 @@ type CampaignListResponse = {
   items?: CampaignOption[]
 }
 
-const seedCreators: Creator[] = [
-  {
-    id: "seed_1",
-    name: "Mina Styles",
-    handle: "@minastyles",
-    niche: "Fashion + Lifestyle",
-    location: "Los Angeles, CA",
-    followers: 182000,
-    engagementRate: 7.8,
-    avgViews: 96000,
-    estCpv: 0.05,
-    fitScore: 92,
-    tags: ["Reels", "UGC", "Product Styling"],
-    verified: true,
-  },
-  {
-    id: "seed_2",
-    name: "Noah Tech",
-    handle: "@noahbytes",
-    niche: "Consumer Tech",
-    location: "Austin, TX",
-    followers: 128000,
-    engagementRate: 6.1,
-    avgViews: 84000,
-    estCpv: 0.04,
-    fitScore: 88,
-    tags: ["YouTube Shorts", "Reviews", "Tutorials"],
-    verified: true,
-  },
-]
+// const seedCreators: Creator[] = [
+//   {
+//     id: "seed_1",
+//     name: "Mina Styles",
+//     handle: "@minastyles",
+//     niche: "Fashion + Lifestyle",
+//     location: "Los Angeles, CA",
+//     followers: 182000,
+//     engagementRate: 7.8,
+//     avgViews: 96000,
+//     estCpv: 0.05,
+//     fitScore: 92,
+//     tags: ["Reels", "UGC", "Product Styling"],
+//     verified: true,
+//   },
+//   {
+//     id: "seed_2",
+//     name: "Noah Tech",
+//     handle: "@noahbytes",
+//     niche: "Consumer Tech",
+//     location: "Austin, TX",
+//     followers: 128000,
+//     engagementRate: 6.1,
+//     avgViews: 84000,
+//     estCpv: 0.04,
+//     fitScore: 88,
+//     tags: ["YouTube Shorts", "Reviews", "Tutorials"],
+//     verified: true,
+//   },
+// ]
 
 const nicheFilters = ["All", "Lifestyle", "Tech", "Wellness", "Beauty", "Fitness", "Finance"]
 
@@ -109,7 +111,7 @@ export default function DiscoverPage() {
   const [search, setSearch] = useState("")
   const [activeNiche, setActiveNiche] = useState("All")
   const [shortlist, setShortlist] = useState<string[]>([])
-  const [creators, setCreators] = useState<Creator[]>(seedCreators)
+  const [creators, setCreators] = useState<Creator[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -162,7 +164,7 @@ export default function DiscoverPage() {
       } catch (err: unknown) {
         if (err instanceof DOMException && err.name === "AbortError") return
         setError("Showing preview data. Live discover endpoint is not available yet.")
-        setCreators(seedCreators)
+        setCreators([])
       } finally {
         setLoading(false)
       }
@@ -376,8 +378,8 @@ export default function DiscoverPage() {
             key={niche}
             onClick={() => setActiveNiche(niche)}
             className={`rounded-full border px-4 py-1.5 text-xs font-semibold transition-colors ${activeNiche === niche
-                ? "border-transparent bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] shadow-sm"
-                : "border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] text-[color:var(--vooki-app-text-soft)] hover:bg-[color:var(--vooki-app-surface-strong)]"
+              ? "border-transparent bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] shadow-sm"
+              : "border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] text-[color:var(--vooki-app-text-soft)] hover:bg-[color:var(--vooki-app-surface-strong)]"
               }`}
           >
             {niche}
@@ -433,22 +435,31 @@ export default function DiscoverPage() {
                 </div>
 
                 {/* Core Stats */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 flex-1">
-                  <div>
-                    <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold mb-1">Followers</p>
-                    <p className="font-bold text-lg text-[color:var(--vooki-app-text-strong)]">{formatCompact(creator.followers)}</p>
+                <div className="flex-1 rounded-2xl bg-[color:var(--vooki-app-surface-strong)] p-4 border border-[color:var(--vooki-app-border)]">
+                  <div className="flex items-center gap-3 mb-3 pb-3 border-b border-[color:var(--vooki-app-border-strong)]">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)]">Primary Platforms</span>
+                    <div className="flex gap-2">
+                       <Instagram className="h-3.5 w-3.5 text-pink-500 opacity-80" />
+                       <Youtube className="h-3.5 w-3.5 text-red-500 opacity-80" />
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold mb-1">Engagement</p>
-                    <p className="font-bold text-lg text-emerald-500">{creator.engagementRate}%</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold mb-1">Avg Views</p>
-                    <p className="font-bold text-lg text-[color:var(--vooki-app-text-strong)]">{formatCompact(creator.avgViews)}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold mb-1">Est CPV</p>
-                    <p className="font-bold text-lg text-[color:var(--vooki-app-text-strong)]">${creator.estCpv.toFixed(2)}</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div>
+                      <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold mb-1">Total Audience</p>
+                      <p className="font-bold text-lg text-[color:var(--vooki-app-text-strong)]">{creator.followers > 0 ? formatCompact(creator.followers) : "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold mb-1">Engagement</p>
+                      <p className="font-bold text-lg text-emerald-500">{creator.engagementRate > 0 ? `${creator.engagementRate}%` : "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold mb-1">Avg Views</p>
+                      <p className="font-bold text-lg text-[color:var(--vooki-app-text-strong)]">{creator.avgViews > 0 ? formatCompact(creator.avgViews) : "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold mb-1">Est CPV</p>
+                      <p className="font-bold text-lg text-[color:var(--vooki-app-text-strong)]">{creator.avgViews > 0 && creator.estCpv > 0 ? `$${creator.estCpv.toFixed(2)}` : "N/A"}</p>
+                    </div>
                   </div>
                 </div>
 
@@ -467,8 +478,8 @@ export default function DiscoverPage() {
                     onClick={() => toggleShortlist(creator.id)}
                     disabled={isSaving}
                     className={`h-10 w-10 rounded-full transition-colors ${saved
-                        ? "bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] hover:bg-[color:var(--vooki-accent-strong)] shadow-[var(--vooki-shadow-accent)]"
-                        : "bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-soft)] border border-[color:var(--vooki-app-border)] hover:text-[color:var(--vooki-app-text-strong)] hover:border-[color:var(--vooki-accent)]"
+                      ? "bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] hover:bg-[color:var(--vooki-accent-strong)] shadow-[var(--vooki-shadow-accent)]"
+                      : "bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-soft)] border border-[color:var(--vooki-app-border)] hover:text-[color:var(--vooki-app-text-strong)] hover:border-[color:var(--vooki-accent)]"
                       }`}
                   >
                     {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Bookmark className="h-4 w-4 fill-current" /> : <BookmarkPlus className="h-4 w-4" />}
@@ -476,7 +487,7 @@ export default function DiscoverPage() {
 
                   <Button
                     onClick={() => setInviteTargetId(creator.id)}
-                    className="h-10 rounded-full bg-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-inverse-text)] hover:bg-[color:var(--vooki-app-text)] flex-1 xl:flex-none shadow-sm px-6"
+                    className="h-10 rounded-full bg-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-bg)] hover:bg-[color:var(--vooki-app-text)] flex-1 xl:flex-none shadow-sm px-6"
                   >
                     Invite
                   </Button>
