@@ -22,6 +22,7 @@ import {
   Instagram,
   Youtube
 } from "lucide-react"
+import { CreateInviteModal } from "@/components/collaboration/CreateInviteModal"
 
 type Creator = {
   id: string
@@ -118,8 +119,7 @@ export default function DiscoverPage() {
   // Inviting State
   const [sentInvites, setSentInvites] = useState<SentInvite[]>([])
   const [campaigns, setCampaigns] = useState<CampaignOption[]>([])
-  const [inviteBusy, setInviteBusy] = useState(false)
-  const [inviteTargetId, setInviteTargetId] = useState<string | null>(null) // null = none, "bulk" = all shortlisted, or specific ID
+  const [inviteBusyIds, setInviteBusyIds] = useState<string[]>([])
   const [inviteCampaignId, setInviteCampaignId] = useState("")
 
   const [shortlistBusyIds, setShortlistBusyIds] = useState<string[]>([])
@@ -256,12 +256,15 @@ export default function DiscoverPage() {
     }
   }
 
-  const sendInvites = async () => {
-    if (!inviteCampaignId) return
-    const idsToInvite = inviteTargetId === "bulk" ? shortlist : inviteTargetId ? [inviteTargetId] : []
+  const sendInvites = async (targetId: string) => {
+    if (!inviteCampaignId) {
+      alert("Please select a target campaign from the dropdown in the header first.")
+      return
+    }
+    const idsToInvite = targetId === "bulk" ? shortlist : [targetId]
     if (!idsToInvite.length) return
 
-    setInviteBusy(true)
+    setInviteBusyIds((prev) => [...prev, targetId])
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/discover/invites`, {
         method: "POST",
@@ -276,12 +279,15 @@ export default function DiscoverPage() {
       })
       if (!response.ok) throw new Error("Failed to send invites")
       await fetchSentInvites()
-      setInviteTargetId(null) // close modal
-      setInviteCampaignId("")
+      if (targetId === "bulk") {
+         alert("Bulk invites sent successfully!")
+      } else {
+         alert("Invite sent successfully!")
+      }
     } catch {
-      // Keep modal open on error or handle gracefully
+      alert("Failed to send invites")
     } finally {
-      setInviteBusy(false)
+      setInviteBusyIds((prev) => prev.filter((id) => id !== targetId))
     }
   }
 
@@ -306,6 +312,25 @@ export default function DiscoverPage() {
                 placeholder="Search by name, handle, or niche..."
                 className="h-11 rounded-full border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] pl-11 text-sm text-[color:var(--vooki-app-text-strong)] focus-visible:ring-[color:var(--vooki-accent)]"
               />
+            </div>
+            
+            <div className="relative w-full sm:w-64 shrink-0">
+              <select
+                value={inviteCampaignId}
+                onChange={(e) => setInviteCampaignId(e.target.value)}
+                className="w-full h-11 rounded-full border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] px-4 text-sm text-[color:var(--vooki-app-text-strong)] focus:outline-none focus:ring-2 focus:ring-[color:var(--vooki-accent)] appearance-none cursor-pointer"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                  backgroundPosition: "right 1rem center",
+                  backgroundRepeat: "no-repeat",
+                  backgroundSize: "1.5em 1.5em",
+                }}
+              >
+                <option value="" disabled>Select Target Campaign...</option>
+                {campaigns.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
@@ -358,13 +383,16 @@ export default function DiscoverPage() {
                 )}
               </div>
               {shortlistedCreators.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-[color:var(--vooki-app-border-strong)]">
+                <div className="mt-4 pt-4 border-t border-[color:var(--vooki-app-border-strong)] flex flex-col gap-2">
                   <Button
-                    onClick={() => setInviteTargetId("bulk")}
+                    onClick={() => sendInvites("bulk")}
+                    disabled={inviteBusyIds.includes("bulk") || !inviteCampaignId}
                     className="w-full h-11 rounded-full bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] hover:bg-[color:var(--vooki-accent-strong)] shadow-[var(--vooki-shadow-accent)]"
                   >
-                    <Send className="mr-2 h-4 w-4" /> Bulk Invite ({shortlist.length})
+                    {inviteBusyIds.includes("bulk") ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                    Bulk Invite ({shortlist.length})
                   </Button>
+                  {!inviteCampaignId && <p className="text-[10px] text-center text-amber-500">Select a campaign in the top bar first</p>}
                 </div>
               )}
             </DialogContent>
@@ -405,92 +433,109 @@ export default function DiscoverPage() {
           filteredCreators.map((creator) => {
             const saved = shortlist.includes(creator.id)
             const isSaving = shortlistBusyIds.includes(creator.id)
+            const hasPendingInvite = sentInvites.some((invite) => invite.influencerId === creator.id && invite.status === "pending")
 
             return (
               <div
                 key={creator.id}
-                className="group relative flex flex-col xl:flex-row xl:items-center justify-between gap-6 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-6 transition-all hover:border-[color:var(--vooki-accent)] hover:shadow-[var(--vooki-shadow-app)]"
+                className="group relative flex flex-col gap-4 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-5 transition-all hover:border-[color:var(--vooki-accent)] hover:shadow-[var(--vooki-shadow-app)]"
               >
-                {/* Creator Identity */}
-                <div className="flex items-center gap-4 xl:w-[320px] shrink-0">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-[color:var(--vooki-accent)] text-xl font-bold text-[color:var(--vooki-accent-text)] shadow-inner">
-                    {creator.name.charAt(0)}
+                {/* Top Row: Identity & Actions */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
+                  
+                  {/* Creator Identity */}
+                  <div className="flex items-center gap-4 min-w-0">
+                    <Link href={`/brand/discover/${creator.id}`} className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-[color:var(--vooki-accent)] text-xl font-bold text-[color:var(--vooki-accent-text)] shadow-inner transition-transform hover:scale-105">
+                      {creator.name.charAt(0)}
+                    </Link>
+                    <div className="min-w-0">
+                      <Link href={`/brand/discover/${creator.id}`} className="group-hover:text-[color:var(--vooki-accent)] transition-colors inline-block">
+                        <div className="flex items-center gap-1.5">
+                          <h3 className="text-base font-bold text-[color:var(--vooki-app-text-strong)] truncate">
+                            {creator.name}
+                          </h3>
+                          {creator.verified && (
+                            <Sparkles className="h-3.5 w-3.5 shrink-0 text-[color:var(--vooki-accent)]" />
+                          )}
+                        </div>
+                        {creator.handle.replace(/^@/, "") !== creator.name && (
+                          <p className="text-xs font-medium text-[color:var(--vooki-app-text-soft)] truncate">{creator.handle}</p>
+                        )}
+                      </Link>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--vooki-app-text-subtle)]">
+                        <span>{creator.niche}</span>
+                        <span className="w-1 h-1 shrink-0 rounded-full bg-[color:var(--vooki-app-border-strong)]" />
+                        <span className="flex items-center whitespace-nowrap"><MapPin className="mr-1 h-3 w-3" /> {creator.location}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-bold text-[color:var(--vooki-app-text-strong)] group-hover:text-[color:var(--vooki-accent)] transition-colors">
-                        {creator.name}
-                      </h3>
-                      {creator.verified && (
-                        <Sparkles className="h-4 w-4 text-[color:var(--vooki-accent)]" />
-                      )}
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-3 shrink-0 sm:self-center border-t border-[color:var(--vooki-app-border)] pt-4 sm:border-0 sm:pt-0">
+                    <div className="flex items-center gap-2 mr-1 sm:mr-3">
+                      <span className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold">Fit Score</span>
+                      <Badge className="bg-[color:var(--vooki-accent-soft)] text-[color:var(--vooki-app-text-strong)] border-[color:var(--vooki-accent-border)] font-bold">
+                        {creator.fitScore}%
+                      </Badge>
                     </div>
-                    <p className="text-sm font-medium text-[color:var(--vooki-app-text-soft)]">{creator.handle}</p>
-                    <div className="mt-1 flex items-center gap-2 text-xs text-[color:var(--vooki-app-text-subtle)]">
-                      <span>{creator.niche}</span>
-                      <span className="w-1 h-1 rounded-full bg-[color:var(--vooki-app-border-strong)]" />
-                      <span className="flex items-center"><MapPin className="mr-1 h-3 w-3" /> {creator.location}</span>
-                    </div>
+
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => toggleShortlist(creator.id)}
+                      disabled={isSaving}
+                      className={`h-9 w-9 rounded-full transition-colors ${saved
+                        ? "bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] hover:bg-[color:var(--vooki-accent-strong)] shadow-[var(--vooki-shadow-accent)]"
+                        : "bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-soft)] border border-[color:var(--vooki-app-border)] hover:text-[color:var(--vooki-app-text-strong)] hover:border-[color:var(--vooki-accent)]"
+                        }`}
+                    >
+                      {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Bookmark className="h-4 w-4 fill-current" /> : <BookmarkPlus className="h-4 w-4" />}
+                    </Button>
+
+                    <CreateInviteModal
+                      campaignId={inviteCampaignId}
+                      campaignName={campaigns.find((c) => c.id === inviteCampaignId)?.name || ""}
+                      preselectedInfluencerId={creator.id}
+                      onSuccess={fetchSentInvites}
+                      trigger={
+                        <Button
+                          disabled={hasPendingInvite || !inviteCampaignId}
+                          className="h-9 rounded-full bg-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-bg)] hover:bg-[color:var(--vooki-app-text)] shadow-sm px-5 text-sm font-semibold"
+                        >
+                          {hasPendingInvite ? "Pending" : "Invite"}
+                        </Button>
+                      }
+                    />
                   </div>
                 </div>
 
-                {/* Core Stats */}
-                <div className="flex-1 rounded-2xl bg-[color:var(--vooki-app-surface-strong)] p-4 border border-[color:var(--vooki-app-border)]">
-                  <div className="flex items-center gap-3 mb-3 pb-3 border-b border-[color:var(--vooki-app-border-strong)]">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)]">Primary Platforms</span>
-                    <div className="flex gap-2">
-                       <Instagram className="h-3.5 w-3.5 text-pink-500 opacity-80" />
-                       <Youtube className="h-3.5 w-3.5 text-red-500 opacity-80" />
+                {/* Bottom Row: Stats */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 rounded-2xl bg-[color:var(--vooki-app-surface-strong)]/30 p-4 border border-[color:var(--vooki-app-border)]/50 mt-1">
+                  <div className="flex flex-col gap-1 shrink-0">
+                     <span className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold">Platforms</span>
+                     <div className="flex items-center gap-2">
+                       <Instagram className="h-4 w-4 text-pink-500 opacity-80" />
+                       <Youtube className="h-4 w-4 text-red-500 opacity-80" />
+                     </div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-3 sm:gap-6 flex-1 w-full">
+                    <div>
+                      <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold mb-0.5">Audience</p>
+                      <p className="font-bold text-base text-[color:var(--vooki-app-text-strong)]">{creator.followers > 0 ? formatCompact(creator.followers) : "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold mb-0.5">Engage</p>
+                      <p className="font-bold text-base text-emerald-500">{creator.engagementRate > 0 ? `${creator.engagementRate}%` : "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold mb-0.5">Avg Views</p>
+                      <p className="font-bold text-base text-[color:var(--vooki-app-text-strong)]">{creator.avgViews > 0 ? formatCompact(creator.avgViews) : "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold mb-0.5">Est CPV</p>
+                      <p className="font-bold text-base text-[color:var(--vooki-app-text-strong)]">{creator.avgViews > 0 && creator.estCpv > 0 ? `$${creator.estCpv.toFixed(2)}` : "N/A"}</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div>
-                      <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold mb-1">Total Audience</p>
-                      <p className="font-bold text-lg text-[color:var(--vooki-app-text-strong)]">{creator.followers > 0 ? formatCompact(creator.followers) : "N/A"}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold mb-1">Engagement</p>
-                      <p className="font-bold text-lg text-emerald-500">{creator.engagementRate > 0 ? `${creator.engagementRate}%` : "N/A"}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold mb-1">Avg Views</p>
-                      <p className="font-bold text-lg text-[color:var(--vooki-app-text-strong)]">{creator.avgViews > 0 ? formatCompact(creator.avgViews) : "N/A"}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold mb-1">Est CPV</p>
-                      <p className="font-bold text-lg text-[color:var(--vooki-app-text-strong)]">{creator.avgViews > 0 && creator.estCpv > 0 ? `$${creator.estCpv.toFixed(2)}` : "N/A"}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center gap-3 xl:w-[280px] shrink-0 xl:justify-end border-t border-[color:var(--vooki-app-border)] pt-4 xl:border-0 xl:pt-0">
-                  <div className="hidden sm:block text-right mr-4">
-                    <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold mb-1">Fit Score</p>
-                    <Badge className="bg-[color:var(--vooki-accent-soft)] text-[color:var(--vooki-app-text-strong)] border-[color:var(--vooki-accent-border)] font-bold">
-                      {creator.fitScore}%
-                    </Badge>
-                  </div>
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => toggleShortlist(creator.id)}
-                    disabled={isSaving}
-                    className={`h-10 w-10 rounded-full transition-colors ${saved
-                      ? "bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] hover:bg-[color:var(--vooki-accent-strong)] shadow-[var(--vooki-shadow-accent)]"
-                      : "bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-soft)] border border-[color:var(--vooki-app-border)] hover:text-[color:var(--vooki-app-text-strong)] hover:border-[color:var(--vooki-accent)]"
-                      }`}
-                  >
-                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Bookmark className="h-4 w-4 fill-current" /> : <BookmarkPlus className="h-4 w-4" />}
-                  </Button>
-
-                  <Button
-                    onClick={() => setInviteTargetId(creator.id)}
-                    className="h-10 rounded-full bg-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-bg)] hover:bg-[color:var(--vooki-app-text)] flex-1 xl:flex-none shadow-sm px-6"
-                  >
-                    Invite
-                  </Button>
                 </div>
               </div>
             )
@@ -498,55 +543,6 @@ export default function DiscoverPage() {
         )}
       </div>
 
-      {/* 3. Campaign Selection Invite Modal */}
-      <Dialog open={!!inviteTargetId && inviteTargetId !== "bulk"} onOpenChange={(open) => !open && setInviteTargetId(null)}>
-        <DialogContent className="max-w-md bg-[color:var(--vooki-app-surface)] border-[color:var(--vooki-app-border)] text-[color:var(--vooki-app-text-strong)] shadow-[var(--vooki-shadow-card)]">
-          <DialogHeader>
-            <DialogTitle>Send Invitation</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-4">
-            <p className="text-sm text-[color:var(--vooki-app-text-soft)]">
-              Select which campaign you want to invite this creator to.
-            </p>
-
-            <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)]">
-                Target Campaign
-              </label>
-              <select
-                value={inviteCampaignId}
-                onChange={(e) => setInviteCampaignId(e.target.value)}
-                className="w-full h-11 rounded-lg border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] px-3 text-sm text-[color:var(--vooki-app-text-strong)] focus:outline-none focus:ring-2 focus:ring-[color:var(--vooki-accent)] appearance-none cursor-pointer"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                  backgroundPosition: "right 0.75rem center",
-                  backgroundRepeat: "no-repeat",
-                  backgroundSize: "1.5em 1.5em",
-                }}
-              >
-                <option value="" disabled>Select a campaign...</option>
-                {campaigns.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="pt-4 flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setInviteTargetId(null)} className="rounded-full hover:bg-[color:var(--vooki-app-surface-strong)]">
-                Cancel
-              </Button>
-              <Button
-                disabled={!inviteCampaignId || inviteBusy}
-                onClick={sendInvites}
-                className="rounded-full bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] hover:bg-[color:var(--vooki-accent-strong)] shadow-[var(--vooki-shadow-accent)] px-6"
-              >
-                {inviteBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                Send Invite
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
