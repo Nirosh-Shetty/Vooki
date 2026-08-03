@@ -52,10 +52,19 @@ export const getConversations = async (
           read: false,
         });
 
-        // Find associated invite if this is an invite thread
-        const invite = await DiscoverInviteModel.findOne({ conversationId: String(conv._id) })
-          .select('_id')
+        // Find associated invites if this is an invite thread
+        const invites = await DiscoverInviteModel.find({ conversationId: String(conv._id) })
+          .select('_id status campaignId')
           .lean();
+
+        const formattedInvites = invites.reduce((acc: any, inv: any) => {
+          acc[String(inv._id)] = {
+            id: String(inv._id),
+            status: inv.status,
+            campaignId: inv.campaignId,
+          };
+          return acc;
+        }, {});
 
         return {
           id: (conv._id as any).toString(),
@@ -65,7 +74,7 @@ export const getConversations = async (
           status: conv.status,
           unreadCount,
           otherUser,
-          inviteId: invite ? String(invite._id) : undefined,
+          invites: formattedInvites,
         };
       })
     );

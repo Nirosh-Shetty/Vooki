@@ -14,6 +14,7 @@ interface ConversationData {
   campaignId?: string;
   promotionId?: string;
   inviteId?: string;
+  invites?: Record<string, { id: string; status: string; campaignId: string; }>;
   campaignTitle?: string;
   otherUser?: {
     name: string;

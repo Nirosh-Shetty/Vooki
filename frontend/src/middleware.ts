@@ -21,7 +21,7 @@ export function middleware(req: NextRequest) {
 
   // Not logged in, block all protected pages
   if (!token && (pathname.startsWith("/brand") || pathname.startsWith("/influencer") || pathname.startsWith("/manager"))) {
-    return NextResponse.redirect(new URL("/signin11", req.url));
+    return NextResponse.redirect(new URL("/signin", req.url));
   }
 
   // Prevent users from accessing other roles' pages

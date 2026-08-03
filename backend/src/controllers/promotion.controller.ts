@@ -762,9 +762,7 @@ export const markPromotionPaid = async (
     }
 
     promotion.paymentStatus = "paid";
-    if (promotion.status !== "completed") {
-      promotion.status = "payment_pending";
-    }
+
     await promotion.save();
     await syncPromotionFinancialRecords(promotion, { ensurePendingRecords: true, markAsPaid: true });
 
