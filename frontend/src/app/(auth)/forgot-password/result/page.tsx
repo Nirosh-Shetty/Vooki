@@ -73,36 +73,36 @@ export default function ForgotPassword1ResultPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[color:var(--vooki-app-bg)] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+        <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl">
           <CardContent className="p-8">
             <div className="text-center space-y-6">
               {/* Success Icon */}
               <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto">
-                <CheckCircleIcon className="h-8 w-8 text-white" />
+                <CheckCircleIcon className="h-8 w-8 text-[color:var(--vooki-app-text-strong)]" />
               </div>
 
               <div>
-                <h2 className="text-xl font-bold text-white mb-2">
+                <h2 className="text-xl font-bold text-[color:var(--vooki-app-text-strong)] mb-2">
                   Check Your Email
                 </h2>
                 <div className="space-y-2">
-                  <p className="text-gray-300 text-sm">
+                  <p className="text-[color:var(--vooki-app-text-soft)] text-sm">
                     We&apos;ve sent a password reset link to
                   </p>
                   <div className="flex items-center justify-center gap-2">
-                    <span className="font-medium text-white">{email}</span>
+                    <span className="font-medium text-[color:var(--vooki-app-text-strong)]">{email}</span>
                     <button
                       type="button"
                       onClick={handleEditEmail}
-                      className="text-xs text-purple-400 hover:text-purple-300 underline"
+                      className="text-xs text-[color:var(--vooki-accent)] hover:text-[color:var(--vooki-accent-strong)] underline"
                     >
                       Wrong email?
                     </button>
                   </div>
                 </div>
-                <p className="text-gray-400 text-xs mt-4">
+                <p className="text-[color:var(--vooki-app-text-muted)] text-xs mt-4">
                   If you don&apos;t see the email, check your spam folder
                 </p>
               </div>
@@ -110,17 +110,17 @@ export default function ForgotPassword1ResultPage() {
               <div className="space-y-3">
                 <Button
                   onClick={() => router.push("/signin")}
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium py-3"
+                  className="w-full bg-[color:var(--vooki-accent)] hover:bg-[color:var(--vooki-accent-strong)] text-gray-900 shadow-[var(--vooki-shadow-accent)] rounded-full font-medium py-3"
                 >
                   Back to Sign In
                 </Button>
 
                 <div className="text-center">
-                  <p className="text-gray-400 text-sm mb-2">
+                  <p className="text-[color:var(--vooki-app-text-muted)] text-sm mb-2">
                     Didn&apos;t receive the email?
                   </p>
                   {countdown > 0 ? (
-                    <p className="text-gray-400 text-sm">
+                    <p className="text-[color:var(--vooki-app-text-muted)] text-sm">
                       Resend in {countdown}s
                     </p>
                   ) : (
@@ -128,7 +128,7 @@ export default function ForgotPassword1ResultPage() {
                       type="button"
                       onClick={handleResend}
                       disabled={isResending}
-                      className="text-sm text-purple-400 hover:text-purple-300 underline disabled:opacity-50"
+                      className="text-sm text-[color:var(--vooki-accent)] hover:text-[color:var(--vooki-accent-strong)] underline disabled:opacity-50"
                     >
                       {isResending ? "Sending..." : "Resend reset link"}
                     </button>

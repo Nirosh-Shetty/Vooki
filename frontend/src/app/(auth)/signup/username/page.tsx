@@ -149,7 +149,7 @@ export default function UsernamePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[color:var(--vooki-app-bg)] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Progress */}
         <div className="flex justify-center mb-8">
@@ -159,23 +159,23 @@ export default function UsernamePage() {
           </div>
         </div>
 
-        <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+        <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl">
           <CardContent className="p-8">
             {/* Header */}
             <div className="flex items-center mb-6">
               <Link href="/signup/welcome" className="mr-4">
-                <ArrowLeftIcon className="h-5 w-5 text-gray-400 hover:text-white transition-colors" />
+                <ArrowLeftIcon className="h-5 w-5 text-[color:var(--vooki-app-text-muted)] hover:text-[color:var(--vooki-app-text-strong)] transition-colors" />
               </Link>
               <div>
-                <h1 className="text-xl font-bold text-white">Choose Username</h1>
-                <p className="text-sm text-gray-400">Last step!</p>
+                <h1 className="text-xl font-bold text-[color:var(--vooki-app-text-strong)]">Choose Username</h1>
+                <p className="text-sm text-[color:var(--vooki-app-text-muted)]">Last step!</p>
               </div>
             </div>
 
             {/* User Info */}
-            <div className="flex items-center p-4 rounded-lg bg-white/5 border border-white/10 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mr-4">
-                <span className="text-white font-bold text-lg">
+            <div className="flex items-center p-4 rounded-lg bg-[color:var(--vooki-app-surface-strong)] border-[color:var(--vooki-app-border)] mb-6">
+              <div className="w-12 h-12 bg-gradient-to-r from-[color:var(--vooki-violet)] to-[color:var(--vooki-accent)] rounded-full flex items-center justify-center mr-4">
+                <span className="text-[color:var(--vooki-app-text-strong)] font-bold text-lg">
                   {userData.name
                     .split(" ")
                     .map((n: string) => n[0])
@@ -184,15 +184,15 @@ export default function UsernamePage() {
                 </span>
               </div>
               <div>
-                <p className="text-white font-medium">{userData.name}</p>
-                <p className="text-gray-400 text-sm">{userData.email}</p>
-                <p className="text-purple-400 text-xs">Signing up as {getRoleLabel()}</p>
+                <p className="text-[color:var(--vooki-app-text-strong)] font-medium">{userData.name}</p>
+                <p className="text-[color:var(--vooki-app-text-muted)] text-sm">{userData.email}</p>
+                <p className="text-[color:var(--vooki-accent)] text-xs">Signing up as {getRoleLabel()}</p>
               </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="username" className="text-white">
+                <Label htmlFor="username" className="text-[color:var(--vooki-app-text-strong)]">
                   Username
                 </Label>
                 <div className="relative">
@@ -201,7 +201,7 @@ export default function UsernamePage() {
                     placeholder="@username"
                     value={username}
                     onChange={handleUsernameChange}
-                    className={`bg-white/10 border-white/20 text-white placeholder-gray-400 pr-10 ${
+                    className={`bg-[color:var(--vooki-app-surface-strong)] border-[color:var(--vooki-app-border)] text-[color:var(--vooki-app-text-strong)] placeholder-[color:var(--vooki-app-text-muted)] pr-10 ${
                       usernameStatus === "available"
                         ? "border-green-500"
                         : usernameStatus === "taken"
@@ -211,7 +211,7 @@ export default function UsernamePage() {
                     required
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    {usernameStatus === "checking" && <LoaderIcon className="h-4 w-4 animate-spin text-gray-400" />}
+                    {usernameStatus === "checking" && <LoaderIcon className="h-4 w-4 animate-spin text-[color:var(--vooki-app-text-muted)]" />}
                     {usernameStatus === "available" && <CheckIcon className="h-4 w-4 text-green-500" />}
                     {usernameStatus === "taken" && <XIcon className="h-4 w-4 text-red-500" />}
                   </div>
@@ -226,7 +226,7 @@ export default function UsernamePage() {
                         variant="ghost"
                         size="sm"
                         onClick={generateNewSuggestions}
-                        className="text-gray-400 hover:text-white bg-transparent hover:bg-white/10 p-2 h-8 w-8 min-w-[32px] flex-shrink-0"
+                        className="text-[color:var(--vooki-app-text-muted)] hover:text-[color:var(--vooki-app-text-strong)] bg-transparent hover:bg-[color:var(--vooki-app-surface-hover)] p-2 h-8 w-8 min-w-[32px] flex-shrink-0"
                         title="Get new suggestions"
                       >
                         <RefreshCwIcon className="h-4 w-4" />
@@ -239,9 +239,9 @@ export default function UsernamePage() {
                           type="button"
                           variant="outline"
                           onClick={() => selectSuggestion(suggestion)}
-                          className="w-full bg-white/5 hover:bg-white/10 border-white/20 hover:border-purple-400/50 text-white justify-start p-4 h-12 transition-all duration-200 group touch-manipulation"
+                          className="w-full bg-[color:var(--vooki-app-surface-strong)] hover:bg-[color:var(--vooki-app-surface-hover)] border-[color:var(--vooki-app-border)] hover:border-[color:var(--vooki-app-border-strong)] text-[color:var(--vooki-app-text-strong)] justify-start p-4 h-12 transition-all duration-200 group touch-manipulation"
                         >
-                          <span className="text-purple-400 mr-3 text-base">@</span>
+                          <span className="text-[color:var(--vooki-accent)] mr-3 text-base">@</span>
                           <span className="group-hover:text-purple-300 text-base font-medium">{suggestion}</span>
                         </Button>
                       ))}
@@ -249,13 +249,13 @@ export default function UsernamePage() {
                   </div>
                 )}
 
-                <p className="text-xs text-gray-400">This will be your unique identifier on Vooki</p>
+                <p className="text-xs text-[color:var(--vooki-app-text-muted)]">This will be your unique identifier on Vooki</p>
               </div>
 
               <Button
                 type="submit"
                 disabled={isSubmitting || usernameStatus !== "available"}
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium py-3"
+                className="w-full bg-[color:var(--vooki-accent)] hover:bg-[color:var(--vooki-accent-strong)] text-gray-900 shadow-[var(--vooki-shadow-accent)] rounded-full font-medium py-3"
               >
                 {isSubmitting ? "Creating account..." : "Complete Signup"}
               </Button>

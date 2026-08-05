@@ -106,23 +106,23 @@ export default function ResetPassword1ResultPage() {
   const config = getResultConfig(status)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[color:var(--vooki-app-bg)] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+        <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl">
           <CardContent className="p-8">
             <div className="text-center space-y-6">
               <div className="flex justify-center">
-                <div className={`${config.iconColor} bg-white/10 rounded-full p-4`}>{config.icon}</div>
+                <div className={`${config.iconColor} bg-[color:var(--vooki-app-surface-strong)] rounded-full p-4`}>{config.icon}</div>
               </div>
 
               <div className="space-y-2">
-                <h1 className="text-xl font-bold text-white">{config.title}</h1>
-                <p className="text-gray-300 text-sm">{config.description}</p>
+                <h1 className="text-xl font-bold text-[color:var(--vooki-app-text-strong)]">{config.title}</h1>
+                <p className="text-[color:var(--vooki-app-text-soft)] text-sm">{config.description}</p>
               </div>
 
               <div className="space-y-3">
                 <Button
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium py-3"
+                  className="w-full bg-[color:var(--vooki-accent)] hover:bg-[color:var(--vooki-accent-strong)] text-gray-900 shadow-[var(--vooki-shadow-accent)] rounded-full font-medium py-3"
                   onClick={config.primaryAction.action}
                 >
                   {config.primaryAction.label}
@@ -131,7 +131,7 @@ export default function ResetPassword1ResultPage() {
                 {config.secondaryAction && (
                   <Button
                     variant="outline"
-                    className="w-full bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30"
+                    className="w-full bg-[color:var(--vooki-app-surface-strong)] border-[color:var(--vooki-app-border)] text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:border-[color:var(--vooki-app-border-strong)]"
                     onClick={config.secondaryAction.action}
                   >
                     {config.secondaryAction.label}
@@ -140,17 +140,17 @@ export default function ResetPassword1ResultPage() {
               </div>
 
               {status === "success" && (
-                <p className="text-gray-400 text-xs">
+                <p className="text-[color:var(--vooki-app-text-muted)] text-xs">
                   For security, you&apos;ll need to sign in again with your new password
                 </p>
               )}
 
               {status === "invalid-token" && (
-                <p className="text-gray-400 text-xs">Reset links expire after 24 hours and can only be used once</p>
+                <p className="text-[color:var(--vooki-app-text-muted)] text-xs">Reset links expire after 24 hours and can only be used once</p>
               )}
 
               {status === "rate-limited" && (
-                <p className="text-gray-400 text-xs">This helps protect your account from unauthorized access</p>
+                <p className="text-[color:var(--vooki-app-text-muted)] text-xs">This helps protect your account from unauthorized access</p>
               )}
             </div>
           </CardContent>
