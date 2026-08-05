@@ -53,7 +53,11 @@ export interface IPromotion extends Document {
     reach: number;
     views: number;
     engagement: number;
+    clicks: number;
+    conversions: number;
   };
+  brandRating?: { score: number; review: string };
+  influencerRating?: { score: number; review: string };
   deliverySubmission?: IDeliverySubmission;
   status: PromotionStatus;
   createdAt: Date;
@@ -123,6 +127,16 @@ const PromotionSchema = new Schema<IPromotion>(
       reach: { type: Number, default: 0, min: 0 },
       views: { type: Number, default: 0, min: 0 },
       engagement: { type: Number, default: 0, min: 0 },
+      clicks: { type: Number, default: 0, min: 0 },
+      conversions: { type: Number, default: 0, min: 0 },
+    },
+    brandRating: {
+      score: { type: Number, min: 1, max: 5 },
+      review: { type: String, trim: true },
+    },
+    influencerRating: {
+      score: { type: Number, min: 1, max: 5 },
+      review: { type: String, trim: true },
     },
     deliverySubmission: {
       type: DeliverySubmissionSchema,

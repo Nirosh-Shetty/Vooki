@@ -28,6 +28,6 @@ collaborationRouter.get("/invites/received", requireRole("influencer"), getRecei
 collaborationRouter.post("/invites/:inviteId/accept", requireRole("influencer"), acceptInvite);
 collaborationRouter.post("/invites/:inviteId/counter", requireRole("influencer"), counterInvite);
 collaborationRouter.post("/invites/:inviteId/ask-question", requireRole("influencer"), askQuestion);
-collaborationRouter.post("/invites/:inviteId/decline", requireRole("influencer"), declineInvite);
+collaborationRouter.post("/invites/:inviteId/decline", requireRole("influencer", "brand", "manager"), declineInvite);
 
 export default collaborationRouter;

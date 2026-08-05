@@ -6,6 +6,7 @@ export interface IMessage extends Document {
   messageType: "text" | "offer" | "counter_offer" | "system";
   text?: string;
   offerData?: {
+    inviteId?: string;
     campaignId?: string;
     promotionId?: string;
     campaignTitle?: string;
@@ -52,6 +53,7 @@ const MessageSchema = new Schema<IMessage>(
     },
 
     offerData: {
+      inviteId: { type: String, trim: true, default: "" },
       campaignId: { type: String, trim: true, default: "" },
       promotionId: { type: String, trim: true, default: "" },
       campaignTitle: { type: String, trim: true, default: "" },

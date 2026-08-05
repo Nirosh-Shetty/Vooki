@@ -21,9 +21,7 @@ export default function InfluencerMessagesPage() {
     >
       <MessagesHubProvider
         role="influencer"
-        heading="Messages"
-        subheading="Manage brand communication, approvals, and delivery updates from one inbox."
-        composerPlaceholder="Reply to brand..."
+        composerPlaceholder="Message brand..."
       />
     </Suspense>
   );

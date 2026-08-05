@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, CheckCircle2, DollarSign, Loader2, MessageSquare, Plus, Save, Trash2, TrendingUp, Check, ChevronRight, FileText, BarChart, Send, CreditCard, LayoutDashboard } from "lucide-react"
+import { ArrowLeft, CheckCircle2, DollarSign, Loader2, MessageSquare, Plus, Save, Trash2, TrendingUp, Check, ChevronRight, FileText, BarChart, Send, CreditCard, LayoutDashboard, Star } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -31,7 +31,7 @@ const statusTransitions: Record<PromotionStatus, PromotionStatus[]> = {
   content_in_progress: ["posted"],
   posted: ["metrics_submitted"],
   metrics_submitted: ["payment_pending"],
-  payment_pending: [], 
+  payment_pending: [],
   completed: [],
 }
 
@@ -69,7 +69,11 @@ type Promotion = {
     reach: number
     views: number
     engagement: number
+    clicks: number
+    conversions: number
   }
+  brandRating?: { score: number; review: string }
+  influencerRating?: { score: number; review: string }
   deliverySubmission?: {
     proofUrl?: string
     notes?: string
@@ -214,7 +218,7 @@ export function PromotionWorkspace({ promotionId, role, backHref, backLabel }: {
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  
+
   const [savingTerms, setSavingTerms] = useState(false)
   const [updatingStatus, setUpdatingStatus] = useState(false)
   const [submittingMetrics, setSubmittingMetrics] = useState(false)
@@ -222,18 +226,22 @@ export function PromotionWorkspace({ promotionId, role, backHref, backLabel }: {
   const [confirmingPayment, setConfirmingPayment] = useState(false)
   const [submittingDelivery, setSubmittingDelivery] = useState(false)
   const [reviewingDelivery, setReviewingDelivery] = useState(false)
-  
+
   const [statusAction, setStatusAction] = useState<PromotionStatus | null>(null)
   const [sendingStructuredMessage, setSendingStructuredMessage] = useState<"offer" | "counter_offer" | null>(null)
-  
+
   const [terms, setTerms] = useState<TermsFormState>({
     product: "", deliverables: [createDeliverableDraft()], draftDueAt: "", postAt: "", captionRequirements: "", hashtags: "",
     paymentAmount: "0", advanceAmount: "0", paymentDueAt: "", paymentMethod: "direct", exclusivityDays: "", discountCode: "",
   })
-  const [metrics, setMetrics] = useState({ reach: "0", views: "0", engagement: "0" })
+  const [metrics, setMetrics] = useState({ reach: "0", views: "0", engagement: "0", clicks: "0", conversions: "0" })
   const [deliveryProofUrl, setDeliveryProofUrl] = useState("")
   const [deliveryNotes, setDeliveryNotes] = useState("")
   const [reviewFeedback, setReviewFeedback] = useState("")
+  
+  const [ratingScore, setRatingScore] = useState<number>(0)
+  const [ratingReview, setRatingReview] = useState("")
+  const [submittingRating, setSubmittingRating] = useState(false)
 
   const router = useRouter()
   const { sendMessage } = useMessaging()
@@ -263,9 +271,11 @@ export function PromotionWorkspace({ promotionId, role, backHref, backLabel }: {
           discountCode: item.discountCode || "",
         })
         setMetrics({
-          reach: String(item.performance.reach || 0),
-          views: String(item.performance.views || 0),
-          engagement: String(item.performance.engagement || 0),
+          reach: String(item.performance?.reach || 0),
+          views: String(item.performance?.views || 0),
+          engagement: String(item.performance?.engagement || 0),
+          clicks: String(item.performance?.clicks || 0),
+          conversions: String(item.performance?.conversions || 0),
         })
         setDeliveryProofUrl(item.deliverySubmission?.proofUrl || "")
         setDeliveryNotes(item.deliverySubmission?.notes || "")
@@ -430,7 +440,13 @@ export function PromotionWorkspace({ promotionId, role, backHref, backLabel }: {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/promotions/${promotion.id}/performance`, {
         method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reach: Number(metrics.reach || 0), views: Number(metrics.views || 0), engagement: Number(metrics.engagement || 0) }),
+        body: JSON.stringify({ 
+          reach: Number(metrics.reach || 0), 
+          views: Number(metrics.views || 0), 
+          engagement: Number(metrics.engagement || 0),
+          clicks: Number(metrics.clicks || 0),
+          conversions: Number(metrics.conversions || 0)
+        }),
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data?.message || "Failed to submit metrics")
@@ -440,6 +456,26 @@ export function PromotionWorkspace({ promotionId, role, backHref, backLabel }: {
       setError(err instanceof Error ? err.message : "Failed to submit metrics")
     } finally {
       setSubmittingMetrics(false)
+    }
+  }
+
+  const submitRating = async () => {
+    if (!promotion || ratingScore < 1 || ratingScore > 5) return
+    setSubmittingRating(true)
+    setMessage(null)
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/promotions/${promotion.id}/rate`, {
+        method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ score: ratingScore, review: ratingReview.trim() }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data?.message || "Failed to submit rating")
+      setMessage(data?.message || "Rating submitted successfully.")
+      await loadPromotion()
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to submit rating")
+    } finally {
+      setSubmittingRating(false)
     }
   }
 
@@ -504,7 +540,7 @@ export function PromotionWorkspace({ promotionId, role, backHref, backLabel }: {
         <Button asChild variant="ghost" className="h-8 px-0 text-[color:var(--vooki-app-text-soft)] hover:bg-transparent hover:text-[color:var(--vooki-app-text-strong)]">
           <Link href={backHref}><ArrowLeft className="mr-2 h-4 w-4" />{backLabel}</Link>
         </Button>
-        
+
         <div className="flex flex-col gap-2 relative z-10">
           <h1 className="text-3xl font-bold tracking-tight text-[color:var(--vooki-app-text-strong)]">{promotion.campaignTitle}</h1>
           <div className="flex items-center gap-2">
@@ -524,11 +560,10 @@ export function PromotionWorkspace({ promotionId, role, backHref, backLabel }: {
               const isPast = idx < currentStepIndex
               return (
                 <div key={step.id} className="flex flex-col items-center gap-3 bg-[color:var(--vooki-app-bg)] px-2">
-                  <div className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all duration-300 ${
-                    isActive ? "border-[color:var(--vooki-accent)] bg-[color:var(--vooki-accent)] text-white shadow-[var(--vooki-shadow-accent)] ring-4 ring-[color:var(--vooki-accent-soft)]" : 
-                    isPast ? "border-[color:var(--vooki-accent)] bg-[color:var(--vooki-accent)] text-white" : 
-                    "border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface)] text-[color:var(--vooki-app-text-soft)]"
-                  }`}>
+                  <div className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all duration-300 ${isActive ? "border-[color:var(--vooki-accent)] bg-[color:var(--vooki-accent)] text-white shadow-[var(--vooki-shadow-accent)] ring-4 ring-[color:var(--vooki-accent-soft)]" :
+                    isPast ? "border-[color:var(--vooki-accent)] bg-[color:var(--vooki-accent)] text-white" :
+                      "border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface)] text-[color:var(--vooki-app-text-soft)]"
+                    }`}>
                     {isPast ? <Check className="h-4 w-4" /> : <span className="text-sm font-semibold">{step.id}</span>}
                   </div>
                   <span className={`text-xs font-semibold uppercase tracking-wider ${isActive ? "text-[color:var(--vooki-app-text-strong)]" : "text-[color:var(--vooki-app-text-soft)] opacity-70"}`}>{step.label}</span>
@@ -544,22 +579,22 @@ export function PromotionWorkspace({ promotionId, role, backHref, backLabel }: {
 
       {/* 2-COLUMN LAYOUT */}
       <div className="grid gap-8 lg:grid-cols-[1fr_360px] items-start">
-        
+
         {/* MAIN COLUMN: TABS */}
         <div className="w-full">
-          <Tabs defaultValue="agreement" className="w-full">
+          <Tabs defaultValue="performance" className="w-full">
             <TabsList className="w-full justify-start bg-transparent border-b border-[color:var(--vooki-app-border)] rounded-none p-0 h-auto gap-6 mb-6">
+              <TabsTrigger value="performance" className="rounded-none border-b-2 border-transparent data-[state=active]:border-[color:var(--vooki-accent)] data-[state=active]:text-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-text-soft)] data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 font-semibold tracking-wide uppercase text-[11px]">
+                <BarChart className="mr-2 h-4 w-4" /> Performance
+              </TabsTrigger>
               <TabsTrigger value="agreement" className="rounded-none border-b-2 border-transparent data-[state=active]:border-[color:var(--vooki-accent)] data-[state=active]:text-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-text-soft)] data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 font-semibold tracking-wide uppercase text-[11px]">
                 <FileText className="mr-2 h-4 w-4" /> Agreement Terms
               </TabsTrigger>
               <TabsTrigger value="delivery" className="rounded-none border-b-2 border-transparent data-[state=active]:border-[color:var(--vooki-accent)] data-[state=active]:text-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-text-soft)] data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 font-semibold tracking-wide uppercase text-[11px]">
                 <Send className="mr-2 h-4 w-4" /> Delivery & Review
               </TabsTrigger>
-              <TabsTrigger value="performance" className="rounded-none border-b-2 border-transparent data-[state=active]:border-[color:var(--vooki-accent)] data-[state=active]:text-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-text-soft)] data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0 py-3 font-semibold tracking-wide uppercase text-[11px]">
-                <BarChart className="mr-2 h-4 w-4" /> Performance
-              </TabsTrigger>
             </TabsList>
-            
+
             {/* TAB: AGREEMENT */}
             <TabsContent value="agreement" className="outline-none mt-0">
               <Card className="border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-sm rounded-3xl overflow-hidden">
@@ -572,73 +607,73 @@ export function PromotionWorkspace({ promotionId, role, backHref, backLabel }: {
                 <CardContent className="p-6 space-y-6">
                   {role === "brand" ? (
                     <div className="space-y-8">
-                        <div className="space-y-5">
-                          <div>
-                            <Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Product or service</Label>
-                            <Input value={terms.product} onChange={(e) => setTerms((prev) => ({ ...prev, product: e.target.value }))} disabled={!canEditTerms} className="h-11 rounded-xl" />
-                          </div>
-                          
-                          <div className="space-y-4 pt-6 border-t border-[color:var(--vooki-app-border-strong)]">
-                            <div className="flex items-center justify-between">
-                              <Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)]">Deliverables</Label>
-                              <Button type="button" variant="outline" size="sm" onClick={addDeliverableDraft} disabled={!canEditTerms} className="rounded-full h-8 text-xs">
-                                <Plus className="mr-2 h-3 w-3" /> Add
-                              </Button>
-                            </div>
-                            {terms.deliverables.map((deliverable, index) => {
-                              const formatOptions = getFormatOptions(deliverable.platform)
-                              return (
-                                <div key={index} className="flex flex-wrap items-end gap-3 rounded-2xl border border-[color:var(--vooki-app-border)] p-4 bg-[color:var(--vooki-app-surface-strong)]">
-                                  <div className="flex-1 min-w-[120px]">
-                                    <Label className="text-[10px] uppercase tracking-wider mb-1 block opacity-70">Platform</Label>
-                                    <select value={deliverable.platform} onChange={(e) => handleDeliverablePlatformChange(index, e.target.value)} disabled={!canEditTerms} className="h-10 w-full rounded-xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface)] px-3 text-sm focus:ring-2 focus:ring-[color:var(--vooki-accent)] outline-none">
-                                      {PLATFORM_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                                    </select>
-                                  </div>
-                                  <div className="flex-1 min-w-[120px]">
-                                    <Label className="text-[10px] uppercase tracking-wider mb-1 block opacity-70">Format</Label>
-                                    <select value={deliverable.format} onChange={(e) => updateDeliverableDraft(index, { format: e.target.value })} disabled={!canEditTerms} className="h-10 w-full rounded-xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface)] px-3 text-sm focus:ring-2 focus:ring-[color:var(--vooki-accent)] outline-none">
-                                      {formatOptions.map((f) => <option key={f} value={f}>{humanizeLabel(f)}</option>)}
-                                    </select>
-                                  </div>
-                                  <div className="w-24">
-                                    <Label className="text-[10px] uppercase tracking-wider mb-1 block opacity-70">Qty</Label>
-                                    <Input type="number" min={1} value={deliverable.quantity} onChange={(e) => updateDeliverableDraft(index, { quantity: e.target.value })} disabled={!canEditTerms} className="h-10 rounded-xl" />
-                                  </div>
-                                  <Button type="button" variant="ghost" size="icon" onClick={() => removeDeliverableDraft(index)} disabled={!canEditTerms || terms.deliverables.length === 1} className="h-10 w-10 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl shrink-0">
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              )
-                            })}
-                          </div>
-
-                          <div className="grid gap-6 sm:grid-cols-2 pt-6 border-t border-[color:var(--vooki-app-border-strong)]">
-                            <div><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Draft Due</Label><Input type="date" value={terms.draftDueAt} onChange={(e) => setTerms((prev) => ({ ...prev, draftDueAt: e.target.value }))} disabled={!canEditTerms} className="h-11 rounded-xl" /></div>
-                            <div><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Post Due</Label><Input type="date" value={terms.postAt} onChange={(e) => setTerms((prev) => ({ ...prev, postAt: e.target.value }))} disabled={!canEditTerms} className="h-11 rounded-xl" /></div>
-                            <div className="sm:col-span-2"><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Caption requirements</Label><Textarea value={terms.captionRequirements} onChange={(e) => setTerms((prev) => ({ ...prev, captionRequirements: e.target.value }))} disabled={!canEditTerms} className="rounded-xl min-h-[100px] resize-y" /></div>
-                            <div className="sm:col-span-2"><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Hashtags (comma separated)</Label><Input value={terms.hashtags} onChange={(e) => setTerms((prev) => ({ ...prev, hashtags: e.target.value }))} disabled={!canEditTerms} className="h-11 rounded-xl" /></div>
-                          </div>
-
-                          <div className="grid gap-6 sm:grid-cols-2 pt-6 border-t border-[color:var(--vooki-app-border-strong)]">
-                            <div><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Payout Amount</Label><Input type="number" min={0} value={terms.paymentAmount} onChange={(e) => setTerms((prev) => ({ ...prev, paymentAmount: e.target.value }))} disabled={!canEditTerms} className="h-11 rounded-xl" /></div>
-                            <div><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Advance Amount</Label><Input type="number" min={0} value={terms.advanceAmount} onChange={(e) => setTerms((prev) => ({ ...prev, advanceAmount: e.target.value }))} disabled={!canEditTerms} className="h-11 rounded-xl" /></div>
-                            <div><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Payment Due</Label><Input type="date" value={terms.paymentDueAt} onChange={(e) => setTerms((prev) => ({ ...prev, paymentDueAt: e.target.value }))} disabled={!canEditTerms} className="h-11 rounded-xl" /></div>
-                            <div>
-                              <Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Payment Method</Label>
-                              <select value={terms.paymentMethod} onChange={(e) => setTerms((prev) => ({ ...prev, paymentMethod: e.target.value }))} disabled={!canEditTerms} className="h-11 w-full rounded-xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface)] px-3 text-sm focus:ring-2 focus:ring-[color:var(--vooki-accent)] outline-none">
-                                <option value="direct">Direct payment</option><option value="escrow">Escrow</option>
-                              </select>
-                            </div>
-                            <div><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Exclusivity Days</Label><Input type="number" min={0} value={terms.exclusivityDays} onChange={(e) => setTerms((prev) => ({ ...prev, exclusivityDays: e.target.value }))} disabled={!canEditTerms} className="h-11 rounded-xl" /></div>
-                            <div><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Discount Code</Label><Input value={terms.discountCode} onChange={(e) => setTerms((prev) => ({ ...prev, discountCode: e.target.value }))} disabled={!canEditTerms} className="h-11 rounded-xl" /></div>
-                          </div>
+                      <div className="space-y-5">
+                        <div>
+                          <Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Product or service</Label>
+                          <Input value={terms.product} onChange={(e) => setTerms((prev) => ({ ...prev, product: e.target.value }))} disabled={!canEditTerms} className="h-11 rounded-xl" />
                         </div>
-                        {canEditTerms && (
-                          <Button onClick={saveTerms} disabled={savingTerms} className="w-full sm:w-auto rounded-full bg-[color:var(--vooki-accent)] text-white hover:bg-[color:var(--vooki-accent-strong)] px-8 shadow-[var(--vooki-shadow-accent)] h-11">
-                            {savingTerms ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Agreement
-                          </Button>
-                        )}
+
+                        <div className="space-y-4 pt-6 border-t border-[color:var(--vooki-app-border-strong)]">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)]">Deliverables</Label>
+                            <Button type="button" variant="outline" size="sm" onClick={addDeliverableDraft} disabled={!canEditTerms} className="rounded-full h-8 text-xs">
+                              <Plus className="mr-2 h-3 w-3" /> Add
+                            </Button>
+                          </div>
+                          {terms.deliverables.map((deliverable, index) => {
+                            const formatOptions = getFormatOptions(deliverable.platform)
+                            return (
+                              <div key={index} className="flex flex-wrap items-end gap-3 rounded-2xl border border-[color:var(--vooki-app-border)] p-4 bg-[color:var(--vooki-app-surface-strong)]">
+                                <div className="flex-1 min-w-[120px]">
+                                  <Label className="text-[10px] uppercase tracking-wider mb-1 block opacity-70">Platform</Label>
+                                  <select value={deliverable.platform} onChange={(e) => handleDeliverablePlatformChange(index, e.target.value)} disabled={!canEditTerms} className="h-10 w-full rounded-xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface)] px-3 text-sm focus:ring-2 focus:ring-[color:var(--vooki-accent)] outline-none">
+                                    {PLATFORM_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                                  </select>
+                                </div>
+                                <div className="flex-1 min-w-[120px]">
+                                  <Label className="text-[10px] uppercase tracking-wider mb-1 block opacity-70">Format</Label>
+                                  <select value={deliverable.format} onChange={(e) => updateDeliverableDraft(index, { format: e.target.value })} disabled={!canEditTerms} className="h-10 w-full rounded-xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface)] px-3 text-sm focus:ring-2 focus:ring-[color:var(--vooki-accent)] outline-none">
+                                    {formatOptions.map((f) => <option key={f} value={f}>{humanizeLabel(f)}</option>)}
+                                  </select>
+                                </div>
+                                <div className="w-24">
+                                  <Label className="text-[10px] uppercase tracking-wider mb-1 block opacity-70">Qty</Label>
+                                  <Input type="number" min={1} value={deliverable.quantity} onChange={(e) => updateDeliverableDraft(index, { quantity: e.target.value })} disabled={!canEditTerms} className="h-10 rounded-xl" />
+                                </div>
+                                <Button type="button" variant="ghost" size="icon" onClick={() => removeDeliverableDraft(index)} disabled={!canEditTerms || terms.deliverables.length === 1} className="h-10 w-10 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl shrink-0">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )
+                          })}
+                        </div>
+
+                        <div className="grid gap-6 sm:grid-cols-2 pt-6 border-t border-[color:var(--vooki-app-border-strong)]">
+                          <div><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Draft Due</Label><Input type="date" value={terms.draftDueAt} onChange={(e) => setTerms((prev) => ({ ...prev, draftDueAt: e.target.value }))} disabled={!canEditTerms} className="h-11 rounded-xl" /></div>
+                          <div><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Post Due</Label><Input type="date" value={terms.postAt} onChange={(e) => setTerms((prev) => ({ ...prev, postAt: e.target.value }))} disabled={!canEditTerms} className="h-11 rounded-xl" /></div>
+                          <div className="sm:col-span-2"><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Caption requirements</Label><Textarea value={terms.captionRequirements} onChange={(e) => setTerms((prev) => ({ ...prev, captionRequirements: e.target.value }))} disabled={!canEditTerms} className="rounded-xl min-h-[100px] resize-y" /></div>
+                          <div className="sm:col-span-2"><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Hashtags (comma separated)</Label><Input value={terms.hashtags} onChange={(e) => setTerms((prev) => ({ ...prev, hashtags: e.target.value }))} disabled={!canEditTerms} className="h-11 rounded-xl" /></div>
+                        </div>
+
+                        <div className="grid gap-6 sm:grid-cols-2 pt-6 border-t border-[color:var(--vooki-app-border-strong)]">
+                          <div><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Payout Amount</Label><Input type="number" min={0} value={terms.paymentAmount} onChange={(e) => setTerms((prev) => ({ ...prev, paymentAmount: e.target.value }))} disabled={!canEditTerms} className="h-11 rounded-xl" /></div>
+                          <div><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Advance Amount</Label><Input type="number" min={0} value={terms.advanceAmount} onChange={(e) => setTerms((prev) => ({ ...prev, advanceAmount: e.target.value }))} disabled={!canEditTerms} className="h-11 rounded-xl" /></div>
+                          <div><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Payment Due</Label><Input type="date" value={terms.paymentDueAt} onChange={(e) => setTerms((prev) => ({ ...prev, paymentDueAt: e.target.value }))} disabled={!canEditTerms} className="h-11 rounded-xl" /></div>
+                          <div>
+                            <Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Payment Method</Label>
+                            <select value={terms.paymentMethod} onChange={(e) => setTerms((prev) => ({ ...prev, paymentMethod: e.target.value }))} disabled={!canEditTerms} className="h-11 w-full rounded-xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface)] px-3 text-sm focus:ring-2 focus:ring-[color:var(--vooki-accent)] outline-none">
+                              <option value="direct">Direct payment</option><option value="escrow">Escrow</option>
+                            </select>
+                          </div>
+                          <div><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Exclusivity Days</Label><Input type="number" min={0} value={terms.exclusivityDays} onChange={(e) => setTerms((prev) => ({ ...prev, exclusivityDays: e.target.value }))} disabled={!canEditTerms} className="h-11 rounded-xl" /></div>
+                          <div><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Discount Code</Label><Input value={terms.discountCode} onChange={(e) => setTerms((prev) => ({ ...prev, discountCode: e.target.value }))} disabled={!canEditTerms} className="h-11 rounded-xl" /></div>
+                        </div>
+                      </div>
+                      {canEditTerms && (
+                        <Button onClick={saveTerms} disabled={savingTerms} className="w-full sm:w-auto rounded-full bg-[color:var(--vooki-accent)] text-white hover:bg-[color:var(--vooki-accent-strong)] px-8 shadow-[var(--vooki-shadow-accent)] h-11">
+                          {savingTerms ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Agreement
+                        </Button>
+                      )}
                     </div>
                   ) : (
                     <div className="grid gap-8 sm:grid-cols-2">
@@ -740,18 +775,32 @@ export function PromotionWorkspace({ promotionId, role, backHref, backLabel }: {
                 </CardHeader>
                 <CardContent className="p-6">
                   {promotion.status === "metrics_submitted" || promotion.status === "payment_pending" || promotion.status === "completed" ? (
-                    <div className="grid gap-6 sm:grid-cols-3">
-                      <div className="p-6 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-center shadow-sm">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="p-4 sm:p-5 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-center shadow-sm min-w-0">
                         <p className="text-[11px] font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest mb-2">Reach</p>
-                        <p className="text-3xl font-bold">{promotion.performance.reach.toLocaleString()}</p>
+                        <p className="text-xl sm:text-2xl font-bold tracking-tight whitespace-nowrap">{promotion.performance.reach.toLocaleString()}</p>
                       </div>
-                      <div className="p-6 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-center shadow-sm">
+                      <div className="p-4 sm:p-5 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-center shadow-sm min-w-0">
                         <p className="text-[11px] font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest mb-2">Views</p>
-                        <p className="text-3xl font-bold">{promotion.performance.views.toLocaleString()}</p>
+                        <p className="text-xl sm:text-2xl font-bold tracking-tight whitespace-nowrap">{promotion.performance.views.toLocaleString()}</p>
                       </div>
-                      <div className="p-6 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-center shadow-sm">
+                      <div className="p-4 sm:p-5 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-center shadow-sm min-w-0">
                         <p className="text-[11px] font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest mb-2">Engagement</p>
-                        <p className="text-3xl font-bold">{promotion.performance.engagement}%</p>
+                        <p className="text-xl sm:text-2xl font-bold tracking-tight whitespace-nowrap">{promotion.performance.engagement}%</p>
+                      </div>
+                      <div className="p-4 sm:p-5 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-center shadow-sm min-w-0">
+                        <p className="text-[11px] font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest mb-2">Clicks</p>
+                        <p className="text-xl sm:text-2xl font-bold tracking-tight whitespace-nowrap">{promotion.performance.clicks.toLocaleString()}</p>
+                      </div>
+                      <div className="p-4 sm:p-5 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-center shadow-sm min-w-0">
+                        <p className="text-[11px] font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest mb-2">Conversions</p>
+                        <p className="text-xl sm:text-2xl font-bold tracking-tight whitespace-nowrap">{promotion.performance.conversions.toLocaleString()}</p>
+                      </div>
+                      <div className="p-4 sm:p-5 rounded-3xl border border-emerald-200 bg-emerald-50 text-center shadow-sm flex flex-col justify-center min-w-0">
+                        <p className="text-[11px] font-semibold text-emerald-800/70 uppercase tracking-widest mb-2">Cost per View</p>
+                        <p className="text-xl sm:text-2xl font-bold text-emerald-700 tracking-tight whitespace-nowrap">
+                          {promotion.performance.views > 0 ? `$${(promotion.paymentAmount / promotion.performance.views).toFixed(2)}` : "—"}
+                        </p>
                       </div>
                     </div>
                   ) : (
@@ -775,11 +824,11 @@ export function PromotionWorkspace({ promotionId, role, backHref, backLabel }: {
                 <LayoutDashboard className="mr-2 h-4 w-4 text-[color:var(--vooki-accent)]" /> ACTION CENTER
               </h3>
             </div>
-            
+
             <CardContent className="p-6 space-y-8">
               {/* PRIMARY ACTION BLOCK BASED ON CONTEXT */}
               <div className="space-y-4">
-                
+
                 {/* 1. Planning Phase Actions */}
                 {isPlanningPhase && (
                   <div className="space-y-4">
@@ -847,6 +896,8 @@ export function PromotionWorkspace({ promotionId, role, backHref, backLabel }: {
                       <div><Label className="text-[10px] uppercase tracking-wider mb-1 block">Reach</Label><Input type="number" min={0} value={metrics.reach} onChange={(e) => setMetrics((prev) => ({ ...prev, reach: e.target.value }))} className="h-10 text-sm rounded-xl" /></div>
                       <div><Label className="text-[10px] uppercase tracking-wider mb-1 block">Views</Label><Input type="number" min={0} value={metrics.views} onChange={(e) => setMetrics((prev) => ({ ...prev, views: e.target.value }))} className="h-10 text-sm rounded-xl" /></div>
                       <div className="col-span-2"><Label className="text-[10px] uppercase tracking-wider mb-1 block">Engagement %</Label><Input type="number" min={0} step="0.01" value={metrics.engagement} onChange={(e) => setMetrics((prev) => ({ ...prev, engagement: e.target.value }))} className="h-10 text-sm rounded-xl" /></div>
+                      <div><Label className="text-[10px] uppercase tracking-wider mb-1 block">Clicks</Label><Input type="number" min={0} value={metrics.clicks} onChange={(e) => setMetrics((prev) => ({ ...prev, clicks: e.target.value }))} className="h-10 text-sm rounded-xl" /></div>
+                      <div><Label className="text-[10px] uppercase tracking-wider mb-1 block">Conversions</Label><Input type="number" min={0} value={metrics.conversions} onChange={(e) => setMetrics((prev) => ({ ...prev, conversions: e.target.value }))} className="h-10 text-sm rounded-xl" /></div>
                     </div>
                     <Button onClick={submitPerformance} disabled={submittingMetrics} className="w-full rounded-full h-11 bg-slate-900 text-white hover:bg-slate-800 shadow-md">
                       {submittingMetrics ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <TrendingUp className="mr-2 h-4 w-4" />} Submit Metrics
@@ -878,10 +929,43 @@ export function PromotionWorkspace({ promotionId, role, backHref, backLabel }: {
                   </div>
                 )}
 
+                {/* 8. Rating Form (when completed) */}
+                {promotion.status === "completed" && (
+                  <div className="space-y-4 pt-6 border-t border-[color:var(--vooki-app-border-strong)]">
+                    <p className="text-sm font-semibold">Rate this Collab</p>
+                    {((role === "brand" && promotion.influencerRating) || (role === "influencer" && promotion.brandRating)) ? (
+                      <div className="p-4 bg-[color:var(--vooki-app-surface-strong)] rounded-2xl border border-[color:var(--vooki-app-border)]">
+                        <div className="flex gap-1 mb-2">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Star key={i} className={`h-4 w-4 ${(role === "brand" ? promotion.influencerRating?.score : promotion.brandRating?.score)! > i ? "fill-amber-400 text-amber-400" : "text-[color:var(--vooki-app-border-strong)]"}`} />
+                          ))}
+                        </div>
+                        <p className="text-sm italic text-[color:var(--vooki-app-text-soft)]">
+                          &quot;{role === "brand" ? promotion.influencerRating?.review : promotion.brandRating?.review}&quot;
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex gap-2">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <button key={i} onClick={() => setRatingScore(i + 1)} className="hover:scale-110 transition-transform">
+                              <Star className={`h-6 w-6 ${ratingScore > i ? "fill-amber-400 text-amber-400" : "text-[color:var(--vooki-app-border-strong)] hover:text-amber-200"}`} />
+                            </button>
+                          ))}
+                        </div>
+                        <Textarea value={ratingReview} onChange={(e) => setRatingReview(e.target.value)} placeholder="Write a review..." className="text-sm min-h-[80px] rounded-xl" />
+                        <Button onClick={submitRating} disabled={submittingRating || ratingScore === 0} className="w-full rounded-full h-11 bg-slate-900 text-white hover:bg-slate-800 shadow-md">
+                          {submittingRating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Star className="mr-2 h-4 w-4" />} Submit Rating
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {(!isPlanningPhase && allowedNextStatuses.length === 0 && promotion.status !== "payment_pending") && (
-                   <p className="text-xs text-center text-[color:var(--vooki-app-text-soft)] italic pt-4">
-                     Waiting on the other party or next steps.
-                   </p>
+                  <p className="text-xs text-center text-[color:var(--vooki-app-text-soft)] italic pt-4">
+                    Waiting on the other party or next steps.
+                  </p>
                 )}
 
               </div>

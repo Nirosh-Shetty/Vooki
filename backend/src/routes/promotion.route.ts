@@ -12,6 +12,7 @@ import {
   updatePromotionStatus,
   updatePromotionTerms,
   confirmPaymentReceived,
+  ratePromotion,
 } from "../controllers/promotion.controller";
 
 const promotionRouter = express.Router();
@@ -28,5 +29,6 @@ promotionRouter.patch("/:promotionId/delivery/review", requireRole("brand", "man
 promotionRouter.patch("/:promotionId/performance", requireRole("influencer"), submitPromotionPerformance);
 promotionRouter.patch("/:promotionId/payment", requireRole("brand", "manager"), markPromotionPaid);
 promotionRouter.patch("/:promotionId/payment/confirm", requireRole("influencer"), confirmPaymentReceived);
+promotionRouter.patch("/:promotionId/rate", requireRole("brand", "manager", "influencer"), ratePromotion);
 
 export default promotionRouter;

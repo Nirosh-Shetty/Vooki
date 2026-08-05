@@ -5,22 +5,26 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   CalendarDays,
   CheckCircle2,
-  CirclePause,
-  Clock3,
+  ChevronRight,
   Filter,
-  Flag,
-  Layers3,
   Plus,
   Search,
   Target,
-  TrendingUp,
   Users,
+  Activity
 } from "lucide-react"
 
 type CampaignStatus = "draft" | "active" | "paused" | "completed" | "archived"
@@ -46,140 +50,8 @@ type Campaign = {
   deliverablesTotal: number
 }
 
-// const seedCampaigns: Campaign[] = [
-//   {
-//     id: "cmp_01",
-//     name: "Spring Launch Burst",
-//     objective: "Drive product awareness across short-form channels",
-//     niche: "Lifestyle",
-//     status: "active",
-//     priority: "high",
-//     paymentMethod: "direct",
-//     budgetTotal: 14500,
-//     budgetSpent: 8200,
-//     roi: 4.1,
-//     startDate: "2026-02-05",
-//     endDate: "2026-03-02",
-//     invitedCreators: 21,
-//     acceptedCreators: 11,
-//     deliverablesDone: 18,
-//     deliverablesTotal: 32,
-//   },
-//   {
-//     id: "cmp_02",
-//     name: "Creator Testimonial Series",
-//     objective: "Build social proof for paid ads and website",
-//     niche: "Tech",
-//     status: "active",
-//     priority: "medium",
-//     paymentMethod: "direct",
-//     budgetTotal: 9200,
-//     budgetSpent: 4100,
-//     roi: 3.6,
-//     startDate: "2026-02-11",
-//     endDate: "2026-03-06",
-//     invitedCreators: 14,
-//     acceptedCreators: 7,
-//     deliverablesDone: 9,
-//     deliverablesTotal: 20,
-//   },
-//   {
-//     id: "cmp_03",
-//     name: "Feature Deep-Dive Reels",
-//     objective: "Explain key features with trusted creators",
-//     niche: "Consumer Tech",
-//     status: "draft",
-//     priority: "medium",
-//     paymentMethod: "direct",
-//     budgetTotal: 7100,
-//     budgetSpent: 0,
-//     roi: 0,
-//     startDate: "2026-03-08",
-//     endDate: "2026-03-28",
-//     invitedCreators: 0,
-//     acceptedCreators: 0,
-//     deliverablesDone: 0,
-//     deliverablesTotal: 16,
-//   },
-//   {
-//     id: "cmp_04",
-//     name: "Valentine Weekend Push",
-//     objective: "Boost weekend sales with urgency-focused content",
-//     niche: "Fashion",
-//     status: "completed",
-//     priority: "high",
-//     paymentMethod: "direct",
-//     budgetTotal: 5800,
-//     budgetSpent: 5760,
-//     roi: 5.2,
-//     startDate: "2026-01-30",
-//     endDate: "2026-02-14",
-//     invitedCreators: 10,
-//     acceptedCreators: 8,
-//     deliverablesDone: 24,
-//     deliverablesTotal: 24,
-//   },
-//   {
-//     id: "cmp_05",
-//     name: "Ambassador Retainer Q1",
-//     objective: "Always-on awareness through recurring creators",
-//     niche: "Wellness",
-//     status: "paused",
-//     priority: "low",
-//     paymentMethod: "direct",
-//     budgetTotal: 12000,
-//     budgetSpent: 6900,
-//     roi: 2.7,
-//     startDate: "2026-01-15",
-//     endDate: "2026-03-31",
-//     invitedCreators: 18,
-//     acceptedCreators: 9,
-//     deliverablesDone: 13,
-//     deliverablesTotal: 36,
-//   },
-//   {
-//     id: "cmp_06",
-//     name: "Holiday UGC Archive",
-//     objective: "Retire and archive Q4 performance assets",
-//     niche: "General",
-//     status: "archived",
-//     priority: "low",
-//     paymentMethod: "direct",
-//     budgetTotal: 4000,
-//     budgetSpent: 4000,
-//     roi: 3.2,
-//     startDate: "2025-11-18",
-//     endDate: "2025-12-28",
-//     invitedCreators: 12,
-//     acceptedCreators: 9,
-//     deliverablesDone: 27,
-//     deliverablesTotal: 27,
-//   },
-// ]
-
 type CampaignListResponse = {
   items?: Campaign[]
-}
-
-type PromotionStatus =
-  | "requested"
-  | "negotiating"
-  | "accepted"
-  | "content_in_progress"
-  | "posted"
-  | "metrics_submitted"
-  | "payment_pending"
-  | "completed"
-
-type PromotionItem = {
-  id: string
-  campaignTitle: string
-  status: PromotionStatus
-  paymentStatus: "pending" | "paid"
-}
-
-type PromotionListResponse = {
-  items?: PromotionItem[]
 }
 
 const statusOrder: CampaignStatus[] = ["draft", "active", "paused", "completed", "archived"]
@@ -191,28 +63,17 @@ const formatDate = (value: string) =>
   new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })
 
 const statusPillClass: Record<CampaignStatus, string> = {
-  draft: "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200",
-  active: "bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300",
-  paused: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
-  completed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
-  archived: "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300",
+  draft: "bg-slate-100 text-slate-700 border-slate-200",
+  active: "bg-cyan-50 text-cyan-700 border-cyan-200",
+  paused: "bg-amber-50 text-amber-700 border-amber-200",
+  completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  archived: "bg-slate-100 text-slate-700 border-slate-200",
 }
 
 const priorityPillClass: Record<CampaignPriority, string> = {
-  low: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-  medium: "bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300",
-  high: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
-}
-
-const promotionPillClass: Record<PromotionStatus, string> = {
-  requested: "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200",
-  negotiating: "bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300",
-  accepted: "bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300",
-  content_in_progress: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
-  posted: "bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300",
-  metrics_submitted: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
-  payment_pending: "bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300",
-  completed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
+  low: "bg-slate-100 text-slate-700",
+  medium: "bg-orange-50 text-orange-700",
+  high: "bg-rose-50 text-rose-700",
 }
 
 export default function CampaignsPage() {
@@ -223,7 +84,6 @@ export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [promotions, setPromotions] = useState<PromotionItem[]>([])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -246,7 +106,6 @@ export default function CampaignsPage() {
         }
       } catch (err: unknown) {
         if (err instanceof DOMException && err.name === "AbortError") return
-        // setCampaigns(seedCampaigns)
         setError("Showing preview campaign data. Live campaign API unavailable.")
       } finally {
         setLoading(false)
@@ -254,30 +113,6 @@ export default function CampaignsPage() {
     }
 
     loadCampaigns()
-    return () => controller.abort()
-  }, [])
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    const loadPromotions = async () => {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/promotions?status=all&limit=6`, {
-          credentials: "include",
-          signal: controller.signal,
-        })
-        if (!response.ok) return
-
-        const data: PromotionListResponse = await response.json()
-        if (Array.isArray(data?.items)) {
-          setPromotions(data.items)
-        }
-      } catch (err: unknown) {
-        if (err instanceof DOMException && err.name === "AbortError") return
-      }
-    }
-
-    loadPromotions()
     return () => controller.abort()
   }, [])
 
@@ -316,8 +151,6 @@ export default function CampaignsPage() {
     const active = campaigns.filter((campaign) => campaign.status === "active")
     const activeSpend = active.reduce((sum, campaign) => sum + campaign.budgetSpent, 0)
     const activeBudget = active.reduce((sum, campaign) => sum + campaign.budgetTotal, 0)
-    const deliverablesDone = active.reduce((sum, campaign) => sum + campaign.deliverablesDone, 0)
-    const deliverablesTotal = active.reduce((sum, campaign) => sum + campaign.deliverablesTotal, 0)
     const avgRoi = active.length ? active.reduce((sum, campaign) => sum + campaign.roi, 0) / active.length : 0
 
     return {
@@ -325,388 +158,226 @@ export default function CampaignsPage() {
       activeSpend,
       activeBudget,
       avgRoi,
-      deliveryRate: deliverablesTotal ? Math.round((deliverablesDone / deliverablesTotal) * 100) : 0,
     }
   }, [campaigns])
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:space-y-8 lg:px-8">
-      <Card className="border-white/60 bg-white/85 shadow-xl shadow-cyan-100/40 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-cyan-900/10">
-        <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-          <div>
-            <Badge className="border-0 bg-amber-100 text-amber-800 hover:bg-amber-100 dark:bg-amber-500/20 dark:text-amber-300">
-              Campaign Control
-            </Badge>
-            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
-              Campaign Operations
-            </h1>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-              Manage lifecycle, creator execution, and budget pacing in one workflow.
-            </p>
-          </div>
-          <Button asChild className="w-full bg-slate-900 text-white hover:bg-slate-800 sm:w-auto dark:bg-cyan-600 dark:hover:bg-cyan-700">
-            <Link href="/brand/campaigns/new">
-              <Plus className="mr-2 h-4 w-4" /> New campaign
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-          <CardContent className="p-4">
-            <p className="text-xs text-slate-500 dark:text-slate-400">Active Campaigns</p>
-            <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{kpi.activeCampaigns}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-          <CardContent className="p-4">
-            <p className="text-xs text-slate-500 dark:text-slate-400">Active Spend</p>
-            <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{formatMoney(kpi.activeSpend)}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-          <CardContent className="p-4">
-            <p className="text-xs text-slate-500 dark:text-slate-400">Budget Committed</p>
-            <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{formatMoney(kpi.activeBudget)}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-          <CardContent className="p-4">
-            <p className="text-xs text-slate-500 dark:text-slate-400">Avg ROI (Active)</p>
-            <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{kpi.avgRoi.toFixed(1)}x</p>
-          </CardContent>
-        </Card>
-        <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-          <CardContent className="p-4">
-            <p className="text-xs text-slate-500 dark:text-slate-400">Delivery Progress</p>
-            <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">{kpi.deliveryRate}%</p>
-          </CardContent>
-        </Card>
+    <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-6 sm:px-6 lg:px-8">
+      
+      {/* 1. Sleek Header Row */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-[color:var(--vooki-app-text-strong)]">
+            Campaigns
+          </h1>
+          <p className="mt-1 text-sm text-[color:var(--vooki-app-text-soft)]">
+            Manage your marketing initiatives and creator budgets.
+          </p>
+        </div>
+        <Button asChild className="shrink-0 bg-[color:var(--vooki-accent)] text-white hover:bg-[color:var(--vooki-accent-strong)] shadow-[var(--vooki-shadow-accent)] rounded-full px-6">
+          <Link href="/brand/campaigns/new">
+            <Plus className="mr-2 h-4 w-4" /> Create Campaign
+          </Link>
+        </Button>
       </div>
 
-      <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-        <CardContent className="space-y-4 p-4 sm:p-5">
-          <div className="grid gap-3 lg:grid-cols-[1fr_auto_auto]">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                className="h-10 border-slate-300 bg-white pl-10 text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                placeholder="Search campaign name, niche, or objective"
-              />
+      {/* 2. Compact KPI Bar */}
+      <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl overflow-hidden">
+        <CardContent className="grid gap-6 p-6 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[color:var(--vooki-app-border-strong)]">
+          <div className="flex items-center gap-4 px-2">
+            <div className="rounded-full bg-cyan-50 p-2.5 text-cyan-600">
+              <Activity className="h-5 w-5" />
             </div>
-
-            <div className="flex rounded-xl border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900">
-              <button
-                onClick={() => setPriorityFilter("all")}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium ${priorityFilter === "all"
-                  ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
-                  : "text-slate-600 dark:text-slate-300"
-                  }`}
-              >
-                All Priority
-              </button>
-              <button
-                onClick={() => setPriorityFilter("high")}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium ${priorityFilter === "high"
-                  ? "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300"
-                  : "text-slate-600 dark:text-slate-300"
-                  }`}
-              >
-                High
-              </button>
-              <button
-                onClick={() => setPriorityFilter("medium")}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium ${priorityFilter === "medium"
-                  ? "bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300"
-                  : "text-slate-600 dark:text-slate-300"
-                  }`}
-              >
-                Medium
-              </button>
-              <button
-                onClick={() => setPriorityFilter("low")}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium ${priorityFilter === "low"
-                  ? "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200"
-                  : "text-slate-600 dark:text-slate-300"
-                  }`}
-              >
-                Low
-              </button>
+            <div>
+              <p className="text-xs font-medium text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider">Active Campaigns</p>
+              <p className="text-2xl font-bold text-[color:var(--vooki-app-text-strong)]">{kpi.activeCampaigns}</p>
             </div>
-
-            <Button
-              variant="outline"
-              onClick={() => {
-                setSearch("")
-                setStatusFilter("all")
-                setPriorityFilter("all")
-              }}
-              className="h-10 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-            >
-              <Filter className="mr-2 h-4 w-4" />
-              Reset
-            </Button>
           </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setStatusFilter("all")}
-              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${statusFilter === "all"
-                ? "border-cyan-300 bg-cyan-100 text-cyan-900 dark:border-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300"
-                : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-                }`}
-            >
-              All ({campaigns.length})
-            </button>
-            {statusOrder.map((status) => (
-              <button
-                key={status}
-                onClick={() => setStatusFilter(status)}
-                className={`rounded-full border px-3 py-1.5 text-xs font-medium capitalize transition-colors ${statusFilter === status
-                  ? "border-cyan-300 bg-cyan-100 text-cyan-900 dark:border-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300"
-                  : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-                  }`}
-              >
-                {status} ({statusCount[status]})
-              </button>
-            ))}
+          <div className="flex items-center gap-4 px-2 pt-4 sm:pt-0">
+            <div className="rounded-full bg-emerald-50 p-2.5 text-emerald-600">
+              <Target className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider">Active Spend</p>
+              <p className="text-2xl font-bold text-[color:var(--vooki-app-text-strong)]">{formatMoney(kpi.activeSpend)}</p>
+            </div>
           </div>
-          {loading ? <p className="text-xs text-slate-500 dark:text-slate-400">Loading campaigns...</p> : null}
-          {error ? <p className="text-xs text-amber-700 dark:text-amber-300">{error}</p> : null}
+          <div className="flex items-center gap-4 px-2 pt-4 lg:pt-0">
+            <div className="rounded-full bg-purple-50 p-2.5 text-purple-600">
+              <CalendarDays className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider">Budget Committed</p>
+              <p className="text-2xl font-bold text-[color:var(--vooki-app-text-strong)]">{formatMoney(kpi.activeBudget)}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 px-2 pt-4 lg:pt-0">
+            <div className="rounded-full bg-amber-50 p-2.5 text-amber-600">
+              <Users className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider">Avg ROI (Active)</p>
+              <p className="text-2xl font-bold text-[color:var(--vooki-app-text-strong)]">{kpi.avgRoi.toFixed(1)}x</p>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
-        <div className="space-y-4">
-          {filteredCampaigns.length === 0 ? (
-            <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-              <CardContent className="p-5 text-sm text-slate-600 dark:text-slate-300">
-                No campaigns found for these filters.
-              </CardContent>
-            </Card>
-          ) : null}
-
-          {filteredCampaigns.map((campaign) => {
-            const budgetUsedPercent = campaign.budgetTotal
-              ? Math.round((campaign.budgetSpent / campaign.budgetTotal) * 100)
-              : 0
-            const deliveryPercent = campaign.deliverablesTotal
-              ? Math.round((campaign.deliverablesDone / campaign.deliverablesTotal) * 100)
-              : 0
-
-            return (
-              <Card
-                key={campaign.id}
-                onClick={() => router.push(`/brand/campaigns/${campaign.id}`)}
-                className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85 cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
-              >
-                <CardHeader className="space-y-3">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <CardTitle className="text-slate-900 dark:text-slate-100">{campaign.name}</CardTitle>
-                      <CardDescription className="mt-1 text-slate-600 dark:text-slate-400">
-                        {campaign.objective}
-                      </CardDescription>
-                    </div>
-                    <div className="flex gap-2">
-                      <Badge className={`border-0 capitalize ${statusPillClass[campaign.status]}`}>
-                        {campaign.status}
-                      </Badge>
-                      <Badge className={`border-0 capitalize ${priorityPillClass[campaign.priority]}`}>
-                        {campaign.priority}
-                      </Badge>
-                      <Badge className={`border-0 ${campaign.paymentMethod === "direct" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300" : "bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300"}`}>
-                        {campaign.paymentMethod === "direct" ? "Direct" : "Escrow"}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-                  <div className="grid gap-3 text-sm md:grid-cols-4">
-                    <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-                      <p className="text-xs text-slate-500 dark:text-slate-400">Niche</p>
-                      <p className="font-semibold text-slate-900 dark:text-slate-100">{campaign.niche}</p>
-                    </div>
-                    <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-                      <p className="text-xs text-slate-500 dark:text-slate-400">Budget</p>
-                      <p className="font-semibold text-slate-900 dark:text-slate-100">
-                        {formatMoney(campaign.budgetSpent)} / {formatMoney(campaign.budgetTotal)}
-                      </p>
-                    </div>
-                    <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-                      <p className="text-xs text-slate-500 dark:text-slate-400">Timeline</p>
-                      <p className="font-semibold text-slate-900 dark:text-slate-100">
-                        {formatDate(campaign.startDate)} - {formatDate(campaign.endDate)}
-                      </p>
-                    </div>
-                    <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-                      <p className="text-xs text-slate-500 dark:text-slate-400">ROI</p>
-                      <p className="font-semibold text-slate-900 dark:text-slate-100">
-                        {campaign.roi > 0 ? `${campaign.roi.toFixed(1)}x` : "Not started"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-                      <div className="mb-2 flex items-center justify-between">
-                        <p className="inline-flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                          <Target className="h-3.5 w-3.5" /> Budget pacing
-                        </p>
-                        <p className="text-xs font-medium text-slate-700 dark:text-slate-300">{budgetUsedPercent}% used</p>
-                      </div>
-                      <Progress value={budgetUsedPercent} className="h-2 bg-slate-200 dark:bg-slate-800" />
-                    </div>
-                    <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-                      <div className="mb-2 flex items-center justify-between">
-                        <p className="inline-flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                          <CheckCircle2 className="h-3.5 w-3.5" /> Deliverables
-                        </p>
-                        <p className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                          {campaign.deliverablesDone}/{campaign.deliverablesTotal}
-                        </p>
-                      </div>
-                      <Progress value={deliveryPercent} className="h-2 bg-slate-200 dark:bg-slate-800" />
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-                    <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-300">
-                      <span className="inline-flex items-center gap-1.5">
-                        <Users className="h-3.5 w-3.5 text-cyan-600" />
-                        Invited {campaign.invitedCreators}
-                      </span>
-                      <span className="inline-flex items-center gap-1.5">
-                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                        Accepted {campaign.acceptedCreators}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
+      {/* 3. Streamlined Filter Toolbar */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between w-full">
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+          <div className="relative w-full sm:w-[320px]">
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--vooki-app-text-soft)]" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className="h-10 rounded-full border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] pl-10 text-sm text-[color:var(--vooki-app-text-strong)] focus-visible:ring-[color:var(--vooki-accent)] w-full"
+              placeholder="Search campaigns..."
+            />
+          </div>
+          
+          {/* Status Dropdown */}
+          <Select
+            value={statusFilter}
+            onValueChange={(val) => setStatusFilter(val as CampaignStatus | "all")}
+          >
+            <SelectTrigger className="h-10 w-full sm:w-[160px] rounded-full border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] font-semibold text-[color:var(--vooki-app-text-strong)] focus:ring-[color:var(--vooki-accent)]">
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent className="border border-[color:var(--vooki-home-border)] bg-[#1a1c17] text-[color:var(--vooki-app-text-strong)] shadow-2xl rounded-2xl">
+              <SelectItem value="all">All Statuses ({campaigns.length})</SelectItem>
+              {statusOrder.map((status) => (
+                <SelectItem key={status} value={status}>
+                  <span className="capitalize">{status} ({statusCount[status]})</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
+        
+        <div className="flex items-center gap-3 w-full sm:w-auto mt-2 lg:mt-0">
+          {/* Priority Dropdown */}
+          <Select
+            value={priorityFilter}
+            onValueChange={(val) => setPriorityFilter(val as CampaignPriority | "all")}
+          >
+            <SelectTrigger className="h-10 w-full sm:w-[160px] rounded-full border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] font-semibold text-[color:var(--vooki-app-text-strong)] focus:ring-[color:var(--vooki-accent)]">
+              <SelectValue placeholder="All Priorities" />
+            </SelectTrigger>
+            <SelectContent className="border border-[color:var(--vooki-home-border)] bg-[#1a1c17] text-[color:var(--vooki-app-text-strong)] shadow-2xl rounded-2xl">
+              <SelectItem value="all">All Priorities</SelectItem>
+              <SelectItem value="high">High Priority</SelectItem>
+              <SelectItem value="medium">Medium Priority</SelectItem>
+              <SelectItem value="low">Low Priority</SelectItem>
+            </SelectContent>
+          </Select>
 
-        {/* <div className="space-y-4">
-          <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-            <CardHeader>
-              <CardTitle className="text-base text-slate-900 dark:text-slate-100">Lifecycle</CardTitle>
-              <CardDescription className="text-slate-600 dark:text-slate-400">
-                Suggested workflow for team consistency.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div className="inline-flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-                <span className="inline-flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                  <Layers3 className="h-4 w-4 text-slate-500" /> Draft
-                </span>
-                <span className="text-xs text-slate-500 dark:text-slate-400">Planning</span>
-              </div>
-              <div className="inline-flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-                <span className="inline-flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                  <TrendingUp className="h-4 w-4 text-cyan-600" /> Active
-                </span>
-                <span className="text-xs text-slate-500 dark:text-slate-400">Execution</span>
-              </div>
-              <div className="inline-flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-                <span className="inline-flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                  <CirclePause className="h-4 w-4 text-amber-600" /> Paused
-                </span>
-                <span className="text-xs text-slate-500 dark:text-slate-400">Blocked</span>
-              </div>
-              <div className="inline-flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-                <span className="inline-flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Completed
-                </span>
-                <span className="text-xs text-slate-500 dark:text-slate-400">Closed</span>
-              </div>
-              <div className="inline-flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-                <span className="inline-flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                  <Clock3 className="h-4 w-4 text-purple-600" /> Archived
-                </span>
-                <span className="text-xs text-slate-500 dark:text-slate-400">History</span>
-              </div>
-            </CardContent>
-          </Card>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSearch("")
+              setStatusFilter("all")
+              setPriorityFilter("all")
+            }}
+            className="h-10 rounded-full text-sm font-semibold text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] shrink-0"
+          >
+            <Filter className="mr-1.5 h-4 w-4" />
+            Reset
+          </Button>
+        </div>
+      </div>
 
-          <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-            <CardHeader>
-              <CardTitle className="text-base text-slate-900 dark:text-slate-100">Upcoming Deadlines</CardTitle>
-              <CardDescription className="text-slate-600 dark:text-slate-400">
-                Prioritize creator follow-up and approvals.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {campaigns
-                .filter((campaign) => campaign.status === "active" || campaign.status === "paused")
-                .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
-                .slice(0, 4)
-                .map((campaign) => (
-                  <div
-                    key={campaign.id}
-                    className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900"
-                  >
-                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{campaign.name}</p>
-                    <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                      <CalendarDays className="h-3.5 w-3.5" />
-                      Ends {formatDate(campaign.endDate)}
-                    </p>
+      {loading ? <p className="text-sm text-[color:var(--vooki-app-text-soft)]">Loading campaigns...</p> : null}
+      {error ? <p className="text-sm text-red-500">{error}</p> : null}
+
+      {/* 4. Sleek Horizontal Campaign Rows */}
+      <div className="grid gap-4">
+        {filteredCampaigns.length === 0 && !loading ? (
+          <div className="rounded-3xl border-2 border-dashed border-[color:var(--vooki-app-border)] p-10 text-center bg-[color:var(--vooki-app-surface-strong)]/50">
+            <Activity className="h-10 w-10 mx-auto text-[color:var(--vooki-app-text-soft)] opacity-50 mb-3" />
+            <p className="text-[color:var(--vooki-app-text-strong)] font-medium text-lg">No campaigns found</p>
+            <p className="text-sm mt-1 text-[color:var(--vooki-app-text-soft)]">Try adjusting your filters.</p>
+          </div>
+        ) : null}
+
+        {filteredCampaigns.map((campaign) => {
+          const budgetUsedPercent = campaign.budgetTotal
+            ? Math.round((campaign.budgetSpent / campaign.budgetTotal) * 100)
+            : 0
+
+          return (
+            <div
+              key={campaign.id}
+              onClick={() => router.push(`/brand/campaigns/${campaign.id}`)}
+              className="group relative flex cursor-pointer flex-col gap-4 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-5 transition-all hover:border-[color:var(--vooki-accent)] hover:shadow-[var(--vooki-shadow-app)] sm:flex-row sm:items-center sm:gap-8 lg:p-6"
+            >
+              {/* Campaign Info */}
+              <div className="flex-1 space-y-1.5">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-lg font-bold text-[color:var(--vooki-app-text-strong)] group-hover:text-[color:var(--vooki-accent)] transition-colors">
+                    {campaign.name}
+                  </h3>
+                  <Badge variant="outline" className={`border capitalize text-[10px] px-2 py-0.5 font-semibold ${statusPillClass[campaign.status]}`}>
+                    {campaign.status}
+                  </Badge>
+                </div>
+                <p className="line-clamp-1 text-sm text-[color:var(--vooki-app-text-soft)]">
+                  {campaign.objective}
+                </p>
+                <p className="text-[11px] font-medium text-[color:var(--vooki-app-text-soft)] opacity-80 uppercase tracking-wide">
+                  {formatDate(campaign.startDate)} — {formatDate(campaign.endDate)} • {campaign.niche}
+                </p>
+              </div>
+
+              {/* Creators Funnel */}
+              <div className="w-full sm:w-[140px] shrink-0">
+                <p className="mb-2 text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold">Network</p>
+                <div className="flex items-center gap-4">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-[color:var(--vooki-app-text-strong)]">
+                      {campaign.invitedCreators}
+                    </span>
+                    <span className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wide">Invited</span>
                   </div>
-                ))}
-            </CardContent>
-          </Card>
-
-          <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-            <CardHeader>
-              <CardTitle className="text-base text-slate-900 dark:text-slate-100">Quick Start</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button asChild variant="outline" className="w-full justify-start border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
-                <Link href="/brand/campaigns/new">
-                  <Flag className="mr-2 h-4 w-4" />
-                  Launch from template
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full justify-start border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
-                <Link href="/brand/discover">
-                  <Users className="mr-2 h-4 w-4" />
-                  Invite creators from discover
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-            <CardHeader>
-              <CardTitle className="text-base text-slate-900 dark:text-slate-100">Live Collaborations</CardTitle>
-              <CardDescription className="text-slate-600 dark:text-slate-400">Recent collaborations moving across your campaign pipeline.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {promotions.slice(0, 5).map((promotion) => (
-                <div
-                  key={promotion.id}
-                  className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900"
-                >
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{promotion.campaignTitle || "Collaboration"}</p>
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    <Badge className={`border-0 text-[10px] capitalize ${promotionPillClass[promotion.status]}`}>
-                      {promotion.status.replaceAll("_", " ")}
-                    </Badge>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400">Payment {promotion.paymentStatus}</p>
+                  <div className="w-px h-6 bg-[color:var(--vooki-app-border-strong)]" />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-emerald-600">
+                      {campaign.acceptedCreators}
+                    </span>
+                    <span className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wide">Accepted</span>
                   </div>
                 </div>
-              ))}
-              {promotions.length === 0 ? (
-                <p className="text-xs text-slate-500 dark:text-slate-400">No collaborations created yet.</p>
-              ) : null}
-            </CardContent>
-          </Card>
-        </div> */}
+              </div>
+
+              {/* Budget Progress */}
+              <div className="w-full sm:w-[200px] shrink-0">
+                <div className="mb-2 flex items-end justify-between">
+                  <span className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold">Budget</span>
+                  <span className="font-bold text-sm text-[color:var(--vooki-app-text-strong)]">
+                    {formatMoney(campaign.budgetSpent)} <span className="text-[color:var(--vooki-app-text-soft)] font-medium text-xs">/ {formatMoney(campaign.budgetTotal)}</span>
+                  </span>
+                </div>
+                <Progress value={budgetUsedPercent} className="h-2 rounded-full bg-[color:var(--vooki-app-border-strong)]" />
+              </div>
+
+              {/* Badges / Extras */}
+              <div className="hidden items-center justify-end gap-3 lg:flex w-[100px] shrink-0">
+                <div className="text-right">
+                  <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold mb-1">Priority</p>
+                  <Badge variant="outline" className={`capitalize text-[10px] font-semibold border-0 ${priorityPillClass[campaign.priority]}`}>
+                    {campaign.priority}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Action Chevron */}
+              <div className="hidden sm:flex items-center justify-center h-10 w-10 rounded-full transition-colors group-hover:bg-[color:var(--vooki-accent-soft)]">
+                <ChevronRight className="h-5 w-5 text-[color:var(--vooki-app-text-soft)] group-hover:text-[color:var(--vooki-accent)] transition-colors" />
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

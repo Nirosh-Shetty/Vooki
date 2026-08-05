@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
+// import { Badge } from "@/components/ui/badge"
 import {
   Select,
   SelectContent,
@@ -40,8 +40,9 @@ interface Deliverable {
 }
 
 interface CreateInviteModalProps {
-  campaignId: string
-  campaignName: string
+  campaignId?: string
+  campaignName?: string
+  campaigns?: { id: string; name: string }[]
   preselectedInfluencerId?: string
   trigger?: React.ReactNode
   onSuccess?: () => void
@@ -50,6 +51,7 @@ interface CreateInviteModalProps {
 export function CreateInviteModal({
   campaignId,
   campaignName,
+  campaigns,
   preselectedInfluencerId,
   trigger,
   onSuccess,
@@ -58,6 +60,15 @@ export function CreateInviteModal({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showAdvanced, setShowAdvanced] = useState(false)
+
+  const [selectedCampaignId, setSelectedCampaignId] = useState(campaignId || "")
+
+  // Use a stable selected campaign based on the open state and campaigns prop
+  useEffect(() => {
+    if (open && !selectedCampaignId && campaigns && campaigns.length > 0) {
+      setSelectedCampaignId(campaigns[0].id)
+    }
+  }, [open, selectedCampaignId, campaigns])
 
   // Form state
   const [influencerId, setInfluencerId] = useState(preselectedInfluencerId || "")
@@ -136,7 +147,7 @@ export function CreateInviteModal({
 
       const payload = {
         influencerId,
-        campaignId,
+        campaignId: selectedCampaignId || campaignId,
         collaborationType: collaborationType || "sponsored_post",
         deliverables,
         timeline: {
@@ -197,15 +208,37 @@ export function CreateInviteModal({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Invite Creator to Collaborate</DialogTitle>
-          <DialogDescription>
-            Campaign: <strong>{campaignName}</strong>
-          </DialogDescription>
+          {campaignName && (
+            <DialogDescription>
+              Campaign: <strong>{campaignName}</strong>
+            </DialogDescription>
+          )}
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
             <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
               {error}
+            </div>
+          )}
+
+          {/* Campaign Selection */}
+          {!campaignId && campaigns && campaigns.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium mb-2">Campaign</label>
+              <Select
+                value={selectedCampaignId}
+                onValueChange={setSelectedCampaignId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select campaign..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {campaigns.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
 
@@ -334,49 +367,49 @@ export function CreateInviteModal({
             >
               {showAdvanced ? "Hide Advanced Settings" : "Show Advanced Settings (Optional Timeline)"}
             </button>
-            
+
             {showAdvanced && (
               <div className="grid grid-cols-2 gap-3 mt-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Posting Start Date
-              </label>
-              <Input
-                type="date"
-                value={postingStartDate}
-                onChange={(e) => setPostingStartDate(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Posting End Date
-              </label>
-              <Input
-                type="date"
-                value={postingEndDate}
-                onChange={(e) => setPostingEndDate(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Draft Due Date (Optional)
-              </label>
-              <Input
-                type="date"
-                value={draftDueDate}
-                onChange={(e) => setDraftDueDate(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Response Deadline
-              </label>
-              <Input
-                type="date"
-                value={responseDeadline}
-                onChange={(e) => setResponseDeadline(e.target.value)}
-              />
-            </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Posting Start Date
+                  </label>
+                  <Input
+                    type="date"
+                    value={postingStartDate}
+                    onChange={(e) => setPostingStartDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Posting End Date
+                  </label>
+                  <Input
+                    type="date"
+                    value={postingEndDate}
+                    onChange={(e) => setPostingEndDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Draft Due Date (Optional)
+                  </label>
+                  <Input
+                    type="date"
+                    value={draftDueDate}
+                    onChange={(e) => setDraftDueDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Response Deadline
+                  </label>
+                  <Input
+                    type="date"
+                    value={responseDeadline}
+                    onChange={(e) => setResponseDeadline(e.target.value)}
+                  />
+                </div>
               </div>
             )}
           </div>

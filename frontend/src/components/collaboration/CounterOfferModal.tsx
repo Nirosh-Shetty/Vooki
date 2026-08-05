@@ -19,6 +19,7 @@ interface CounterOfferModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess?: () => void
+  role?: "brand" | "influencer" | "manager"
 }
 
 export function CounterOfferModal({
@@ -27,6 +28,7 @@ export function CounterOfferModal({
   open,
   onOpenChange,
   onSuccess,
+  role = "influencer",
 }: CounterOfferModalProps) {
   const [tab, setTab] = useState("compensation")
   const [message, setMessage] = useState("")
@@ -48,8 +50,12 @@ export function CounterOfferModal({
     setLoading(true)
 
     try {
+      const endpoint = (role === "brand" || role === "manager")
+        ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/collaborations/invites/${inviteId}/brand-counter`
+        : `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/collaborations/invites/${inviteId}/counter`
+
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/collaborations/invites/${inviteId}/counter`,
+        endpoint,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -13,8 +13,6 @@ import { messagingAPI } from "@/lib/socket/messaging-api";
 
 interface MessagesHubProviderProps {
   role: RoleVariant;
-  heading: string;
-  subheading: string;
   composerPlaceholder: string;
 }
 
@@ -22,8 +20,6 @@ type StructuredMessageAction = "accept_offer" | "request_changes";
 
 export function MessagesHubProvider({
   role,
-  heading,
-  subheading,
   composerPlaceholder,
 }: MessagesHubProviderProps) {
   const searchParams = useSearchParams();
@@ -81,7 +77,9 @@ export function MessagesHubProvider({
       payload: { conversation: HubConversation; message: HubMessage }
     ) => {
       const { conversation, message } = payload;
-      if (!conversation.promotionId && !conversation.inviteId) {
+      const activeInviteId = message.offerData?.inviteId || conversation.inviteId;
+
+      if (!conversation.promotionId && !activeInviteId) {
         throw new Error("This thread is not linked to a collaboration yet.");
       }
 
@@ -90,10 +88,10 @@ export function MessagesHubProvider({
         
         if (conversation.promotionId) {
           endpoint = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/promotions/${conversation.promotionId}/status`;
-        } else if (conversation.inviteId) {
-          endpoint = role === "brand" 
-            ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/collaborations/invites/${conversation.inviteId}/accept-counter`
-            : `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/collaborations/invites/${conversation.inviteId}/accept`;
+        } else if (activeInviteId) {
+          endpoint = (role === "brand" || role === "manager") 
+            ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/collaborations/invites/${activeInviteId}/accept-counter`
+            : `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/collaborations/invites/${activeInviteId}/accept`;
         }
 
         const response = await fetch(endpoint, {
@@ -123,43 +121,6 @@ export function MessagesHubProvider({
         await fetchConversations();
         return;
       }
-
-      if (conversation.inviteId && !conversation.promotionId) {
-        // Send actual counter offer to the backend for invites
-        const endpoint = role === "brand"
-          ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/collaborations/invites/${conversation.inviteId}/brand-counter`
-          : `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/collaborations/invites/${conversation.inviteId}/counter`;
-
-        try {
-          await fetch(endpoint, {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              message: "I would like to adjust this offer before accepting. Can we align on the details here?",
-            }),
-          });
-        } catch (error) {
-          console.error("Failed to sync counter offer with backend:", error);
-        }
-      }
-
-      await sendMessage(conversation.id, undefined, {
-        messageType: "counter_offer",
-        offerData: {
-          campaignTitle: message.offerData?.campaignTitle || conversation.campaignTitle || "",
-          deliverableSummary: message.offerData?.deliverableSummary || "",
-          paymentAmount: message.offerData?.paymentAmount,
-          advanceAmount: message.offerData?.advanceAmount,
-          draftDueAt: message.offerData?.draftDueAt || null,
-          postAt: message.offerData?.postAt || null,
-          hashtags: message.offerData?.hashtags || [],
-          discountCode: message.offerData?.discountCode || "",
-          note: "I would like to adjust this offer before accepting. Can we align on the details here?",
-        },
-      });
-
-      await fetchConversations();
     },
     [fetchConversations, sendMessage]
   );
@@ -197,6 +158,7 @@ export function MessagesHubProvider({
     campaignId: conv.campaignId,
     promotionId: conv.promotionId,
     inviteId: conv.inviteId,
+    invites: conv.invites,
     campaignTitle: conv.campaignTitle,
     avatar: conv.otherUser?.profilePicture?.substring(0, 2).toUpperCase() || "??",
     lastMessage: conv.lastMessage,
@@ -254,8 +216,6 @@ export function MessagesHubProvider({
   return (
     <MessagesHub
       role={role}
-      heading={heading}
-      subheading={subheading}
       composerPlaceholder={composerPlaceholder}
       conversations={transformedConversations}
       messagesByConversation={messagesByConversation}

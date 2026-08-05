@@ -139,6 +139,21 @@ export const createCollaborationInvite = async (
       responseDeadline: timeline?.responseDeadline ? new Date(timeline.responseDeadline) : defaultDeadline,
     };
 
+    // Check for existing active invites
+    const existingActiveInvite = await DiscoverInviteModel.findOne({
+      brandId: requester.id,
+      influencerId: String(influencerId),
+      campaignId: String(campaignId),
+      status: { $in: ["pending", "counter_offered"] },
+    });
+
+    if (existingActiveInvite) {
+      return res.status(400).json({
+        message:
+          "An active invite already exists for this creator on this campaign. Please continue the negotiation in your messages.",
+      });
+    }
+
     // Create invite
     const newInvite = await DiscoverInviteModel.create({
       brandId: requester.id,
@@ -226,15 +241,15 @@ export const getBrandInvites = async (
     const invitesWithInfluencerInfo = await Promise.all(
       invites.map(async (invite: any) => {
         const influencer = await UserModel.findById(invite.influencerId).select(
-          "_id name handle niche avatar"
+          "_id name username influencerProfile.niche avatar"
         );
 
         return {
           id: invite._id,
           influencerId: invite.influencerId,
           influencerName: influencer?.name || "",
-          influencerHandle: influencer?.handle || "",
-          influencerNiche: influencer?.niche || "",
+          influencerHandle: influencer?.username || "",
+          influencerNiche: influencer?.influencerProfile?.niche || "",
           campaignId: invite.campaignId,
           campaignLabel: invite.campaignTitle,
           note: invite.brandMessage || "",
@@ -479,6 +494,7 @@ export const counterInvite = async (
       messageType: "counter_offer",
       text: message || undefined,
       offerData: {
+        inviteId: String(invite._id),
         campaignId: String(invite.campaignId),
         campaignTitle: invite.campaignTitle,
         paymentAmount:
@@ -583,18 +599,22 @@ export const declineInvite = async (
   res: Response
 ): Promise<any> => {
   try {
-    const userId = getRequestUserId(req);
-    if (!userId) {
+    const user = getRequestUser(req);
+    if (!user || !user.id) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
     const { inviteId } = req.params;
     const { reason } = req.body;
 
-    const invite = await DiscoverInviteModel.findOne({
-      _id: String(inviteId),
-      influencerId: userId,
-    });
+    const query: any = { _id: String(inviteId) };
+    if (user.role === "influencer") {
+      query.influencerId = user.id;
+    } else {
+      query.brandId = user.id;
+    }
+
+    const invite = await DiscoverInviteModel.findOne(query);
 
     if (!invite) {
       return res.status(404).json({ message: "Invite not found" });
@@ -815,6 +835,7 @@ export const brandCounterOffer = async (
       messageType: "counter_offer",
       text: message || undefined,
       offerData: {
+        inviteId: String(invite._id),
         campaignId: String(invite.campaignId),
         campaignTitle: invite.campaignTitle,
         paymentAmount:
