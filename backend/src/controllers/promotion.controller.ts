@@ -66,7 +66,11 @@ const formatPromotion = (promotion: any) => ({
     reach: Number(promotion?.performance?.reach || 0),
     views: Number(promotion?.performance?.views || 0),
     engagement: Number(promotion?.performance?.engagement || 0),
+    clicks: Number(promotion?.performance?.clicks || 0),
+    conversions: Number(promotion?.performance?.conversions || 0),
   },
+  brandRating: promotion.brandRating,
+  influencerRating: promotion.influencerRating,
   deliverySubmission: {
     proofUrl: promotion?.deliverySubmission?.proofUrl || "",
     notes: promotion?.deliverySubmission?.notes || "",
@@ -578,7 +582,7 @@ export const submitPromotionPerformance = async (
     }
 
     const { promotionId } = req.params;
-    const { reach, views, engagement } = req.body || {};
+    const { reach, views, engagement, clicks, conversions } = req.body || {};
     if (!promotionId || !isValidObjectId(promotionId)) {
       return res.status(404).json({ message: "Promotion not found" });
     }
@@ -594,6 +598,8 @@ export const submitPromotionPerformance = async (
     const parsedReach = parseNumber(reach);
     const parsedViews = parseNumber(views);
     const parsedEngagement = parseNumber(engagement);
+    const parsedClicks = parseNumber(clicks) || 0;
+    const parsedConversions = parseNumber(conversions) || 0;
 
     if (
       parsedReach === undefined ||
@@ -601,15 +607,19 @@ export const submitPromotionPerformance = async (
       parsedViews === undefined ||
       parsedViews < 0 ||
       parsedEngagement === undefined ||
-      parsedEngagement < 0
+      parsedEngagement < 0 ||
+      parsedClicks < 0 ||
+      parsedConversions < 0
     ) {
-      return res.status(400).json({ message: "reach, views, and engagement must be non-negative numbers" });
+      return res.status(400).json({ message: "Metrics must be non-negative numbers" });
     }
 
     promotion.performance = {
       reach: Math.round(parsedReach),
       views: Math.round(parsedViews),
       engagement: Number(parsedEngagement.toFixed(2)),
+      clicks: Math.round(parsedClicks),
+      conversions: Math.round(parsedConversions),
     };
     promotion.status = "metrics_submitted";
     await promotion.save();
@@ -810,6 +820,49 @@ export const confirmPaymentReceived = async (
     });
   } catch (error) {
     console.error("Error confirming payment receipt:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const ratePromotion = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const requester = getRequester(req);
+    if (!requester?.id) return res.status(401).json({ message: "Unauthorized" });
+
+    const { promotionId } = req.params;
+    const { score, review } = req.body || {};
+
+    if (!promotionId || !isValidObjectId(promotionId)) {
+      return res.status(404).json({ message: "Promotion not found" });
+    }
+
+    if (score === undefined || score < 1 || score > 5) {
+      return res.status(400).json({ message: "Score must be between 1 and 5" });
+    }
+
+    const promotion = await PromotionModel.findById(promotionId);
+    if (!promotion || !canAccessPromotion(promotion, requester)) {
+      return res.status(404).json({ message: "Promotion not found" });
+    }
+
+    if (promotion.status !== "completed") {
+      return res.status(409).json({ message: "Can only rate completed promotions" });
+    }
+
+    if (requester.role === "brand") {
+      promotion.influencerRating = { score, review: review || "" };
+    } else if (requester.role === "influencer") {
+      promotion.brandRating = { score, review: review || "" };
+    }
+
+    await promotion.save();
+
+    return res.status(200).json({
+      message: "Rating submitted",
+      promotion: formatPromotion(promotion),
+    });
+  } catch (error) {
+    console.error("Error rating promotion:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };

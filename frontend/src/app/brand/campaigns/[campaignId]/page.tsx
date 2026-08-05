@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
-import { ArrowLeft, Loader2, Search, Calendar, Users, Target, Activity, MessageSquare, ChevronRight } from "lucide-react"
+import { ArrowLeft, Loader2, Search, Calendar, Users, Target, Activity, MessageSquare, ChevronRight, Eye, MousePointerClick, Zap } from "lucide-react"
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -24,7 +25,7 @@ type Campaign = {
 type Promotion = {
   id: string; campaignId: string; campaignTitle: string; influencerId: string; influencerName?: string; influencerHandle?: string;
   deliverables: Deliverable[]; status: PromotionStatus; paymentStatus: "pending" | "paid"; paymentAmount: number; paymentDueAt: string;
-  performance: { reach: number; views: number; engagement: number }
+  performance: { reach: number; views: number; engagement: number; clicks: number; conversions: number }
 }
 
 type InviteStatus = "pending" | "accepted" | "rejected" | "expired"
@@ -169,6 +170,24 @@ export default function CampaignDetailPage() {
   const liveDealsCount = promotions.filter((p) => ["negotiating", "accepted", "content_in_progress", "posted", "metrics_submitted", "payment_pending"].includes(p.status)).length;
   const completedDealsCount = promotions.filter((p) => p.status === "completed").length;
 
+  // New Analytics Computations
+  const totalReach = promotions.reduce((sum, p) => sum + (p.performance?.reach || 0), 0);
+  const totalViews = promotions.reduce((sum, p) => sum + (p.performance?.views || 0), 0);
+  const totalEngagementAvg = promotions.length ? (promotions.reduce((sum, p) => sum + (p.performance?.engagement || 0), 0) / promotions.length).toFixed(1) : "0.0";
+  const totalClicks = promotions.reduce((sum, p) => sum + (p.performance?.clicks || 0), 0);
+  const totalConversions = promotions.reduce((sum, p) => sum + (p.performance?.conversions || 0), 0);
+
+  const cpv = totalViews > 0 ? campaign.budgetSpent / totalViews : 0;
+  const cpe = totalEngagementAvg !== "0.0" && totalViews > 0 ? campaign.budgetSpent / (totalViews * (Number(totalEngagementAvg)/100)) : 0;
+
+  const chartData = promotions
+    .filter(p => p.status === "completed" || p.status === "metrics_submitted" || p.status === "payment_pending")
+    .map(p => ({
+      name: p.influencerName || p.influencerHandle || "Creator",
+      Views: p.performance?.views || 0,
+      Clicks: p.performance?.clicks || 0,
+    })).slice(0, 5);
+
   return (
     <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-6 sm:px-6 lg:px-8">
       
@@ -212,78 +231,97 @@ export default function CampaignDetailPage() {
 
         {/* TAB: OVERVIEW */}
         <TabsContent value="overview" className="space-y-6 outline-none mt-0">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            
-            {/* Budget Card */}
-            <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl overflow-hidden lg:col-span-2">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest flex items-center">
-                    <Target className="mr-2 h-4 w-4" /> Budget Utilization
-                  </h3>
-                  <span className="text-sm font-medium text-[color:var(--vooki-app-text-strong)]">{budgetPercentage}%</span>
-                </div>
-                
-                <div className="flex items-end justify-between mb-2">
-                  <div>
-                    <p className="text-3xl font-bold text-[color:var(--vooki-app-text-strong)]">{formatMoney(campaign.budgetSpent)}</p>
-                    <p className="text-sm text-[color:var(--vooki-app-text-soft)]">spent of {formatMoney(campaign.budgetTotal)}</p>
-                  </div>
-                  {campaign.roi > 0 && (
-                    <div className="text-right">
-                      <p className="text-xl font-bold text-emerald-600">{campaign.roi.toFixed(1)}x</p>
-                      <p className="text-xs text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider">Estimated ROI</p>
-                    </div>
-                  )}
-                </div>
-                
-                <Progress value={budgetPercentage} className="h-3 mt-4 rounded-full bg-[color:var(--vooki-app-border-strong)]" />
+          
+          {/* Top Level KPIs */}
+          <div className="grid gap-6 grid-cols-2 lg:grid-cols-4">
+            <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl">
+              <CardContent className="p-5 flex flex-col justify-center">
+                <p className="text-[11px] font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest mb-1 flex items-center"><Target className="h-3 w-3 mr-1" /> Budget Spent</p>
+                <p className="text-2xl font-bold">{formatMoney(campaign.budgetSpent)}</p>
+                <p className="text-xs text-[color:var(--vooki-app-text-muted)] mt-1">of {formatMoney(campaign.budgetTotal)} ({budgetPercentage}%)</p>
               </CardContent>
             </Card>
+            <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl">
+              <CardContent className="p-5 flex flex-col justify-center">
+                <p className="text-[11px] font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest mb-1 flex items-center"><Eye className="h-3 w-3 mr-1" /> Total Views</p>
+                <p className="text-2xl font-bold">{totalViews.toLocaleString()}</p>
+                <p className="text-xs text-[color:var(--vooki-app-text-muted)] mt-1">Reach: {totalReach.toLocaleString()}</p>
+              </CardContent>
+            </Card>
+            <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl">
+              <CardContent className="p-5 flex flex-col justify-center">
+                <p className="text-[11px] font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest mb-1 flex items-center"><MousePointerClick className="h-3 w-3 mr-1" /> Total Clicks</p>
+                <p className="text-2xl font-bold">{totalClicks.toLocaleString()}</p>
+                <p className="text-xs text-[color:var(--vooki-app-text-muted)] mt-1">{totalConversions.toLocaleString()} Conversions</p>
+              </CardContent>
+            </Card>
+            <Card className="border border-[color:var(--vooki-app-border)] bg-emerald-50 shadow-[var(--vooki-shadow-app)] rounded-3xl">
+              <CardContent className="p-5 flex flex-col justify-center">
+                <p className="text-[11px] font-semibold text-emerald-800/70 uppercase tracking-widest mb-1 flex items-center"><Zap className="h-3 w-3 mr-1" /> Estimated ROI</p>
+                <p className="text-2xl font-bold text-emerald-700">{campaign.roi > 0 ? `${campaign.roi.toFixed(1)}x` : "—"}</p>
+                <p className="text-xs text-emerald-700/70 mt-1">Return on Investment</p>
+              </CardContent>
+            </Card>
+          </div>
 
-            {/* Timeline Card */}
-            <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl overflow-hidden">
-              <CardContent className="p-6 h-full flex flex-col justify-center">
+          <div className="grid gap-6 lg:grid-cols-3">
+            
+            {/* Efficiency Metrics */}
+            <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl overflow-hidden lg:col-span-1">
+              <CardContent className="p-6 h-full">
                 <h3 className="text-sm font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest flex items-center mb-6">
-                  <Calendar className="mr-2 h-4 w-4" /> Timeline
+                  <Activity className="mr-2 h-4 w-4" /> Efficiency
                 </h3>
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] font-semibold">Start Date</p>
-                    <p className="text-base font-medium text-[color:var(--vooki-app-text-strong)]">{formatDate(campaign.startDate)}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] font-semibold mb-1">Cost Per View (CPV)</p>
+                    <p className="text-xl font-bold text-[color:var(--vooki-app-text-strong)] tracking-tight whitespace-nowrap">{cpv > 0 ? `$${cpv.toFixed(2)}` : "—"}</p>
                   </div>
                   <div className="w-full h-px bg-[color:var(--vooki-app-border-strong)]" />
                   <div>
-                    <p className="text-[10px] uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] font-semibold">End Date</p>
-                    <p className="text-base font-medium text-[color:var(--vooki-app-text-strong)]">{formatDate(campaign.endDate)}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] font-semibold mb-1">Cost Per Engagement (CPE)</p>
+                    <p className="text-xl font-bold text-[color:var(--vooki-app-text-strong)] tracking-tight whitespace-nowrap">{cpe > 0 ? `$${cpe.toFixed(2)}` : "—"}</p>
+                  </div>
+                  <div className="w-full h-px bg-[color:var(--vooki-app-border-strong)]" />
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] font-semibold mb-1">Avg Engagement Rate</p>
+                    <p className="text-xl font-bold text-[color:var(--vooki-app-text-strong)] tracking-tight whitespace-nowrap">{totalEngagementAvg}%</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Funnel Stats */}
-            <div className="lg:col-span-3 grid gap-6 grid-cols-2 md:grid-cols-4">
-              <div className="p-6 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-sm">
-                <p className="text-xs text-[color:var(--vooki-app-text-soft)] font-medium">Outreach</p>
-                <p className="mt-1 text-3xl font-bold">{pendingInvitesCount}</p>
-                <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider mt-1">Pending Invites</p>
-              </div>
-              <div className="p-6 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-sm">
-                <p className="text-xs text-[color:var(--vooki-app-text-soft)] font-medium">Acquisition</p>
-                <p className="mt-1 text-3xl font-bold">{acceptedInvitesCount}</p>
-                <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider mt-1">Accepted Invites</p>
-              </div>
-              <div className="p-6 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-sm">
-                <p className="text-xs text-[color:var(--vooki-app-text-soft)] font-medium">Execution</p>
-                <p className="mt-1 text-3xl font-bold">{liveDealsCount}</p>
-                <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider mt-1">Live Deals</p>
-              </div>
-              <div className="p-6 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-sm">
-                <p className="text-xs text-[color:var(--vooki-app-text-soft)] font-medium">Completion</p>
-                <p className="mt-1 text-3xl font-bold">{completedDealsCount}</p>
-                <p className="text-[10px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider mt-1">Finished Deals</p>
-              </div>
-            </div>
+            {/* Chart */}
+            <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl overflow-hidden lg:col-span-2">
+              <CardContent className="p-6">
+                <h3 className="text-sm font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest flex items-center mb-4">
+                  <BarChart className="mr-2 h-4 w-4" /> Top Creators by Views & Clicks
+                </h3>
+                {chartData.length > 0 ? (
+                  <div className="h-[250px] w-full mt-4">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "var(--vooki-app-text-muted)" }} />
+                        <YAxis yAxisId="left" orientation="left" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "var(--vooki-app-text-muted)" }} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v} />
+                        <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "var(--vooki-app-text-muted)" }} />
+                        <Tooltip 
+                          cursor={{ fill: 'var(--vooki-app-surface-hover)' }}
+                          contentStyle={{ borderRadius: '12px', border: '1px solid var(--vooki-app-border)', boxShadow: 'var(--vooki-shadow-app-soft)' }}
+                        />
+                        <Bar yAxisId="left" dataKey="Views" fill="var(--vooki-accent)" radius={[4, 4, 0, 0]} />
+                        <Bar yAxisId="right" dataKey="Clicks" fill="var(--vooki-violet)" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-[250px] w-full flex flex-col items-center justify-center text-[color:var(--vooki-app-text-muted)]">
+                    <Activity className="h-8 w-8 mb-2 opacity-50" />
+                    <p className="text-sm">Chart data will appear once metrics are submitted.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
           </div>
         </TabsContent>
 
