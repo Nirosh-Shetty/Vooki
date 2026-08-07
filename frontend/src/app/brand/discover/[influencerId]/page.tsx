@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useParams } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -22,7 +23,10 @@ import {
   BarChart3,
   Eye,
   Activity,
-  DollarSign
+  DollarSign,
+  Lock,
+  Grid,
+  Briefcase
 } from "lucide-react"
 import { CreateInviteModal } from "@/components/collaboration/CreateInviteModal"
 
@@ -35,16 +39,26 @@ type PublicProfile = {
   verified: boolean
   niche: string
   followers: number
-  rating: number
-  totalReviews: number
+  rating?: number
+  totalReviews?: number
+  influencerProfile?: {
+    statsConnection?: {
+      instagram?: { followers: number; engagementRate?: number }
+      youtube?: { subscribers: number; engagementRate?: number }
+    }
+  }
   socialLinks: Record<string, string>
   metrics: {
     engagementRate: number
-    avgViews: number
     estCpv: number
-    fitScore: number
   }
-  highlights: string[]
+  audienceDemographics: {
+    topAgeBracket: string
+    genderSplit: { male: number; female: number }
+    topLocation: string
+  }
+  pastCollaborations: string[]
+  recentContent: string[]
 }
 
 type BrandInviteItem = {
@@ -76,22 +90,27 @@ const previewProfiles: Record<string, PublicProfile> = {
     verified: true,
     niche: "Fashion + Lifestyle",
     followers: 182000,
-    rating: 4.8,
-    totalReviews: 62,
     socialLinks: {
       instagram: "https://instagram.com/minastyles",
       youtube: "https://youtube.com/@minastyles",
     },
     metrics: {
       engagementRate: 7.8,
-      avgViews: 96000,
       estCpv: 0.05,
-      fitScore: 92,
     },
-    highlights: [
-      "Strong conversion on product styling reels",
-      "Consistent campaign delivery and brand-safe content",
-      "High repeat-collab rate with D2C fashion brands",
+    audienceDemographics: {
+      topAgeBracket: "18-24",
+      genderSplit: { male: 15, female: 85 },
+      topLocation: "New York, USA",
+    },
+    pastCollaborations: ["Sephora", "Zara", "Revolve"],
+    recentContent: [
+      "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1509631179647-0c500ab14c50?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1485230405346-71acb9518d9c?auto=format&fit=crop&q=80&w=800",
     ],
   },
   seed_2: {
@@ -103,22 +122,27 @@ const previewProfiles: Record<string, PublicProfile> = {
     verified: true,
     niche: "Consumer Tech",
     followers: 128000,
-    rating: 4.7,
-    totalReviews: 49,
     socialLinks: {
       instagram: "https://instagram.com/noahbytes",
       youtube: "https://youtube.com/@noahbytes",
     },
     metrics: {
       engagementRate: 6.1,
-      avgViews: 84000,
       estCpv: 0.04,
-      fitScore: 88,
     },
-    highlights: [
-      "Great for product explainers and comparison content",
-      "Reliable performance in launch-week campaign windows",
-      "Audience quality is strong for SaaS and gadget categories",
+    audienceDemographics: {
+      topAgeBracket: "25-34",
+      genderSplit: { male: 75, female: 25 },
+      topLocation: "London, UK",
+    },
+    pastCollaborations: ["Sony", "Logitech", "Samsung"],
+    recentContent: [
+      "https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1585338107529-13afc5f02586?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1527443154391-507e9dc6c5cc?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&q=80&w=800",
+      "https://images.unsplash.com/photo-1587831990711-23ca6441447b?auto=format&fit=crop&q=80&w=800",
     ],
   },
 }
@@ -141,6 +165,7 @@ export default function DiscoverProfilePage() {
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [campaigns, setCampaigns] = useState<CampaignOption[]>([])
   const [selectedCampaignId, setSelectedCampaignId] = useState("")
+  const [activeTab, setActiveTab] = useState<"content" | "collabs">("content")
 
   const isPreviewProfile = Boolean(influencerId && previewProfiles[influencerId])
 
@@ -285,188 +310,249 @@ export default function DiscoverProfilePage() {
 
       {!loading && profile && (
         <>
-          <div className="overflow-hidden rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
-            {/* Banner/Cover Photo */}
-            <div className="h-32 w-full bg-gradient-to-r from-cyan-500/20 via-emerald-500/20 to-cyan-500/20" />
+          {/* Header Strip */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 rounded-3xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-card)] p-6 shadow-sm">
+            <div className="flex items-center gap-5">
+              <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-[color:var(--vooki-app-border-strong)] bg-gradient-to-br from-[color:var(--vooki-app-surface-strong)] to-[color:var(--vooki-app-surface-card)] text-2xl font-black text-[color:var(--vooki-app-text-strong)] shadow-inner">
+                {profile.name.charAt(0)}
+                {profile.verified && (
+                  <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[color:var(--vooki-app-bg)]">
+                    <Sparkles className="h-3 w-3 text-[color:var(--vooki-accent)]" />
+                  </div>
+                )}
+              </div>
+              <div>
+                <h1 className="text-2xl font-black tracking-tight text-[color:var(--vooki-app-text-strong)]">
+                  {profile.name}
+                </h1>
+                <p className="text-sm font-medium text-[color:var(--vooki-app-text-soft)]">{profile.handle}</p>
+                <div className="mt-1 flex items-center gap-2">
+                  <Badge variant="secondary" className="rounded-lg px-2 py-0.5 text-[10px] font-semibold bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-strong)] border-[color:var(--vooki-app-border)] uppercase tracking-wider">
+                    {profile.niche}
+                  </Badge>
+                </div>
+              </div>
+            </div>
             
-            <div className="px-6 sm:px-10 pb-8">
-              <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between relative -mt-12">
-                
-                {/* Identity */}
-                <div className="flex flex-col sm:flex-row sm:items-end gap-5">
-                  <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-4 border-[color:var(--vooki-app-surface-card)] bg-gradient-to-br from-cyan-400 to-[color:var(--vooki-accent)] text-3xl font-bold text-[color:var(--vooki-accent-text)] shadow-inner">
-                    {profile.name.charAt(0)}
-                  </div>
-                  <div className="pb-2">
-                    <div className="flex items-center gap-2">
-                      <h1 className="text-3xl font-bold tracking-tight text-[color:var(--vooki-app-text-strong)]">
-                        {profile.name}
-                      </h1>
-                      {profile.verified && (
-                         <Sparkles className="h-5 w-5 text-[color:var(--vooki-accent)] shrink-0" />
-                      )}
-                    </div>
-                    {profile.handle.replace(/^@/, "") !== profile.name && (
-                      <p className="text-sm font-medium text-[color:var(--vooki-app-text-soft)] mt-0.5">{profile.handle}</p>
-                    )}
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px] text-[color:var(--vooki-app-text-subtle)]">
-                      <span>{profile.niche}</span>
-                      <span className="w-1.5 h-1.5 shrink-0 rounded-full bg-[color:var(--vooki-app-border-strong)]" />
-                      <span className="flex items-center whitespace-nowrap"><MapPin className="mr-1 h-3.5 w-3.5" /> Location not provided</span>
-                    </div>
-                  </div>
-                </div>
-                {/* Actions */}
-                <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 sm:mt-14 shrink-0">
-                  <CreateInviteModal
-                    campaigns={campaigns}
-                    preselectedInfluencerId={influencerId}
-                    onSuccess={() => setInviteStatus("pending")}
-                    trigger={
-                      <Button
-                        disabled={inviteBusy || inviteStatus === "pending" || campaigns.length === 0}
-                        className="h-10 rounded-full bg-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-bg)] hover:bg-[color:var(--vooki-app-text)] shadow-sm px-6 font-semibold"
-                      >
-                        <HeartHandshake className="mr-2 h-4 w-4" />
-                        {campaigns.length === 0
-                          ? "No Campaigns"
-                          : inviteStatus === "pending"
-                          ? "Invite pending"
-                          : inviteStatus === "accepted" || inviteStatus === "rejected" || inviteStatus === "expired"
-                            ? "Invite again"
-                            : "Invite to campaign"}
-                      </Button>
-                    }
-                  />
-                  <Button asChild variant="outline" className="h-10 rounded-full border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-strong)] hover:border-[color:var(--vooki-accent)] shadow-sm">
-                    <Link href={`/brand/messages`}>
-                      Message <ArrowUpRight className="ml-2 h-4 w-4" />
-                    </Link>
+            <div className="flex items-center gap-3">
+              <Button asChild variant="outline" className="h-12 px-6 rounded-xl border border-[color:var(--vooki-app-border-strong)] bg-transparent text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)] transition-all font-bold">
+                <Link href={`/brand/messages`}>
+                  Message
+                </Link>
+              </Button>
+              <CreateInviteModal
+                campaigns={campaigns}
+                preselectedInfluencerId={influencerId}
+                onSuccess={() => setInviteStatus("pending")}
+                trigger={
+                  <Button
+                    disabled={inviteBusy || inviteStatus === "pending" || campaigns.length === 0}
+                    className="h-12 px-8 rounded-xl bg-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-bg)] hover:bg-[color:var(--vooki-app-text)] hover:-translate-y-0.5 hover:shadow-md transition-all font-bold"
+                  >
+                    <HeartHandshake className="mr-2 h-4 w-4" />
+                    {campaigns.length === 0
+                      ? "No Campaigns"
+                      : inviteStatus === "pending"
+                      ? "Invite Pending"
+                      : inviteStatus === "accepted" || inviteStatus === "rejected" || inviteStatus === "expired"
+                        ? "Invite Again"
+                        : "Invite to Campaign"}
                   </Button>
-                </div>
-              </div>
-
-              {/* Core Metrics */}
-              <div className="grid gap-4 sm:grid-cols-4 mt-6 pt-8 border-t border-[color:var(--vooki-app-border)]">
-                <div className="rounded-2xl bg-[color:var(--vooki-app-surface-strong)]/50 p-4 border border-[color:var(--vooki-app-border)]/50 flex flex-col gap-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Users className="h-4 w-4 text-[color:var(--vooki-app-text-soft)]" />
-                    <p className="text-[11px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold">Total Audience</p>
-                  </div>
-                  <p className="font-bold text-2xl text-[color:var(--vooki-app-text-strong)]">{formatCompact(profile.followers)}</p>
-                </div>
-                <div className="rounded-2xl bg-[color:var(--vooki-app-surface-strong)]/50 p-4 border border-[color:var(--vooki-app-border)]/50 flex flex-col gap-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Activity className="h-4 w-4 text-[color:var(--vooki-app-text-soft)]" />
-                    <p className="text-[11px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold">Engagement</p>
-                  </div>
-                  <p className="font-bold text-2xl text-emerald-500">{profile.metrics.engagementRate}%</p>
-                </div>
-                <div className="rounded-2xl bg-[color:var(--vooki-app-surface-strong)]/50 p-4 border border-[color:var(--vooki-app-border)]/50 flex flex-col gap-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Eye className="h-4 w-4 text-[color:var(--vooki-app-text-soft)]" />
-                    <p className="text-[11px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold">Avg Views</p>
-                  </div>
-                  <p className="font-bold text-2xl text-[color:var(--vooki-app-text-strong)]">{formatCompact(profile.metrics.avgViews)}</p>
-                </div>
-                <div className="rounded-2xl bg-[color:var(--vooki-app-surface-strong)]/50 p-4 border border-[color:var(--vooki-app-border)]/50 flex flex-col gap-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <DollarSign className="h-4 w-4 text-[color:var(--vooki-app-text-soft)]" />
-                    <p className="text-[11px] text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider font-semibold">Est CPV</p>
-                  </div>
-                  <p className="font-bold text-2xl text-[color:var(--vooki-app-text-strong)]">${profile.metrics.estCpv.toFixed(2)}</p>
-                </div>
-              </div>
+                }
+              />
             </div>
           </div>
 
+          {/* Top Section: Dashboard Insights */}
           <div className="grid gap-6 lg:grid-cols-3">
-            {/* Performance Snapshot */}
-            <div className="rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-6 lg:col-span-2 shadow-[var(--vooki-shadow-app)]">
-              <div className="mb-6">
-                <h3 className="text-xl font-bold text-[color:var(--vooki-app-text-strong)]">Performance Snapshot</h3>
-                <p className="text-sm text-[color:var(--vooki-app-text-soft)]">
-                  Quick signals for collaboration fit and campaign outcome quality.
-                </p>
-              </div>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)]/30 p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <TrendingUp className="h-5 w-5 text-emerald-500" />
-                      <span className="text-sm font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider">Fit Score</span>
-                    </div>
-                    <span className="text-xl font-bold text-[color:var(--vooki-app-text-strong)]">{profile.metrics.fitScore}%</span>
+            
+            {/* Reputation & Value */}
+            <div className="rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-6 shadow-sm flex flex-col justify-between">
+              <div>
+                <h3 className="mb-5 text-sm font-bold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)]">Creator Value</h3>
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between mb-1 gap-2">
+                    <span className="text-sm font-medium text-[color:var(--vooki-app-text-strong)] flex items-center gap-2 min-w-0"><Star className="w-4 h-4 shrink-0 text-amber-500 fill-amber-500" /> <span className="truncate">Vooki Rating</span></span>
+                    <span className="text-lg font-black tracking-tight text-[color:var(--vooki-app-text-strong)] shrink-0">{profile.rating ? `${profile.rating}/5` : "New"}</span>
                   </div>
-                  <div className="rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)]/30 p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Star className="h-5 w-5 text-amber-500 fill-current" />
-                      <span className="text-sm font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-wider">Rating</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-xl font-bold text-[color:var(--vooki-app-text-strong)]">{profile.rating.toFixed(1)}</span>
-                      <p className="text-[10px] text-[color:var(--vooki-app-text-subtle)]">({profile.totalReviews} reviews)</p>
-                    </div>
+                  <div className="flex items-center justify-between mb-1 gap-2">
+                    <span className="text-sm font-medium text-[color:var(--vooki-app-text-strong)] flex items-center gap-2 min-w-0"><Activity className="w-4 h-4 shrink-0 text-emerald-500" /> <span className="truncate">Avg. Engagement</span></span>
+                    <span className="text-lg font-black tracking-tight text-emerald-500 shrink-0">{profile.metrics?.engagementRate || 0}%</span>
                   </div>
-                </div>
-                
-                <div className="space-y-2 mt-2">
-                  {profile.highlights.map((highlight) => (
-                    <div
-                      key={highlight}
-                      className="flex items-start gap-3 rounded-2xl border border-[color:var(--vooki-app-border)]/50 bg-[color:var(--vooki-app-surface-strong)]/20 p-4 text-sm text-[color:var(--vooki-app-text-strong)]"
-                    >
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[color:var(--vooki-accent)]" />
-                      <span className="leading-relaxed">{highlight}</span>
-                    </div>
-                  ))}
+                  <div className="flex items-center justify-between mb-1 gap-2">
+                    <span className="text-sm font-medium text-[color:var(--vooki-app-text-strong)] flex items-center gap-2 min-w-0"><DollarSign className="w-4 h-4 shrink-0 text-emerald-600" /> <span className="truncate">Est CPV</span></span>
+                    <span className="text-lg font-black tracking-tight text-[color:var(--vooki-app-text-strong)] shrink-0">${profile.metrics?.estCpv?.toFixed(2) || "0.00"}</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Social Links */}
-            <div className="rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-6 shadow-[var(--vooki-shadow-app)]">
-              <div className="mb-6">
-                <h3 className="text-xl font-bold text-[color:var(--vooki-app-text-strong)]">Social Channels</h3>
-                <p className="text-sm text-[color:var(--vooki-app-text-soft)]">
-                  Connected platforms.
-                </p>
-              </div>
-              <div className="space-y-3">
-                {socialEntries.length === 0 ? (
-                  <div className="rounded-2xl border border-[color:var(--vooki-app-border)]/50 bg-[color:var(--vooki-app-surface-strong)]/20 p-4 text-sm text-[color:var(--vooki-app-text-soft)] text-center">
-                    No social links shared yet.
-                  </div>
-                ) : (
-                  socialEntries.map(([platform, value]) => {
-                    const isInsta = platform.toLowerCase() === 'instagram'
-                    const isYT = platform.toLowerCase() === 'youtube'
-                    
-                    return (
-                      <a
-                        key={platform}
-                        href={value}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="group flex items-center justify-between rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)]/30 p-4 text-sm text-[color:var(--vooki-app-text-strong)] hover:border-[color:var(--vooki-accent)] hover:bg-[color:var(--vooki-app-surface-strong)] transition-all"
-                      >
-                        <span className="flex items-center gap-3 font-medium capitalize">
-                          {isInsta ? <Instagram className="h-5 w-5 text-pink-500" /> : isYT ? <Youtube className="h-5 w-5 text-red-500" /> : <Globe className="h-5 w-5 text-[color:var(--vooki-accent)]" />}
-                          {platform}
-                        </span>
-                        <ArrowUpRight className="h-4 w-4 opacity-50 group-hover:opacity-100 group-hover:text-[color:var(--vooki-accent)] transition-all" />
-                      </a>
-                    )
-                  })
-                )}
-                <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-emerald-600 dark:text-emerald-400">
-                  <div className="flex items-start gap-3">
-                    <Users className="h-5 w-5 shrink-0" />
-                    <span className="leading-relaxed font-medium">Audience data enrichment active.</span>
-                  </div>
+            {/* Platform Reach & Links */}
+            <div className="rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-6 shadow-sm flex flex-col justify-between">
+              <div>
+                <h3 className="mb-5 text-sm font-bold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)]">Platforms</h3>
+                
+                <div className="space-y-4">
+                  {/* Instagram Stats */}
+                  <a href={profile.socialLinks?.instagram || "#"} target={profile.socialLinks?.instagram ? "_blank" : "_self"} rel="noreferrer" className="flex items-center justify-between p-3 rounded-2xl bg-[color:var(--vooki-app-surface-strong)]/30 border border-[color:var(--vooki-app-border)] gap-2 hover:border-[color:var(--vooki-accent)] transition-all group cursor-pointer">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-pink-500/10 text-pink-500 group-hover:bg-pink-500 group-hover:text-white transition-colors">
+                        <Instagram className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-[color:var(--vooki-app-text-strong)] truncate flex items-center gap-1">Instagram <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" /></p>
+                        <p className="text-[11px] font-medium text-[color:var(--vooki-app-text-subtle)] uppercase tracking-wider truncate">Followers</p>
+                      </div>
+                    </div>
+                    <span className="text-lg font-black tracking-tight text-[color:var(--vooki-app-text-strong)] shrink-0">
+                      {formatCompact(profile.influencerProfile?.statsConnection?.instagram?.followers || profile.followers || 0)}
+                    </span>
+                  </a>
+
+                  {/* YouTube Stats */}
+                  <a href={profile.socialLinks?.youtube || "#"} target={profile.socialLinks?.youtube ? "_blank" : "_self"} rel="noreferrer" className="flex items-center justify-between p-3 rounded-2xl bg-[color:var(--vooki-app-surface-strong)]/30 border border-[color:var(--vooki-app-border)] gap-2 hover:border-[color:var(--vooki-accent)] transition-all group cursor-pointer">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-500 group-hover:bg-red-500 group-hover:text-white transition-colors">
+                        <Youtube className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-[color:var(--vooki-app-text-strong)] truncate flex items-center gap-1">YouTube <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" /></p>
+                        <p className="text-[11px] font-medium text-[color:var(--vooki-app-text-subtle)] uppercase tracking-wider truncate">Subscribers</p>
+                      </div>
+                    </div>
+                    <span className="text-lg font-black tracking-tight text-[color:var(--vooki-app-text-strong)] shrink-0">
+                      {formatCompact(profile.influencerProfile?.statsConnection?.youtube?.subscribers || 0)}
+                    </span>
+                  </a>
                 </div>
               </div>
             </div>
+
+            {/* Audience Demographics (Conditional) */}
+            <div className="rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-6 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)]">Audience</h3>
+                {profile.audienceDemographics && profile.audienceDemographics.genderSplit && Object.keys(profile.audienceDemographics.genderSplit).length > 0 && (
+                  <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-500 border-0 text-[10px]">Verified Data</Badge>
+                )}
+              </div>
+              
+              {(!profile.audienceDemographics || !profile.audienceDemographics.genderSplit || Object.keys(profile.audienceDemographics.genderSplit).length === 0) ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-[color:var(--vooki-app-surface-strong)]/30 rounded-2xl border border-dashed border-[color:var(--vooki-app-border-strong)]">
+                  <div className="h-10 w-10 bg-[color:var(--vooki-app-surface-strong)] rounded-full flex items-center justify-center mb-3">
+                    <Lock className="w-5 h-5 text-[color:var(--vooki-app-text-subtle)]" />
+                  </div>
+                  <h4 className="text-sm font-bold text-[color:var(--vooki-app-text-strong)] mb-1">Data Unavailable</h4>
+                  <p className="text-xs text-[color:var(--vooki-app-text-soft)]">The creator has not granted permission to access authenticated demographic data.</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Gender */}
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="font-medium text-[color:var(--vooki-app-text-strong)]">Gender Split</span>
+                    </div>
+                    <div className="h-3 w-full rounded-full bg-[color:var(--vooki-app-surface-strong)] flex overflow-hidden">
+                      <div className="h-full bg-pink-500" style={{ width: `${profile.audienceDemographics?.genderSplit?.female || 50}%` }} />
+                      <div className="h-full bg-blue-500" style={{ width: `${profile.audienceDemographics?.genderSplit?.male || 50}%` }} />
+                    </div>
+                    <div className="flex justify-between mt-2 text-xs font-bold">
+                      <span className="text-pink-500">{profile.audienceDemographics?.genderSplit?.female || 50}% F</span>
+                      <span className="text-blue-500">{profile.audienceDemographics?.genderSplit?.male || 50}% M</span>
+                    </div>
+                  </div>
+
+                  {/* Age */}
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="font-medium text-[color:var(--vooki-app-text-strong)]">Top Age Bracket</span>
+                      <span className="font-bold text-[color:var(--vooki-app-text-strong)]">{profile.audienceDemographics?.topAgeBracket || "N/A"}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Location */}
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="font-medium text-[color:var(--vooki-app-text-strong)]">Top Location</span>
+                      <span className="font-bold text-[color:var(--vooki-app-text-strong)] flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-[color:var(--vooki-app-text-soft)]" />
+                        {profile.audienceDemographics?.topLocation || "Global"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Bottom Section: Tabbed Content */}
+          <div className="mt-10">
+            <div className="flex items-center gap-6 border-b border-[color:var(--vooki-app-border-strong)] mb-6 overflow-x-auto">
+              <button 
+                onClick={() => setActiveTab("content")} 
+                className={`pb-4 text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === 'content' ? 'border-b-2 border-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-text-strong)]' : 'border-b-2 border-transparent text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)]'}`}
+              >
+                <Grid className="w-4 h-4" />
+                Recent Content
+              </button>
+              <button 
+                onClick={() => setActiveTab("collabs")} 
+                className={`pb-4 text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === 'collabs' ? 'border-b-2 border-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-text-strong)]' : 'border-b-2 border-transparent text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)]'}`}
+              >
+                <Briefcase className="w-4 h-4" />
+                Past Collaborations
+              </button>
+            </div>
+
+            {/* Tab Panels */}
+            {activeTab === "content" && (
+              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                {(!profile.recentContent || profile.recentContent.length === 0) ? (
+                   <div className="py-20 rounded-3xl border border-dashed border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-card)] text-center flex flex-col items-center">
+                    <Grid className="w-10 h-10 text-[color:var(--vooki-app-text-subtle)] mb-4" />
+                    <h3 className="text-lg font-bold text-[color:var(--vooki-app-text-strong)]">No Content Available</h3>
+                    <p className="text-sm text-[color:var(--vooki-app-text-soft)]">This creator has not synced recent media.</p>
+                   </div>
+                ) : (
+                  <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6">
+                    {profile.recentContent.map((imgUrl, idx) => (
+                      <div key={idx} className="group relative overflow-hidden rounded-3xl break-inside-avoid shadow-sm hover:shadow-md transition-all border border-[color:var(--vooki-app-border)]">
+                        <div className="absolute inset-0 bg-[color:var(--vooki-app-surface-strong)] animate-pulse" />
+                        <Image 
+                          src={imgUrl} 
+                          alt={`Recent content from ${profile.name}`}
+                          width={400}
+                          height={idx % 3 === 0 ? 500 : 350} 
+                          className="relative z-10 w-full h-auto object-cover transform transition-transform duration-700 group-hover:scale-105"
+                          unoptimized
+                        />
+                        <div className="absolute inset-0 z-20 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === "collabs" && (
+              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                {(!profile.pastCollaborations || profile.pastCollaborations.length === 0) ? (
+                   <div className="py-20 rounded-3xl border border-dashed border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-card)] text-center flex flex-col items-center">
+                    <Briefcase className="w-10 h-10 text-[color:var(--vooki-app-text-subtle)] mb-4" />
+                    <h3 className="text-lg font-bold text-[color:var(--vooki-app-text-strong)]">No Past Collaborations</h3>
+                    <p className="text-sm text-[color:var(--vooki-app-text-soft)]">No brand collaborations have been listed.</p>
+                   </div>
+                ) : (
+                  <div className="flex flex-wrap gap-3">
+                    {profile.pastCollaborations.map(brand => (
+                      <Badge key={brand} variant="secondary" className="bg-[color:var(--vooki-app-surface-card)] text-[color:var(--vooki-app-text-strong)] border border-[color:var(--vooki-app-border-strong)] px-4 py-2 text-sm font-bold shadow-sm">
+                        {brand}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </>
       )}
