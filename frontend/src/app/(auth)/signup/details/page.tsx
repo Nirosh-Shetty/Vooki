@@ -222,7 +222,7 @@ export default function DetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[color:var(--vooki-app-bg)] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Progress */}
         <div className="flex justify-center mb-8">
@@ -233,23 +233,23 @@ export default function DetailsPage() {
           </div>
         </div>
 
-        <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+        <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl">
           <CardContent className="p-8">
             {/* Header */}
             <div className="flex items-center mb-6">
               <Link href="/signup/welcome" className="mr-4">
-                <ArrowLeftIcon className="h-5 w-5 text-gray-400 hover:text-white transition-colors" />
+                <ArrowLeftIcon className="h-5 w-5 text-[color:var(--vooki-app-text-muted)] hover:text-[color:var(--vooki-app-text-strong)] transition-colors" />
               </Link>
               <div>
-                <h1 className="text-xl font-bold text-white">Create Account</h1>
-                {selectedRole && <p className="text-sm text-gray-400">Signing up as {getRoleLabel()}</p>}
+                <h1 className="text-xl font-bold text-[color:var(--vooki-app-text-strong)]">Create Account</h1>
+                {selectedRole && <p className="text-sm text-[color:var(--vooki-app-text-muted)]">Signing up as {getRoleLabel()}</p>}
               </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Email */}
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-white">
+                <Label htmlFor="email" className="text-[color:var(--vooki-app-text-strong)]">
                   Email
                 </Label>
                 <Input
@@ -258,7 +258,7 @@ export default function DetailsPage() {
                   placeholder="your@email.com"
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
-                  className={`bg-white/10 border-white/20 text-white placeholder-gray-400 ${
+                  className={`bg-[color:var(--vooki-app-surface-strong)] border-[color:var(--vooki-app-border)] text-[color:var(--vooki-app-text-strong)] placeholder-[color:var(--vooki-app-text-muted)] ${
                     errors.email ? "border-red-500" : isEmailValid && formData.email ? "border-green-500" : ""
                   }`}
                   required
@@ -310,7 +310,7 @@ export default function DetailsPage() {
 
               {/* Username */}
               <div className="space-y-2">
-                <Label htmlFor="username" className="text-white">
+                <Label htmlFor="username" className="text-[color:var(--vooki-app-text-strong)]">
                   Username
                 </Label>
                 <div className="relative">
@@ -319,7 +319,7 @@ export default function DetailsPage() {
                     placeholder="@username"
                     value={formData.username}
                     onChange={(e) => handleInputChange("username", e.target.value)}
-                    className={`bg-white/10 border-white/20 text-white placeholder-gray-400 pr-10 ${
+                    className={`bg-[color:var(--vooki-app-surface-strong)] border-[color:var(--vooki-app-border)] text-[color:var(--vooki-app-text-strong)] placeholder-[color:var(--vooki-app-text-muted)] pr-10 ${
                       errors.username
                         ? "border-red-500"
                         : usernameStatus === "available"
@@ -331,7 +331,7 @@ export default function DetailsPage() {
                     required
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    {usernameStatus === "checking" && <LoaderIcon className="h-4 w-4 animate-spin text-gray-400" />}
+                    {usernameStatus === "checking" && <LoaderIcon className="h-4 w-4 animate-spin text-[color:var(--vooki-app-text-muted)]" />}
                     {usernameStatus === "available" && <CheckIcon className="h-4 w-4 text-green-500" />}
                     {usernameStatus === "taken" && <XIcon className="h-4 w-4 text-red-500" />}
                   </div>
@@ -348,7 +348,7 @@ export default function DetailsPage() {
                           variant="secondary"
                           size="sm"
                           onClick={() => selectSuggestion(suggestion)}
-                          className="bg-white/10 hover:bg-white/20 border border-white/20 hover:border-purple-400/50 text-white text-xs px-3 py-1 h-7 rounded-full transition-all duration-200"
+                          className="bg-[color:var(--vooki-app-surface-strong)] hover:bg-[color:var(--vooki-app-surface-hover)] border-[color:var(--vooki-app-border)] hover:border-[color:var(--vooki-app-border-strong)] text-[color:var(--vooki-app-text-strong)] text-xs px-3 py-1 h-7 rounded-full transition-all duration-200"
                         >
                           @{suggestion}
                         </Button>
@@ -358,7 +358,7 @@ export default function DetailsPage() {
                         variant="ghost"
                         size="sm"
                         onClick={generateNewSuggestions}
-                        className="text-gray-400 hover:text-white bg-transparent hover:bg-white/10 p-1 h-7 w-7 min-w-[28px] rounded-full border border-white/20 hover:border-purple-400/50"
+                        className="text-[color:var(--vooki-app-text-muted)] hover:text-[color:var(--vooki-app-text-strong)] bg-transparent hover:bg-[color:var(--vooki-app-surface-hover)] p-1 h-7 w-7 min-w-[28px] rounded-full border-[color:var(--vooki-app-border)] hover:border-[color:var(--vooki-app-border-strong)]"
                         title="Get new suggestions"
                       >
                         <RefreshCwIcon className="h-3 w-3" />
@@ -372,7 +372,7 @@ export default function DetailsPage() {
 
               {/* Password */}
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-white">
+                <Label htmlFor="password" className="text-[color:var(--vooki-app-text-strong)]">
                   Password
                 </Label>
                 <div className="relative">
@@ -382,7 +382,7 @@ export default function DetailsPage() {
                     placeholder="Create a strong password"
                     value={formData.password}
                     onChange={(e) => handleInputChange("password", e.target.value)}
-                    className={`bg-white/10 border-white/20 text-white placeholder-gray-400 pr-10 ${
+                    className={`bg-[color:var(--vooki-app-surface-strong)] border-[color:var(--vooki-app-border)] text-[color:var(--vooki-app-text-strong)] placeholder-[color:var(--vooki-app-text-muted)] pr-10 ${
                       errors.password
                         ? "border-red-500"
                         : isPasswordValid && formData.password
@@ -394,7 +394,7 @@ export default function DetailsPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[color:var(--vooki-app-text-muted)] hover:text-[color:var(--vooki-app-text-strong)]"
                   >
                     {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
                   </button>
@@ -406,7 +406,7 @@ export default function DetailsPage() {
                       <div
                         className={`w-1 h-1 rounded-full mr-2 ${passwordStrength.hasLength ? "bg-green-500" : "bg-gray-500"}`}
                       ></div>
-                      <span className={passwordStrength.hasLength ? "text-green-400" : "text-gray-400"}>
+                      <span className={passwordStrength.hasLength ? "text-green-400" : "text-[color:var(--vooki-app-text-muted)]"}>
                         8+ characters
                       </span>
                     </div>
@@ -414,7 +414,7 @@ export default function DetailsPage() {
                       <div
                         className={`w-1 h-1 rounded-full mr-2 ${passwordStrength.hasLetter ? "bg-green-500" : "bg-gray-500"}`}
                       ></div>
-                      <span className={passwordStrength.hasLetter ? "text-green-400" : "text-gray-400"}>
+                      <span className={passwordStrength.hasLetter ? "text-green-400" : "text-[color:var(--vooki-app-text-muted)]"}>
                         Contains letters
                       </span>
                     </div>
@@ -422,7 +422,7 @@ export default function DetailsPage() {
                       <div
                         className={`w-1 h-1 rounded-full mr-2 ${passwordStrength.hasNumber ? "bg-green-500" : "bg-gray-500"}`}
                       ></div>
-                      <span className={passwordStrength.hasNumber ? "text-green-400" : "text-gray-400"}>
+                      <span className={passwordStrength.hasNumber ? "text-green-400" : "text-[color:var(--vooki-app-text-muted)]"}>
                         Contains numbers
                       </span>
                     </div>
@@ -434,13 +434,13 @@ export default function DetailsPage() {
               <Button
                 type="submit"
                 disabled={isSubmitting || !isEmailValid || usernameStatus !== "available" || !isPasswordValid}
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium py-3"
+                className="w-full bg-[color:var(--vooki-accent)] hover:bg-[color:var(--vooki-accent-strong)] text-gray-900 shadow-[var(--vooki-shadow-accent)] rounded-full font-medium py-3"
               >
                 {isSubmitting ? "Creating account..." : "Create Account"}
               </Button>
             </form>
 
-            <p className="text-center text-xs text-gray-400 mt-6">
+            <p className="text-center text-xs text-[color:var(--vooki-app-text-muted)] mt-6">
               By continuing, you agree to our Terms & Privacy Policy
             </p>
           </CardContent>

@@ -64,18 +64,18 @@ export default function ForgotPassword1Page() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[color:var(--vooki-app-bg)] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+        <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl">
           <CardContent className="p-8">
             {/* Header */}
             <div className="flex items-center mb-6">
               <Link href="/signin" className="mr-4">
-                <ArrowLeftIcon className="h-5 w-5 text-gray-400 hover:text-white transition-colors" />
+                <ArrowLeftIcon className="h-5 w-5 text-[color:var(--vooki-app-text-muted)] hover:text-[color:var(--vooki-app-text-strong)] transition-colors" />
               </Link>
               <div>
-                <h1 className="text-xl font-bold text-white">Reset Password</h1>
-                <p className="text-sm text-gray-400">
+                <h1 className="text-xl font-bold text-[color:var(--vooki-app-text-strong)]">Reset Password</h1>
+                <p className="text-sm text-[color:var(--vooki-app-text-muted)]">
                   We&apos;ll send you a reset link
                 </p>
               </div>
@@ -83,10 +83,10 @@ export default function ForgotPassword1Page() {
 
             {/* Icon */}
             <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MailIcon className="h-8 w-8 text-white" />
+              <div className="w-16 h-16 bg-gradient-to-r from-[color:var(--vooki-violet)] to-[color:var(--vooki-accent)] rounded-full flex items-center justify-center mx-auto mb-4">
+                <MailIcon className="h-8 w-8 text-[color:var(--vooki-app-text-strong)]" />
               </div>
-              <p className="text-gray-300 text-sm">
+              <p className="text-[color:var(--vooki-app-text-soft)] text-sm">
                 Enter your email and we&apos;ll send you a link to reset your
                 password
               </p>
@@ -97,7 +97,7 @@ export default function ForgotPassword1Page() {
               onSubmit={handleSubmit(handleForgotPasswordSubmit)}
             >
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-white">
+                <Label htmlFor="email" className="text-[color:var(--vooki-app-text-strong)]">
                   Email Address
                 </Label>
                 <Input
@@ -105,7 +105,7 @@ export default function ForgotPassword1Page() {
                   type="email"
                   placeholder="your@email.com"
                   {...register("email")}
-                  className="bg-white/10 border-white/20 text-white placeholder-gray-400"
+                  className="bg-[color:var(--vooki-app-surface-strong)] border-[color:var(--vooki-app-border)] text-[color:var(--vooki-app-text-strong)] placeholder-[color:var(--vooki-app-text-muted)]"
                   required
                 />
 
@@ -114,7 +114,7 @@ export default function ForgotPassword1Page() {
                 ) : error ? (
                   <p className="text-red-400 text-xs">{error}</p>
                 ) : (
-                  <p className="text-gray-400 text-xs">
+                  <p className="text-[color:var(--vooki-app-text-muted)] text-xs">
                     Enter the email associated with your account
                   </p>
                 )}
@@ -123,7 +123,7 @@ export default function ForgotPassword1Page() {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium py-3"
+                className="w-full bg-[color:var(--vooki-accent)] hover:bg-[color:var(--vooki-accent-strong)] text-gray-900 shadow-[var(--vooki-shadow-accent)] rounded-full font-medium py-3"
               >
                 {isSubmitting ? "Sending..." : "Send Reset Link"}
               </Button>

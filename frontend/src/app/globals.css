@@ -415,3 +415,12 @@
   --vooki-app-glow-violet: rgba(184, 168, 232, 0.1);
   --vooki-app-glow-blue: rgba(141, 169, 214, 0.1);
 }
+
+/* Hide scrollbar while keeping scroll functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

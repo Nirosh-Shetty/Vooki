@@ -137,7 +137,7 @@ export default function VerifyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[color:var(--vooki-app-bg)] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Progress */}
         <div className="flex justify-center mb-8">
@@ -148,25 +148,25 @@ export default function VerifyPage() {
           </div>
         </div>
 
-        <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+        <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl">
           <CardContent className="p-8">
             {/* Header */}
             <div className="flex items-center mb-6">
               <Link href="/signup/details" className="mr-4">
-                <ArrowLeftIcon className="h-5 w-5 text-gray-400 hover:text-white transition-colors" />
+                <ArrowLeftIcon className="h-5 w-5 text-[color:var(--vooki-app-text-muted)] hover:text-[color:var(--vooki-app-text-strong)] transition-colors" />
               </Link>
               <div>
-                <h1 className="text-xl font-bold text-white">Verify Email</h1>
-                <p className="text-sm text-gray-400">Almost done!</p>
+                <h1 className="text-xl font-bold text-[color:var(--vooki-app-text-strong)]">Verify Email</h1>
+                <p className="text-sm text-[color:var(--vooki-app-text-muted)]">Almost done!</p>
               </div>
             </div>
 
             <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircleIcon className="h-8 w-8 text-white" />
+              <div className="w-16 h-16 bg-gradient-to-r from-[color:var(--vooki-violet)] to-[color:var(--vooki-accent)] rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircleIcon className="h-8 w-8 text-[color:var(--vooki-app-text-strong)]" />
               </div>
-              <p className="text-gray-300 mb-2">We sent a code to</p>
-              <p className="text-white font-medium">{email}</p>
+              <p className="text-[color:var(--vooki-app-text-soft)] mb-2">We sent a code to</p>
+              <p className="text-[color:var(--vooki-app-text-strong)] font-medium">{email}</p>
             </div>
 
             {/* OTP Input */}
@@ -183,7 +183,7 @@ export default function VerifyPage() {
                     onChange={(e) => handleOtpChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
                     onPaste={index === 0 ? handlePaste : undefined}
-                    className="w-12 h-12 text-center text-lg bg-white/10 border-white/20 text-white"
+                    className="w-12 h-12 text-center text-lg bg-[color:var(--vooki-app-surface-strong)] border-[color:var(--vooki-app-border)] text-[color:var(--vooki-app-text-strong)]"
                   />
                 ))}
               </div>
@@ -193,18 +193,18 @@ export default function VerifyPage() {
               <Button
                 onClick={handleVerify}
                 disabled={isVerifying || otp.join("").length !== 6}
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium py-3"
+                className="w-full bg-[color:var(--vooki-accent)] hover:bg-[color:var(--vooki-accent-strong)] text-gray-900 shadow-[var(--vooki-shadow-accent)] rounded-full font-medium py-3"
               >
                 {isVerifying ? "Verifying..." : "Verify & Continue"}
               </Button>
 
               <div className="text-center">
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-[color:var(--vooki-app-text-muted)]">
                   Didn&apos;t receive it?{" "}
                   {countdown > 0 ? (
                     <span>Resend in {countdown}s</span>
                   ) : (
-                    <button onClick={handleResend} className="text-purple-400 hover:text-purple-300">
+                    <button onClick={handleResend} className="text-[color:var(--vooki-accent)] hover:text-[color:var(--vooki-accent-strong)]">
                       Resend code
                     </button>
                   )}

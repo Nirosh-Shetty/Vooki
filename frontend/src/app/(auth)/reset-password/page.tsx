@@ -87,19 +87,19 @@ export default function ResetPassword1Page() {
   if (!token) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[color:var(--vooki-app-bg)] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+        <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl">
           <CardContent className="p-8">
             {/* Header */}
             <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <ShieldCheckIcon className="h-8 w-8 text-white" />
+              <div className="w-16 h-16 bg-gradient-to-r from-[color:var(--vooki-violet)] to-[color:var(--vooki-accent)] rounded-full flex items-center justify-center mx-auto mb-4">
+                <ShieldCheckIcon className="h-8 w-8 text-[color:var(--vooki-app-text-strong)]" />
               </div>
-              <h1 className="text-xl font-bold text-white mb-2">
+              <h1 className="text-xl font-bold text-[color:var(--vooki-app-text-strong)] mb-2">
                 Create New Password
               </h1>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-[color:var(--vooki-app-text-muted)]">
                 Choose a strong password for your account
               </p>
             </div>
@@ -107,7 +107,7 @@ export default function ResetPassword1Page() {
             <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
               {/* New Password */}
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-white">
+                <Label htmlFor="password" className="text-[color:var(--vooki-app-text-strong)]">
                   New Password
                 </Label>
                 <div className="relative">
@@ -116,12 +116,12 @@ export default function ResetPassword1Page() {
                     type={showPassword ? "text" : "password"}
                     placeholder="Create a strong password"
                     {...register("password")}
-                    className="bg-white/10 border-white/20 text-white placeholder-gray-400 pr-10"
+                    className="bg-[color:var(--vooki-app-surface-strong)] border-[color:var(--vooki-app-border)] text-[color:var(--vooki-app-text-strong)] placeholder-[color:var(--vooki-app-text-muted)] pr-10"
                     required
                   />
                   <button
                     type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[color:var(--vooki-app-text-muted)] hover:text-[color:var(--vooki-app-text-strong)]"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
@@ -142,7 +142,7 @@ export default function ResetPassword1Page() {
                       ></div>
                       <span
                         className={
-                          hasMinLength ? "text-green-400" : "text-gray-400"
+                          hasMinLength ? "text-green-400" : "text-[color:var(--vooki-app-text-muted)]"
                         }
                       >
                         8+ characters
@@ -156,7 +156,7 @@ export default function ResetPassword1Page() {
                       ></div>
                       <span
                         className={
-                          hasLetter ? "text-green-400" : "text-gray-400"
+                          hasLetter ? "text-green-400" : "text-[color:var(--vooki-app-text-muted)]"
                         }
                       >
                         Contains letters
@@ -170,7 +170,7 @@ export default function ResetPassword1Page() {
                       ></div>
                       <span
                         className={
-                          hasNumber ? "text-green-400" : "text-gray-400"
+                          hasNumber ? "text-green-400" : "text-[color:var(--vooki-app-text-muted)]"
                         }
                       >
                         Contains numbers
@@ -184,7 +184,7 @@ export default function ResetPassword1Page() {
                       ></div>
                       <span
                         className={
-                          hasSpecialChar ? "text-green-400" : "text-gray-400"
+                          hasSpecialChar ? "text-green-400" : "text-[color:var(--vooki-app-text-muted)]"
                         }
                       >
                         Contains symbols
@@ -201,7 +201,7 @@ export default function ResetPassword1Page() {
 
               {/* Confirm Password */}
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-white">
+                <Label htmlFor="confirmPassword" className="text-[color:var(--vooki-app-text-strong)]">
                   Confirm Password
                 </Label>
                 <div className="relative">
@@ -210,12 +210,12 @@ export default function ResetPassword1Page() {
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm your password"
                     {...register("confirmPassword")}
-                    className="bg-white/10 border-white/20 text-white placeholder-gray-400 pr-10"
+                    className="bg-[color:var(--vooki-app-surface-strong)] border-[color:var(--vooki-app-border)] text-[color:var(--vooki-app-text-strong)] placeholder-[color:var(--vooki-app-text-muted)] pr-10"
                     required
                   />
                   <button
                     type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[color:var(--vooki-app-text-muted)] hover:text-[color:var(--vooki-app-text-strong)]"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? (
@@ -243,7 +243,7 @@ export default function ResetPassword1Page() {
 
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium py-3"
+                className="w-full bg-[color:var(--vooki-accent)] hover:bg-[color:var(--vooki-accent-strong)] text-gray-900 shadow-[var(--vooki-shadow-accent)] rounded-full font-medium py-3"
                 disabled={
                   isSubmitting ||
                   !isPasswordStrong ||

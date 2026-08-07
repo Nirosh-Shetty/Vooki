@@ -95,12 +95,12 @@ export default function OauthRoleRequiredPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[color:var(--vooki-app-bg)] flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+          <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl">
             <CardContent className="p-8 flex flex-col items-center justify-center min-h-[300px]">
-              <LoaderIcon className="w-12 h-12 text-purple-400 animate-spin mb-4" />
-              <p className="text-gray-300">Loading...</p>
+              <LoaderIcon className="w-12 h-12 text-[color:var(--vooki-accent)] animate-spin mb-4" />
+              <p className="text-[color:var(--vooki-app-text-soft)]">Loading...</p>
             </CardContent>
           </Card>
         </div>
@@ -110,9 +110,9 @@ export default function OauthRoleRequiredPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[color:var(--vooki-app-bg)] flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+          <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl">
             <CardContent className="p-8 flex flex-col items-center justify-center min-h-[300px]">
               <p className="text-red-400 text-center mb-4">{error}</p>
               <Button
@@ -129,17 +129,17 @@ export default function OauthRoleRequiredPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[color:var(--vooki-app-bg)] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+        <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl">
           <CardContent className="p-8 flex flex-col items-center justify-center min-h-[300px]">
-            <h1 className="text-xl font-bold text-white mb-4">Select Your Role</h1>
-            <p className="text-gray-300 text-center mb-6">Choose how you&apos;ll use Vooki to finish signing up with Google or Facebook.</p>
+            <h1 className="text-xl font-bold text-[color:var(--vooki-app-text-strong)] mb-4">Select Your Role</h1>
+            <p className="text-[color:var(--vooki-app-text-soft)] text-center mb-6">Choose how you&apos;ll use Vooki to finish signing up with Google or Facebook.</p>
             <div className="w-full space-y-3">
               {roles.map((role) => (
                 <Button
                   key={role.id}
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium py-3"
+                  className="w-full bg-[color:var(--vooki-accent)] hover:bg-[color:var(--vooki-accent-strong)] text-gray-900 shadow-[var(--vooki-shadow-accent)] rounded-full font-medium py-3"
                   onClick={() => handleRoleSelect(role.id)}
                 >
                   {role.label}
