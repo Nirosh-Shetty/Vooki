@@ -30,6 +30,7 @@ interface NetworkInfluencer {
   status: NetworkStatus
   campaignName?: string
   lastActive: string
+  performanceLabel?: string
 }
 
 const mockNetwork: NetworkInfluencer[] = [
@@ -43,7 +44,8 @@ const mockNetwork: NetworkInfluencer[] = [
     engagement: 5.2,
     status: "active",
     campaignName: "Q3 Headphone Launch",
-    lastActive: "2h ago"
+    lastActive: "2h ago",
+    performanceLabel: "Top Performer"
   },
   {
     id: "seed_2",
@@ -55,7 +57,8 @@ const mockNetwork: NetworkInfluencer[] = [
     engagement: 6.8,
     status: "active",
     campaignName: "Summer Activewear",
-    lastActive: "5h ago"
+    lastActive: "5h ago",
+    performanceLabel: "High ROI"
   },
   {
     id: "seed_3",
@@ -90,7 +93,8 @@ const mockNetwork: NetworkInfluencer[] = [
     followers: 3200000,
     engagement: 8.1,
     status: "shortlisted",
-    lastActive: "3h ago"
+    lastActive: "3h ago",
+    performanceLabel: "High Engagement"
   },
   {
     id: "seed_6",
@@ -114,13 +118,15 @@ const formatCompact = (value: number) => {
 export default function MyNetworkPage() {
   const [activeTab, setActiveTab] = useState<NetworkStatus | "all">("all")
   const [searchQuery, setSearchQuery] = useState("")
+  const [activePerformanceFilter, setActivePerformanceFilter] = useState<string | null>(null)
 
   const filteredNetwork = mockNetwork.filter(influencer => {
     const matchesTab = activeTab === "all" || influencer.status === activeTab
     const matchesSearch = influencer.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           influencer.handle.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           influencer.niche.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesTab && matchesSearch
+    const matchesPerformance = !activePerformanceFilter || influencer.performanceLabel === activePerformanceFilter;
+    return matchesTab && matchesSearch && matchesPerformance
   })
 
   const tabs = [
@@ -180,6 +186,21 @@ export default function MyNetworkPage() {
             className="w-full pl-10 h-10 bg-[color:var(--vooki-app-bg)] border-[color:var(--vooki-app-border-strong)] rounded-xl text-sm font-medium focus-visible:ring-1 focus-visible:ring-[color:var(--vooki-accent)]"
           />
         </div>
+      </div>
+
+      {/* Performance Filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-bold text-[color:var(--vooki-app-text-soft)] mr-2">Past Performance:</span>
+        {["Top Performer", "High ROI", "High Engagement"].map(label => (
+          <Badge 
+            key={label}
+            variant="outline"
+            className={`cursor-pointer px-3 py-1.5 text-xs font-bold transition-all rounded-lg ${activePerformanceFilter === label ? 'bg-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-bg)] border-transparent' : 'bg-[color:var(--vooki-app-surface-card)] text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]'}`}
+            onClick={() => setActivePerformanceFilter(prev => prev === label ? null : label)}
+          >
+            {label}
+          </Badge>
+        ))}
       </div>
 
       {/* Network Grid */}
