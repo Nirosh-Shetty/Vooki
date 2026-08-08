@@ -28,8 +28,8 @@ export function MessagesHubProvider({
   const requestedPromotionId = searchParams?.get("promotionId") || "";
   const requestedCampaignTitle = searchParams?.get("campaignTitle") || "";
 
-  const { conversations, isLoading: conversationsLoading, fetchConversations } = useConversations();
-  const { isConnected, userId } = useSocket();
+  const { conversations, isLoading: conversationsLoading, fetchConversations, setConversations } = useConversations();
+  const { isConnected, userId, socket } = useSocket();
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(
     conversations[0]?.id || null
   );
@@ -43,15 +43,70 @@ export function MessagesHubProvider({
 
   const { sendMessage, joinConversation, leaveConversation } = useMessaging();
 
+  const clearConversationUnread = useCallback((conversationId: string) => {
+    setConversations((prevConversations) =>
+      prevConversations.map((conv) =>
+        conv.id === conversationId
+          ? {
+              ...conv,
+              unreadCount: 0,
+              lastMessage: conv.lastMessage,
+            }
+          : conv
+      )
+    );
+  }, [setConversations]);
+
   useEffect(() => {
     if (selectedConversationId && isConnected) {
       joinConversation(selectedConversationId);
       markAsRead(selectedConversationId);
+      clearConversationUnread(selectedConversationId);
       return () => {
         leaveConversation(selectedConversationId);
       };
     }
-  }, [selectedConversationId, isConnected, joinConversation, leaveConversation, markAsRead]);
+  }, [selectedConversationId, isConnected, joinConversation, leaveConversation, markAsRead, clearConversationUnread]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleConversationUpdated = (update: {
+      conversationId: string;
+      lastMessage: string;
+      lastMessageAt: string | Date;
+      senderId: string;
+      unreadCount: number;
+    }) => {
+      setConversations((prevConversations) => {
+        const targetConversation = prevConversations.find((conv) => conv.id === update.conversationId);
+
+        if (!targetConversation) {
+          void fetchConversations();
+          return prevConversations;
+        }
+
+        const nextUnreadCount = update.senderId === userId
+          ? Math.max(0, targetConversation.unreadCount)
+          : targetConversation.unreadCount + 1;
+
+        const updatedConversation = {
+          ...targetConversation,
+          lastMessage: update.lastMessage,
+          lastMessageAt: new Date(update.lastMessageAt),
+          unreadCount: update.unreadCount > 0 ? update.unreadCount : nextUnreadCount,
+        };
+
+        return [updatedConversation, ...prevConversations.filter((conv) => conv.id !== update.conversationId)];
+      });
+    };
+
+    socket.on("conversation-updated", handleConversationUpdated);
+
+    return () => {
+      socket.off("conversation-updated", handleConversationUpdated);
+    };
+  }, [socket, setConversations, fetchConversations, userId]);
 
   const handleCreateConversation = useCallback(
     async (
@@ -160,7 +215,9 @@ export function MessagesHubProvider({
     inviteId: conv.inviteId,
     invites: conv.invites,
     campaignTitle: conv.campaignTitle,
-    avatar: conv.otherUser?.profilePicture?.substring(0, 2).toUpperCase() || "??",
+    avatar: conv.otherUser?.name?.trim()?.charAt(0)?.toUpperCase() || "?",
+    profileURL: conv.otherUser?.profilePicture || null,
+    icon: conv.otherUser?.name?.trim()?.charAt(0)?.toUpperCase() || null,
     lastMessage: conv.lastMessage,
     lastMessageAt: conv.lastMessageAt ? new Date(conv.lastMessageAt).toLocaleString() : "Now",
     unreadCount: conv.unreadCount,
@@ -223,6 +280,7 @@ export function MessagesHubProvider({
       onSelectConversation={setSelectedConversationId}
       onSendMessage={(text) => {
         if (!selectedConversationId) return;
+        clearConversationUnread(selectedConversationId);
         void sendMessage(selectedConversationId, text).catch((sendError) => {
           console.error("Provider failed to send message:", sendError);
         });

@@ -208,6 +208,13 @@ export const handleMessaging = (
         const roomName = `conversation:${conversationId}`;
         console.log("Broadcasting to room:", roomName, "with message:", messageData.text);
         io.to(roomName).emit("message-received", messageData);
+        io.to(roomName).emit("conversation-updated", {
+          conversationId,
+          lastMessage: messageData.text || (messageData.mediaType ? `[${messageData.mediaType}]` : "New message"),
+          lastMessageAt: messageData.createdAt,
+          senderId: userId,
+          unreadCount: 0,
+        });
 
         callback?.({
           success: true,
