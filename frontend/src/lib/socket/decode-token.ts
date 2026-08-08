@@ -25,7 +25,7 @@ export function decodeToken(token: string): TokenPayload | null {
     const decoded = JSON.parse(atob(padded));
 
     return {
-      id: decoded.id,
+      id: decoded.uid,
       role: decoded.role,
       iat: decoded.iat,
       exp: decoded.exp,
