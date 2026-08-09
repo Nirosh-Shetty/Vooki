@@ -39,6 +39,21 @@ interface Deliverable {
   description?: string
 }
 
+const PLATFORM_FORMATS: Record<string, { label: string; value: string }[]> = {
+  instagram: [
+    { label: "Post", value: "post" },
+    { label: "Reel", value: "reel" },
+    { label: "Story", value: "story" },
+  ],
+  tiktok: [
+    { label: "Video", value: "video" },
+  ],
+  youtube: [
+    { label: "Video", value: "video" },
+    { label: "Shorts", value: "shorts" },
+  ],
+}
+
 interface CreateInviteModalProps {
   campaignId?: string
   campaignName?: string
@@ -106,7 +121,20 @@ export function CreateInviteModal({
     value: any
   ) => {
     const updated = [...deliverables]
-    updated[index] = { ...updated[index], [field]: value }
+    
+    if (field === "platform") {
+      const platformFormats = PLATFORM_FORMATS[value] || PLATFORM_FORMATS.instagram
+      const currentFormatValid = platformFormats.some(f => f.value === updated[index].format)
+      
+      updated[index] = { 
+        ...updated[index], 
+        platform: value,
+        format: currentFormatValid ? updated[index].format : platformFormats[0].value 
+      }
+    } else {
+      updated[index] = { ...updated[index], [field]: value }
+    }
+    
     setDeliverables(updated)
   }
 
@@ -205,24 +233,27 @@ export function CreateInviteModal({
         )}
       </DialogTrigger>
 
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Invite Creator to Collaborate</DialogTitle>
-          {campaignName && (
-            <DialogDescription>
-              Campaign: <strong>{campaignName}</strong>
-            </DialogDescription>
-          )}
-        </DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-bg)] p-0 shadow-2xl rounded-xl">
+        <div className="bg-gradient-to-br from-[color:var(--vooki-app-surface-card)] to-[color:var(--vooki-app-bg)] p-5">
+          <DialogHeader className="mb-6">
+            <DialogTitle className="text-2xl font-black text-[color:var(--vooki-app-text-strong)]">
+              Invite Creator to Collaborate
+            </DialogTitle>
+            {campaignName && (
+              <DialogDescription className="text-[color:var(--vooki-app-text-soft)] font-medium mt-1">
+                Proposing collaboration for <strong className="text-[color:var(--vooki-app-text-strong)]">{campaignName}</strong>
+              </DialogDescription>
+            )}
+          </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
-              {error}
-            </div>
-          )}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm font-semibold text-rose-400">
+                {error}
+              </div>
+            )}
 
-          {/* Campaign Selection */}
+            {/* Campaign Selection */}
           {!campaignId && campaigns && campaigns.length > 0 && (
             <div>
               <label className="block text-sm font-medium mb-2">Campaign</label>
@@ -242,23 +273,22 @@ export function CreateInviteModal({
             </div>
           )}
 
-          {/* Creator Selection */}
           {!preselectedInfluencerId && (
-            <div>
-              <label className="block text-sm font-medium mb-2">Creator</label>
-              <input
+            <div className="space-y-1.5">
+              <label className="block text-sm font-semibold text-[color:var(--vooki-app-text-strong)]">Creator Identification</label>
+              <Input
                 type="text"
                 placeholder="Enter creator ID or search"
                 value={influencerId}
                 onChange={(e) => setInfluencerId(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md"
+                className="h-11 border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-bg)] rounded-xl text-sm font-medium text-[color:var(--vooki-app-text-strong)] focus-visible:ring-1 focus-visible:ring-[color:var(--vooki-accent)]"
               />
             </div>
           )}
 
           {/* Collaboration Type */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-[color:var(--vooki-app-text-strong)]">
               Collaboration Type
             </label>
             <Select
@@ -267,7 +297,7 @@ export function CreateInviteModal({
                 setCollaborationType(v as CollaborationType)
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="h-11 border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-bg)] rounded-xl text-sm font-medium focus:ring-[color:var(--vooki-accent)]">
                 <SelectValue placeholder="Select type..." />
               </SelectTrigger>
               <SelectContent>
@@ -282,20 +312,20 @@ export function CreateInviteModal({
           </div>
 
           {/* Deliverables */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-[color:var(--vooki-app-text-strong)] mb-2">
               Deliverables
             </label>
             <div className="space-y-3">
               {deliverables.map((d, idx) => (
-                <div key={idx} className="flex gap-2">
+                <div key={idx} className="flex flex-col sm:flex-row gap-3 items-center bg-[color:var(--vooki-app-bg)] p-3 rounded-2xl border border-[color:var(--vooki-app-border)]">
                   <Select
                     value={d.platform}
                     onValueChange={(v) =>
                       handleUpdateDeliverable(idx, "platform", v)
                     }
                   >
-                    <SelectTrigger className="flex-1">
+                    <SelectTrigger className="flex-1 h-10 border-transparent bg-[color:var(--vooki-app-surface-card)] hover:bg-[color:var(--vooki-app-surface-strong)]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -311,14 +341,15 @@ export function CreateInviteModal({
                       handleUpdateDeliverable(idx, "format", v)
                     }
                   >
-                    <SelectTrigger className="flex-1">
+                    <SelectTrigger className="flex-1 h-10 border-transparent bg-[color:var(--vooki-app-surface-card)] hover:bg-[color:var(--vooki-app-surface-strong)]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="reel">Reel</SelectItem>
-                      <SelectItem value="story">Story</SelectItem>
-                      <SelectItem value="post">Post</SelectItem>
-                      <SelectItem value="video">Video</SelectItem>
+                      {(PLATFORM_FORMATS[d.platform] || PLATFORM_FORMATS.instagram).map((format) => (
+                        <SelectItem key={format.value} value={format.value}>
+                          {format.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
 
@@ -333,16 +364,17 @@ export function CreateInviteModal({
                         Number(e.target.value)
                       )
                     }
-                    className="w-20"
+                    className="w-full sm:w-24 h-10 border-transparent bg-[color:var(--vooki-app-surface-card)] text-center font-bold"
                   />
 
                   <Button
                     type="button"
                     variant="ghost"
-                    size="sm"
+                    size="icon"
+                    className="h-10 w-10 shrink-0 text-rose-500 hover:bg-rose-500/10 hover:text-rose-600 rounded-xl"
                     onClick={() => handleRemoveDeliverable(idx)}
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-5 h-5" />
                   </Button>
                 </div>
               ))}
@@ -350,64 +382,73 @@ export function CreateInviteModal({
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
+                className="w-full h-11 border-dashed border-[color:var(--vooki-app-border-strong)] bg-transparent hover:bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-strong)] font-semibold rounded-2xl"
                 onClick={handleAddDeliverable}
               >
-                + Add Deliverable
+                <Plus className="w-4 h-4 mr-2" /> Add Deliverable
               </Button>
             </div>
           </div>
 
           {/* Timeline - Advanced Settings */}
-          <div className="border-t pt-4">
-            <button
-              type="button"
-              className="text-sm text-slate-500 hover:text-slate-700 font-medium flex items-center gap-1"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-            >
-              {showAdvanced ? "Hide Advanced Settings" : "Show Advanced Settings (Optional Timeline)"}
-            </button>
+          <div className="space-y-1.5 border-t border-[color:var(--vooki-app-border)] pt-4">
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-semibold text-[color:var(--vooki-app-text-strong)]">
+                Timeline (Optional)
+              </label>
+              <button
+                type="button"
+                className="text-xs font-bold text-[color:var(--vooki-accent)] hover:text-[color:var(--vooki-app-text-strong)] transition-colors"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+              >
+                {showAdvanced ? "Hide Details" : "Show Dates"}
+              </button>
+            </div>
 
             {showAdvanced && (
-              <div className="grid grid-cols-2 gap-3 mt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label className="block text-xs font-semibold text-[color:var(--vooki-app-text-soft)] mb-1.5">
                     Posting Start Date
                   </label>
                   <Input
                     type="date"
                     value={postingStartDate}
                     onChange={(e) => setPostingStartDate(e.target.value)}
+                    className="h-11 border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-bg)] rounded-xl text-sm font-medium text-[color:var(--vooki-app-text-strong)] focus:ring-[color:var(--vooki-accent)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label className="block text-xs font-semibold text-[color:var(--vooki-app-text-soft)] mb-1.5">
                     Posting End Date
                   </label>
                   <Input
                     type="date"
                     value={postingEndDate}
                     onChange={(e) => setPostingEndDate(e.target.value)}
+                    className="h-11 border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-bg)] rounded-xl text-sm font-medium text-[color:var(--vooki-app-text-strong)] focus:ring-[color:var(--vooki-accent)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Draft Due Date (Optional)
+                  <label className="block text-xs font-semibold text-[color:var(--vooki-app-text-soft)] mb-1.5">
+                    Draft Due Date
                   </label>
                   <Input
                     type="date"
                     value={draftDueDate}
                     onChange={(e) => setDraftDueDate(e.target.value)}
+                    className="h-11 border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-bg)] rounded-xl text-sm font-medium text-[color:var(--vooki-app-text-strong)] focus:ring-[color:var(--vooki-accent)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label className="block text-xs font-semibold text-[color:var(--vooki-app-text-soft)] mb-1.5">
                     Response Deadline
                   </label>
                   <Input
                     type="date"
                     value={responseDeadline}
                     onChange={(e) => setResponseDeadline(e.target.value)}
+                    className="h-11 border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-bg)] rounded-xl text-sm font-medium text-[color:var(--vooki-app-text-strong)] focus:ring-[color:var(--vooki-accent)]"
                   />
                 </div>
               </div>
@@ -415,12 +456,12 @@ export function CreateInviteModal({
           </div>
 
           {/* Compensation */}
-          <div>
-            <label className="block text-sm font-medium mb-3">
+          <div className="space-y-1.5 border-t border-[color:var(--vooki-app-border)] pt-4">
+            <label className="block text-sm font-semibold text-[color:var(--vooki-app-text-strong)] mb-2">
               Compensation Structure
             </label>
-            <div className="flex gap-4 mb-3">
-              <label className="flex items-center gap-2 cursor-pointer">
+            <div className="flex gap-4 mb-2">
+              <label className="flex items-center gap-2 cursor-pointer font-semibold text-[color:var(--vooki-app-text-strong)] text-sm">
                 <input
                   type="radio"
                   value="fixed"
@@ -428,10 +469,11 @@ export function CreateInviteModal({
                   onChange={(e) =>
                     setCompensationType(e.target.value as CompensationType)
                   }
+                  className="text-[color:var(--vooki-accent)] focus:ring-[color:var(--vooki-accent)]"
                 />
                 Fixed Amount
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex items-center gap-2 cursor-pointer font-semibold text-[color:var(--vooki-app-text-strong)] text-sm">
                 <input
                   type="radio"
                   value="range"
@@ -439,6 +481,7 @@ export function CreateInviteModal({
                   onChange={(e) =>
                     setCompensationType(e.target.value as CompensationType)
                   }
+                  className="text-[color:var(--vooki-accent)] focus:ring-[color:var(--vooki-accent)]"
                 />
                 Range
               </label>
@@ -450,51 +493,60 @@ export function CreateInviteModal({
                 placeholder="Enter amount (₹)"
                 value={fixedAmount}
                 onChange={(e) => setFixedAmount(e.target.value)}
+                className="h-11 border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-bg)] rounded-xl text-sm font-medium text-[color:var(--vooki-app-text-strong)] focus:ring-[color:var(--vooki-accent)] max-w-[200px]"
               />
             ) : (
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <Input
                   type="number"
                   placeholder="Min (₹)"
                   value={minAmount}
                   onChange={(e) => setMinAmount(e.target.value)}
+                  className="h-11 border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-bg)] rounded-xl text-sm font-medium text-[color:var(--vooki-app-text-strong)] focus:ring-[color:var(--vooki-accent)]"
                 />
                 <Input
                   type="number"
                   placeholder="Max (₹)"
                   value={maxAmount}
                   onChange={(e) => setMaxAmount(e.target.value)}
+                  className="h-11 border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-bg)] rounded-xl text-sm font-medium text-[color:var(--vooki-app-text-strong)] focus:ring-[color:var(--vooki-accent)]"
                 />
               </div>
             )}
           </div>
 
           {/* Brand Message */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
+          <div className="space-y-1.5 border-t border-[color:var(--vooki-app-border)] pt-4">
+            <label className="block text-sm font-semibold text-[color:var(--vooki-app-text-strong)] mb-2">
               Message to Creator
             </label>
             <Textarea
               placeholder="e.g., 'We love your storytelling style. Your audience aligns perfectly with our brand.'"
               value={brandMessage}
               onChange={(e) => setBrandMessage(e.target.value)}
-              className="h-20"
+              className="min-h-[100px] border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-bg)] rounded-xl text-sm font-medium text-[color:var(--vooki-app-text-strong)] focus-visible:ring-1 focus-visible:ring-[color:var(--vooki-accent)] resize-none"
             />
           </div>
 
-          <div className="flex gap-2 justify-end">
+          <div className="flex flex-col sm:flex-row gap-3 sm:justify-end pt-4">
             <Button
               type="button"
               variant="outline"
+              className="h-11 rounded-2xl font-bold border-[color:var(--vooki-app-border-strong)] text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]"
               onClick={() => setOpen(false)}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Creating..." : "Send Invite"}
+            <Button 
+              type="submit" 
+              disabled={loading}
+              className="h-11 rounded-2xl font-bold bg-[color:var(--vooki-accent)] text-black hover:bg-[color:var(--vooki-accent-hover)] px-8 shadow-[var(--vooki-shadow-app-soft)]"
+            >
+              {loading ? "Creating Invite..." : "Send Invite"}
             </Button>
           </div>
         </form>
+        </div>
       </DialogContent>
     </Dialog>
   )
