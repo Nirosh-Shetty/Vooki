@@ -184,9 +184,9 @@ export default function PaymentsPage() {
   if (authLoading || isLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          Loading payments...
+        <div className="flex items-center gap-3 font-semibold text-[color:var(--vooki-app-text-soft)]">
+          <Loader2 className="h-6 w-6 animate-spin text-[color:var(--vooki-accent)]" />
+          Loading finance hub...
         </div>
       </div>
     )
@@ -194,73 +194,87 @@ export default function PaymentsPage() {
 
   if (!user || user.role !== "brand") {
     return (
-      <div className="mx-auto w-full max-w-3xl px-4 py-10">
-        <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-          <CardContent className="p-6 text-sm text-slate-600 dark:text-slate-300">
-            Payments are available on brand accounts once collaborations reach the payout stage.
-          </CardContent>
-        </Card>
+      <div className="mx-auto w-full max-w-3xl px-4 py-12">
+        <div className="rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-4 sm:p-5 text-center shadow-[var(--vooki-shadow-app-soft)]">
+          <Wallet className="mx-auto h-12 w-12 text-[color:var(--vooki-app-text-muted)] mb-4" />
+          <h2 className="text-xl font-bold text-[color:var(--vooki-app-text-strong)]">Finance Hub Access</h2>
+          <p className="mt-2 text-sm text-[color:var(--vooki-app-text-soft)]">
+            Finance metrics and payout records are available for brand accounts managing creator collaborations.
+          </p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:space-y-8 lg:px-8">
-      {/* <Card className="border-white/60 bg-white/85 shadow-lg shadow-blue-100/40 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/85 dark:shadow-none">
-        <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+    <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-5 sm:px-6 lg:px-8">
+      {/* Hero Banner */}
+      {/* <div className="relative overflow-hidden rounded-2xl border border-[color:var(--vooki-app-border-strong)] bg-gradient-to-r from-[color:var(--vooki-app-surface-card)] via-[color:var(--vooki-app-surface-strong)]/60 to-[color:var(--vooki-app-surface-card)] p-5 sm:p-4 sm:p-5 shadow-md">
+        <div className="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-[color:var(--vooki-app-glow-green)] opacity-30 blur-3xl" />
+        <div className="absolute left-1/3 bottom-0 -mb-16 h-48 w-48 rounded-full bg-[color:var(--vooki-app-glow-blue)] opacity-20 blur-3xl" />
+
+        <div className="relative flex flex-col justify-between gap-3 sm:p-5 md:flex-row md:items-center">
           <div>
-            <Badge className="border-0 bg-blue-100 text-blue-900 hover:bg-blue-100 dark:bg-blue-500/20 dark:text-blue-300">
-              <Sparkles className="mr-1 h-3.5 w-3.5" /> Payment Hub
-            </Badge>
-            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">Payments</h1>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-              Payment records appear automatically when a collaboration moves into payout.
+            <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)]/80 px-3 py-1 text-xs font-bold text-[color:var(--vooki-app-text-strong)] shadow-[var(--vooki-shadow-app-soft)] backdrop-blur-md">
+              <Sparkles className="h-3.5 w-3.5 text-amber-400" /> Financial Dashboard
+            </div>
+            <h1 className="mt-3 text-3xl font-black tracking-tight text-[color:var(--vooki-app-text-strong)] sm:text-4xl">
+              Payouts & Expenses
+            </h1>
+            <p className="mt-2 max-w-xl text-sm font-medium text-[color:var(--vooki-app-text-soft)] leading-relaxed">
+              Track creator payouts, escrow releases, and campaign budget allocation in real-time.
             </p>
           </div>
-          <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900 dark:border-blue-900 dark:bg-blue-500/10 dark:text-blue-200">
-            Manage payment timing from the collaboration itself, then use this page to track what is due and what is already paid.
-          </div>
-        </CardContent>
-      </Card> */}
+        </div>
+      </div> */}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="Total tracked" value={formatMoney(metrics.totalSpent)} icon={<Wallet className="h-5 w-5 text-blue-700 dark:text-blue-300" />} tone="blue" />
         <MetricCard label="Pending" value={formatMoney(metrics.pending)} icon={<Clock3 className="h-5 w-5 text-amber-700 dark:text-amber-300" />} tone="amber" />
         <MetricCard label="Processing" value={formatMoney(metrics.processing)} icon={<TrendingUp className="h-5 w-5 text-sky-700 dark:text-sky-300" />} tone="sky" />
         <MetricCard label="Completed" value={formatMoney(metrics.completed)} icon={<CheckCircle2 className="h-5 w-5 text-emerald-700 dark:text-emerald-300" />} tone="emerald" />
       </div>
 
-      <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-        <CardContent className="space-y-3 p-4 sm:p-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search by influencer or campaign"
-                className="h-10 border-slate-300 bg-white pl-10 text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-              />
-            </div>
+      {/* Toolbar & Search */}
+      <div className="rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-4 shadow-[var(--vooki-shadow-app-soft)] space-y-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[color:var(--vooki-app-text-subtle)]" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search transactions by creator name or campaign title..."
+              className="h-11 border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-bg)] pl-11 rounded-2xl text-sm font-medium text-[color:var(--vooki-app-text-strong)] placeholder:text-[color:var(--vooki-app-text-subtle)] focus-visible:ring-1 focus-visible:ring-[color:var(--vooki-accent)]"
+            />
           </div>
+        </div>
 
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as PaymentStatus | "all")} className="w-full">
-            <TabsList className="grid h-auto w-full grid-cols-5 rounded-xl border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-950">
-              <TabsTrigger value="all">All ({counts.all})</TabsTrigger>
-              <TabsTrigger value="pending">Pending ({counts.pending})</TabsTrigger>
-              <TabsTrigger value="processing">Processing ({counts.processing})</TabsTrigger>
-              <TabsTrigger value="completed">Completed ({counts.completed})</TabsTrigger>
-              <TabsTrigger value="failed">Failed ({counts.failed})</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </CardContent>
-      </Card>
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as PaymentStatus | "all")} className="w-full">
+          <TabsList className="flex flex-wrap gap-1.5 h-auto w-full rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)]/40 p-1.5">
+            {[
+              { id: "all", label: `All (${counts.all})` },
+              { id: "pending", label: `Pending (${counts.pending})` },
+              { id: "processing", label: `Processing (${counts.processing})` },
+              { id: "completed", label: `Completed (${counts.completed})` },
+              { id: "failed", label: `Failed (${counts.failed})` },
+            ].map((tab) => (
+              <TabsTrigger
+                key={tab.id}
+                value={tab.id}
+                className="flex-1 rounded-xl py-2 text-xs font-bold transition-all data-[state=active]:bg-[color:var(--vooki-app-surface-card)] data-[state=active]:text-[color:var(--vooki-app-text-strong)] data-[state=active]:shadow-sm"
+              >
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      </div>
 
-      {error ? (
-        <Card className="border-rose-200 bg-rose-50 shadow-sm dark:border-rose-900 dark:bg-rose-500/10">
-          <CardContent className="p-4 text-sm text-rose-700 dark:text-rose-300">{error}</CardContent>
-        </Card>
-      ) : null}
+      {error && (
+        <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm font-semibold text-rose-400">
+          {error}
+        </div>
+      )}
 
       <div className="space-y-4">
         {filteredPayments.length === 0 ? (
@@ -278,63 +292,70 @@ export default function PaymentsPage() {
         ) : null}
 
         {filteredPayments.map((payment) => (
-          <Card key={payment.id} className="border-slate-200 bg-white/90 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/85">
-            <CardHeader className="pb-3">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <CardTitle className="text-lg text-slate-900 dark:text-slate-100">{payment.influencerName}</CardTitle>
-                    <Badge className={statusColors[payment.status]}>{statusLabels[payment.status]}</Badge>
-                  </div>
-                  <CardDescription className="mt-1 text-slate-600 dark:text-slate-400">
-                    {payment.campaignTitle}
-                    {payment.influencerHandle ? ` - ${payment.influencerHandle}` : ""}
-                  </CardDescription>
+          <div
+            key={payment.id}
+            className="group relative flex flex-col justify-between gap-4 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-[color:var(--vooki-app-border-strong)] hover:shadow-md"
+          >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-3">
+                  <h3 className="text-lg font-bold text-[color:var(--vooki-app-text-strong)]">
+                    {payment.influencerName}
+                  </h3>
+                  <Badge className={`rounded-lg px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider ${statusColors[payment.status]}`}>
+                    {statusLabels[payment.status]}
+                  </Badge>
                 </div>
-                <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">{formatMoney(payment.amount, payment.currency)}</p>
+                <p className="text-sm font-medium text-[color:var(--vooki-app-text-soft)]">
+                  {payment.campaignTitle} {payment.influencerHandle ? `• ${payment.influencerHandle}` : ""}
+                </p>
               </div>
-            </CardHeader>
 
-            <CardContent className="space-y-4">
-              <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-3 dark:text-slate-300">
-                <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-950">
-                  <Calendar className="h-4 w-4 text-slate-700 dark:text-slate-300" />
+              <div className="text-left sm:text-right">
+                <p className="text-2xl font-black tracking-tight text-[color:var(--vooki-app-text-strong)]">
+                  {formatMoney(payment.amount, payment.currency)}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between border-t border-[color:var(--vooki-app-border)]/60">
+              <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-[color:var(--vooki-app-text-soft)]">
+                <div className="inline-flex items-center gap-1.5 rounded-xl bg-[color:var(--vooki-app-surface-strong)]/50 px-3 py-1.5 border border-[color:var(--vooki-app-border)]">
+                  <Calendar className="h-3.5 w-3.5 text-[color:var(--vooki-app-text-subtle)]" />
                   <span>Due {new Date(payment.dueDate).toLocaleDateString()}</span>
                 </div>
-                <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-950">
-                  <CreditCard className="h-4 w-4 text-slate-700 dark:text-slate-300" />
+                <div className="inline-flex items-center gap-1.5 rounded-xl bg-[color:var(--vooki-app-surface-strong)]/50 px-3 py-1.5 border border-[color:var(--vooki-app-border)]">
+                  <CreditCard className="h-3.5 w-3.5 text-[color:var(--vooki-app-text-subtle)]" />
                   <span>{paymentMethodLabels[payment.paymentMethod]}</span>
                 </div>
+
                 {payment.status === "failed" ? (
-                  <div className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 dark:border-rose-900 dark:bg-rose-500/10">
-                    <AlertCircle className="h-4 w-4 text-rose-700 dark:text-rose-300" />
-                    <span className="text-rose-700 dark:text-rose-300">{payment.failureReason || "Retry needed"}</span>
+                  <div className="inline-flex items-center gap-1.5 rounded-xl bg-rose-500/10 px-3 py-1.5 border border-rose-500/20 text-rose-400">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    <span>{payment.failureReason || "Action required"}</span>
                   </div>
                 ) : payment.processedDate ? (
-                  <div className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-900 dark:bg-emerald-500/10">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-700 dark:text-emerald-300" />
-                    <span className="text-emerald-700 dark:text-emerald-300">Paid {new Date(payment.processedDate).toLocaleDateString()}</span>
+                  <div className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/10 px-3 py-1.5 border border-emerald-500/20 text-emerald-400">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    <span>Released {new Date(payment.processedDate).toLocaleDateString()}</span>
                   </div>
                 ) : null}
               </div>
 
-              <div className="flex flex-col gap-2 sm:flex-row">
-                {payment.promotionId ? (
-                  <Button size="sm" className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-cyan-600 dark:hover:bg-cyan-700" asChild>
-                    <Link href={`/brand/promotions/${payment.promotionId}`}>
-                      Open collaboration
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                ) : null}
-                {payment.notes ? (
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
-                    {payment.notes}
-                  </div>
-                ) : null}
-              </div>
-            </CardContent>
-          </Card>
+              {payment.promotionId && (
+                <Button
+                  size="sm"
+                  className="rounded-xl bg-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-bg)] font-bold hover:bg-[color:var(--vooki-app-text)] transition-all shadow-xs"
+                  asChild
+                >
+                  <Link href={`/brand/promotions/${payment.promotionId}`}>
+                    Manage Collaboration
+                    <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                  </Link>
+                </Button>
+              )}
+            </div>
+          </div>
         ))}
       </div>
 
@@ -379,24 +400,18 @@ function MetricCard({
   icon: React.ReactNode
   tone: "blue" | "amber" | "sky" | "emerald"
 }) {
-  const toneClass = {
-    blue: "bg-blue-100 dark:bg-blue-500/20",
-    amber: "bg-amber-100 dark:bg-amber-500/20",
-    sky: "bg-sky-100 dark:bg-sky-500/20",
-    emerald: "bg-emerald-100 dark:bg-emerald-500/20",
-  }[tone]
-
   return (
-    <Card className="border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-900/85">
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">{value}</p>
-          </div>
-          <div className={`rounded-lg p-2 ${toneClass}`}>{icon}</div>
+    <div className="group relative overflow-hidden rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[color:var(--vooki-app-border-strong)] hover:shadow-[var(--vooki-shadow-app-soft)]">
+      <div className="absolute inset-0 bg-gradient-to-br from-transparent to-[color:var(--vooki-app-surface-strong)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      <div className="relative flex items-start justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-[color:var(--vooki-app-text-subtle)]">{label}</p>
+          <p className="mt-2 text-2xl font-black tracking-tight text-[color:var(--vooki-app-text-strong)]">{value}</p>
         </div>
-      </CardContent>
-    </Card>
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--vooki-app-surface-strong)] border border-[color:var(--vooki-app-border)] shadow-xs transition-transform duration-300 group-hover:scale-110">
+          {icon}
+        </div>
+      </div>
+    </div>
   )
 }
