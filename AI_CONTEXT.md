@@ -171,7 +171,8 @@
 ## 21. Completed Tasks
 
 1. Redesigned Finance Page (`payments/page.tsx`) with Vooki aesthetic (glassmorphism, vibrant badges, hover lifts). Addressed transaction map updates.
-2. Redesigned Invite Modal (`CreateInviteModal.tsx`) into structured cards with premium controls. Handled user feedback to normalize padding (`p-4`, `rounded-xl`) to maintain standard sizing.
+2. Redesigned Invite Modal (`CreateInviteModal.tsx`) into structured cards with premium controls. Handled user feedback to normalize padding (`p-4`, `rounded-xl`) to maintain standard sizing and dynamic deliverable formats based on platform.
+3. Updated topbar user info across Brand, Creator (Influencer), and Manager layouts (`WorkspaceShell`) to dynamically pull name, email/handle, profile photo (if available), or fall back to full name initials from `AuthContext`.
 
 ## 22. Next Steps
 

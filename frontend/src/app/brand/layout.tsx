@@ -54,15 +54,25 @@ export default function BrandLayout({ children }: { children: React.ReactNode })
     { prefix: "/brand/promotions/", title: "Collaboration Detail" },
   ]);
 
+  const name = user?.brandName || user?.name || "Brand User";
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .map((n) => n[0])
+    .join("")
+    .substring(0, 2)
+    .toUpperCase();
+
   return (
     <WorkspaceShell
       roleLabel="Brand"
       workspaceLabel="Brand workspace"
       pageTitle={pageTitle}
       brandIcon={Building}
-      accountName={user?.brandName || user?.name || "Brand User"}
-      accountMeta="Brand account"
-      accountInitials={(user?.brandName || user?.name || "B").substring(0, 2).toUpperCase()}
+      accountName={name}
+      accountMeta={user?.email || "Brand account"}
+      accountInitials={initials || "B"}
+      accountAvatar={user?.profilePicture}
       sidebarItems={sidebarItems}
       mobilePrimary={mobilePrimary}
       settingsHref="/brand/settings"

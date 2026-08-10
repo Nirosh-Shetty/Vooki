@@ -43,6 +43,7 @@ type WorkspaceShellProps = {
   accountName: string;
   accountMeta: string;
   accountInitials: string;
+  accountAvatar?: string;
   sidebarItems: WorkspaceNavItem[];
   mobilePrimary: WorkspaceNavItem[];
   settingsHref: string;
@@ -110,6 +111,7 @@ export function WorkspaceShell({
   accountName,
   accountMeta,
   accountInitials,
+  accountAvatar,
   sidebarItems,
   mobilePrimary,
   settingsHref,
@@ -259,8 +261,12 @@ export function WorkspaceShell({
                         className="h-auto rounded-full border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-card)] px-2 py-1.5 text-[color:var(--vooki-app-text-strong)] shadow-[var(--vooki-shadow-app-soft)] hover:bg-[color:var(--vooki-app-surface-strong)]"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--vooki-app-active-bg)] text-sm font-semibold text-[color:var(--vooki-app-active-text)]">
-                            {accountInitials}
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--vooki-app-active-bg)] text-sm font-semibold text-[color:var(--vooki-app-active-text)] overflow-hidden shrink-0">
+                            {accountAvatar ? (
+                              <img src={accountAvatar} alt={accountName} className="h-full w-full object-cover" />
+                            ) : (
+                              accountInitials
+                            )}
                           </div>
                           <div className="hidden text-left md:block">
                             <p className="text-sm font-medium">{accountName}</p>
