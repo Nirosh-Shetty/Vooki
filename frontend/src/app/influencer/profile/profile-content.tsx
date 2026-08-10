@@ -26,6 +26,7 @@ import {
   Users,
   Video,
   Youtube,
+  Copy,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -84,7 +85,7 @@ type SocialConnectionEntry =
   | GenericSocialConnectionEntry;
 
 type InfluencerProfile = {
-  id: string;
+  _id: string;
   role: "influencer";
   name: string;
   username?: string;
@@ -102,6 +103,7 @@ type InfluencerProfile = {
     audience?: string;
     socialConnections?: Record<string, SocialConnectionEntry>;
   };
+  avatar?: string;
 };
 
 type PlatformMetric = {
@@ -367,6 +369,7 @@ export function ProfileContent() {
   const [error, setError] = useState<string | null>(null);
   const [connectError, setConnectError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
 
   const searchParams = useSearchParams();
   const connectedPlatform = searchParams?.get("connected");
@@ -374,6 +377,22 @@ export function ProfileContent() {
   const [socialConnections, setSocialConnections] = useState<Record<string, SocialConnectionEntry>>(
     {}
   );
+
+  const handleCopyProfileLink = async () => {
+    if (!profile?._id) return;
+
+    try {
+      // Constructs the full absolute URL for the clipboard
+      const profileUrl = `${window.location.origin}/creator/${profile._id}`;
+      await navigator.clipboard.writeText(profileUrl);
+
+      setIsCopied(true);
+      // Reset the icon back to 'copy' after 2 seconds
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy link:", err);
+    }
+  };
 
   const loadConnections = async (signal: AbortSignal) => {
     try {
@@ -507,7 +526,7 @@ export function ProfileContent() {
     profile?.influencerDetails?.summary ??
     "Build a standout Vooki profile that helps the right brands understand your audience, content and collaboration value.";
 
-  const heroAvatar = profile?.profilePicture || "/images/avatar2.png";
+  const heroAvatar = profile?.avatar || "/images/avatar2.png";
 
   const connectEndpoints: Record<PlatformKey, string> = {
     youtube: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/social/connect/youtube`,
@@ -571,84 +590,104 @@ export function ProfileContent() {
 
         <div className="relative p-5 sm:p-7 lg:p-8">
           <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-              <div className="relative shrink-0">
-                {/* Soft glow */}
-                <div className="absolute -inset-3 rounded-full bg-gradient-to-tr from-violet-500/30 via-fuchsia-400/20 to-transparent blur-xl" />
+            <div className="flex flex-col gap-4">
+              {/* Top Row: Avatar and Name side-by-side */}
+              <div className="flex items-center gap-4 sm:gap-6">
+                <div className="relative shrink-0">
+                  {/* Soft glow */}
+                  <div className="absolute -inset-3 rounded-full bg-gradient-to-tr to-transparent blur-xl" />
 
-                {/* Gradient profile ring */}
-                <div className="relative rounded-full bg-white p-[3px] shadow-2xl">
-                  <Avatar className="h-28 w-28 rounded-full border-4 border-[color:var(--vooki-app-surface)] sm:h-32 sm:w-32">
-                    <AvatarImage
-                      src={heroAvatar}
-                      alt={profile.name}
-                      className="object-cover object-center "
-                    />
+                  {/* Used inline-flex to stop it from stretching full-width on mobile */}
+                  <div className="relative inline-flex rounded-full bg-white p-[3px] shadow-2xl">
+                    <Avatar className="h-20 w-20 sm:h-28 sm:w-28 rounded-full border-4 border-[color:var(--vooki-app-surface)]">
+                      <AvatarImage
+                        src={heroAvatar}
+                        alt={profile.name}
+                        className="object-cover object-center "
+                      />
 
-                    <AvatarFallback className="bg-white text-3xl font-bold">
-                      {profile.name
-                        .split(" ")
-                        .map((part) => part[0])
-                        .join("")
-                        .slice(0, 2)}
-                    </AvatarFallback>
-                  </Avatar>
+                      <AvatarFallback className="bg-white text-xl sm:text-3xl font-bold text-black">
+                        {profile.name
+                          .split(" ")
+                          .map((part) => part[0])
+                          .join("")
+                          .slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                </div>
+
+                {/* Name and Badges (Right side) */}
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="truncate sm:text-3xl font-bold tracking-tight text-[color:var(--vooki-app-text-strong)]">
+                      {profile.name}
+                    </h3>
+                    <Badge className=" shrink-0 rounded-full border-0 bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] hover:bg-[color:var(--vooki-app-active-border)] transition-colors">
+                      <Sparkles className="mr-1 h-3 w-3" />
+                      Vooki Creator
+                    </Badge>
+                  </div>
+
+                  <p className="mt-1 truncate text-sm text-[color:var(--vooki-app-text-soft)]">
+                    @{profile.username || "creator"}
+                  </p>
                 </div>
               </div>
 
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-2xl font-bold tracking-tight text-[color:var(--vooki-app-text-strong)] sm:text-3xl">
-                    {profile.name}
-                  </h1>
-                  <Badge className="rounded-full border-0 bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] hover:bg-[color:var(--vooki-app-active-border)] transition-colors">
-                    <Sparkles className="mr-1 h-3 w-3" />
-                    Vooki Creator
-                  </Badge>
-                </div>
-
-                <p className="mt-1 text-sm text-[color:var(--vooki-app-text-soft)]">
-                  @{profile.username || "creator"}
-                </p>
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {profile.influencerDetails?.niche && (
-                    <Badge
-                      variant="outline"
-                      className="rounded-full border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-soft)]"
-                    >
-                      {profile.influencerDetails.niche}
-                    </Badge>
-                  )}
+              {/* Bottom Row: Niche & Setup progress */}
+              <div className="flex flex-wrap items-center gap-2">
+                {profile.influencerDetails?.niche && (
                   <Badge
                     variant="outline"
                     className="rounded-full border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-soft)]"
                   >
-                    <CheckCircle2 className="mr-1 h-3 w-3 text-[color:var(--vooki-app-active-icon)]" />
-                    {connectedCount > 0
-                      ? `${connectedCount} verified channel${connectedCount > 1 ? "s" : ""}`
-                      : "Profile setup in progress"}
+                    {profile.influencerDetails.niche}
                   </Badge>
-                </div>
+                )}
+                <Badge
+                  variant="outline"
+                  className="rounded-full border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-soft)]"
+                >
+                  <CheckCircle2 className="mr-1 h-3 w-3 text-[color:var(--vooki-app-active-icon)]" />
+                  {connectedCount > 0
+                    ? `${connectedCount} verified channel${connectedCount > 1 ? "s" : ""}`
+                    : "Profile setup in progress"}
+                </Badge>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mt-4 xl:mt-0">
               <Button
                 asChild
                 className="rounded-xl border border-[color:var(--vooki-app-border-strong)] bg-transparent text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-hover)] shadow-sm"
               >
                 <Link href="/influencer/profile/edit">Edit profile</Link>
               </Button>
-              <Button
-                className="rounded-xl border border-[color:var(--vooki-app-active-border)] bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] hover:bg-[color:var(--vooki-app-active-border)] shadow-sm hover:shadow-md transition-all cursor-pointer"
-                onClick={() => {
-                  window.open(`shareprofile/${profile.id}`, "_blank", "noopener,noreferrer");
-                }}
-              >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Preview public profile
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  className="rounded-xl border border-[color:var(--vooki-app-active-border)] bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] hover:bg-[color:var(--vooki-app-active-border)] shadow-sm hover:shadow-md transition-all cursor-pointer"
+                  onClick={() => {
+                    window.open(`/creator/${profile._id}`, "_blank", "noopener,noreferrer");
+                  }}
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Preview public profile
+                </Button>
+
+                <Button
+                  className="rounded-xl border border-[color:var(--vooki-app-border-strong)] bg-transparent text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-hover)] shadow-sm transition-all cursor-pointer px-3"
+                  onClick={handleCopyProfileLink}
+                  title="Copy profile link"
+                  aria-label="Copy profile link"
+                >
+                  {isCopied ? (
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
 
