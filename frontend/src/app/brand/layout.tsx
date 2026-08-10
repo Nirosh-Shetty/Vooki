@@ -15,6 +15,7 @@ import {
 
 import { useRouteTitle } from "@/hooks/useRouteTitle";
 import { WorkspaceShell, type WorkspaceNavItem } from "@/components/workspace/workspace-shell";
+import { useAuth } from "@/context/auth-context";
 
 const sidebarItems: WorkspaceNavItem[] = [
   { label: "Dashboard", href: "/brand/dashboard", icon: Home },
@@ -46,6 +47,7 @@ const routeTitle: Record<string, string> = {
 };
 
 export default function BrandLayout({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const pageTitle = useRouteTitle(routeTitle, "Brand Workspace", [
     { prefix: "/brand/campaigns/", title: "Campaign Detail" },
     { prefix: "/brand/discover/", title: "Creator Detail" },
@@ -58,9 +60,9 @@ export default function BrandLayout({ children }: { children: React.ReactNode })
       workspaceLabel="Brand workspace"
       pageTitle={pageTitle}
       brandIcon={Building}
-      accountName="TechCorp"
+      accountName={user?.brandName || user?.name || "Brand User"}
       accountMeta="Brand account"
-      accountInitials="TC"
+      accountInitials={(user?.brandName || user?.name || "B").substring(0, 2).toUpperCase()}
       sidebarItems={sidebarItems}
       mobilePrimary={mobilePrimary}
       settingsHref="/brand/settings"
