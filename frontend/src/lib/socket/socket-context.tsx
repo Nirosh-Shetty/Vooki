@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
-import { getCurrentUserId } from "./decode-token";
+import { decodeToken } from "./decode-token";
 
 interface SocketContextType {
   socket: Socket | null;
@@ -55,9 +55,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
           return;
         }
 
-        // Get user ID from token
-        const currentUserId = getCurrentUserId();
-        setUserId(currentUserId);
+        // Get user ID from the fetched socket token
+        const tokenPayload = decodeToken(token);
+        setUserId(tokenPayload?.id ?? null);
+
+        console.log("Fetched socket token:", tokenPayload);
 
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 

@@ -2,14 +2,28 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useEffect, type ReactNode } from "react";
+import { useMemo, useState, useEffect, useRef, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SearchPeopleDialog } from "./search-people-dialog";
-import { ArrowLeft, Check, CheckCheck, Circle, Dot, Loader2, MoreVertical, Paperclip, Plus, Search, Send, Smile } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  CheckCheck,
+  Circle,
+  Dot,
+  Loader2,
+  MoreVertical,
+  Paperclip,
+  Plus,
+  Search,
+  Send,
+  Smile,
+  User,
+} from "lucide-react";
 import { CounterOfferModal } from "@/components/collaboration/CounterOfferModal";
 import { DeclineConfirmDialog } from "@/components/collaboration/DeclineConfirmDialog";
 
@@ -34,7 +48,9 @@ export interface HubConversation {
   id: string;
   name: string;
   context: string;
-  avatar: string;
+  avatar?: string;
+  profileURL?: string | null;
+  icon?: string | null;
   lastMessage: string;
   lastMessageAt: string;
   unreadCount: number;
@@ -45,7 +61,7 @@ export interface HubConversation {
   promotionId?: string;
   inviteId?: string;
   campaignTitle?: string;
-  invites?: Record<string, { id: string; status: string; campaignId: string; }>;
+  invites?: Record<string, { id: string; status: string; campaignId: string }>;
 }
 
 export interface HubMessage {
@@ -98,6 +114,82 @@ const formatDate = (value?: string | Date | null) => {
   if (Number.isNaN(date.getTime())) return "Not set";
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };
+
+const avatarPalette = [
+  "#7c3aed",
+  "#2563eb",
+  "#0f766e",
+  "#d97706",
+  "#db2777",
+  "#059669",
+  "#b45309",
+  "#4f46e5",
+  "#be185d",
+  "#0284c7",
+] as const;
+
+const getAvatarInitial = (conversation: Pick<HubConversation, "name" | "avatar">) => {
+  const fallback = conversation.avatar?.trim();
+  if (fallback && fallback !== "??") return fallback;
+  return conversation.name?.trim()?.charAt(0)?.toUpperCase() || "?";
+};
+
+const getAvatarStyle = (conversation: Pick<HubConversation, "id" | "name" | "avatar">) => {
+  const seed = `${conversation.id || ""}${conversation.name || ""}${conversation.avatar || ""}`;
+  let hash = 0;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash << 5) - hash + seed.charCodeAt(index);
+    hash |= 0;
+  }
+  const paletteIndex = Math.abs(hash) % avatarPalette.length;
+  return { backgroundColor: avatarPalette[paletteIndex], color: "#ffffff" };
+};
+
+function ConversationAvatar({
+  conversation,
+  online,
+  size = "md",
+}: {
+  conversation: Pick<HubConversation, "id" | "name" | "avatar" | "profileURL" | "icon">;
+  online?: boolean;
+  size?: "sm" | "md";
+}) {
+  const isImage = Boolean(conversation.profileURL);
+  const label = getAvatarInitial(conversation);
+  const avatarStyle = getAvatarStyle(conversation);
+  const sizeClasses = size === "sm"
+    ? "h-9 w-9 sm:h-11 sm:w-11 rounded-xl sm:rounded-2xl text-xs sm:text-sm"
+    : "h-10 w-10 rounded-2xl text-sm";
+  const badgeClass = size === "sm"
+    ? "h-2.5 w-2.5 sm:h-3 sm:w-3"
+    : "h-3 w-3";
+
+  return (
+    <div className="relative shrink-0">
+      <div
+        className={`flex items-center justify-center overflow-hidden border border-white/20 font-semibold ${sizeClasses}`}
+        style={isImage ? undefined : avatarStyle}
+      >
+        {isImage ? (
+          <img
+            src={conversation.profileURL!}
+            alt={conversation.name}
+            className="h-full w-full object-cover"
+          />
+        ) : conversation.icon ? (
+          <span>{conversation.icon}</span>
+        ) : (
+          <span>{label}</span>
+        )}
+      </div>
+      {online ? (
+        <span
+          className={`absolute bottom-0 right-0 rounded-full border-2 border-[color:var(--vooki-app-surface-card)] bg-[color:var(--vooki-accent)] ${badgeClass}`}
+        />
+      ) : null}
+    </div>
+  );
+}
 
 const getCollaborationHref = (role: RoleVariant, promotionId?: string) => {
   if (!promotionId) return null;
@@ -212,8 +304,14 @@ export function MessagesHub({
   const [creatingConversation, setCreatingConversation] = useState(false);
   const [cardActionKey, setCardActionKey] = useState<string | null>(null);
   const [cardActionError, setCardActionError] = useState<string | null>(null);
-  const [counterModal, setCounterModal] = useState<{ open: boolean; inviteId: string; terms: any } | null>(null);
-  const [declineModal, setDeclineModal] = useState<{ open: boolean; inviteId: string } | null>(null);
+  const [counterModal, setCounterModal] = useState<{
+    open: boolean;
+    inviteId: string;
+    terms: any;
+  } | null>(null);
+  const [declineModal, setDeclineModal] = useState<{ open: boolean; inviteId: string } | null>(
+    null
+  );
 
   useEffect(() => {
     if (providedSelectedId !== undefined) {
@@ -256,6 +354,15 @@ export function MessagesHub({
     }
     return map;
   }, [selectedMessages]);
+
+  const messagesContentRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!selectedConversation) return;
+    const content = messagesContentRef.current;
+    if (!content) return;
+    content.scrollTop = content.scrollHeight;
+  }, [selectedConversation, selectedMessages.length]);
 
   const openConversation = (id: string) => {
     setSelectedId(id);
@@ -318,13 +425,12 @@ export function MessagesHub({
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-4 sm:px-6 lg:px-8">
-      <div className="grid h-[calc(100vh-9rem)] min-h-[580px] gap-4 lg:grid-cols-[360px_1fr]">
-        <Card
-          className={`${mobileChatOpen ? "hidden lg:flex" : "flex"} rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]`}
+<div className="mx-auto w-full px-3 pt-4 sm:px-6 lg:px-8 overflow-x-hidden">
+      <div className="grid h-[calc(100dvh-13rem)] min-h-[360px] gap-4 sm:h-[calc(100vh-10.5rem)] sm:min-h-[520px] lg:grid-cols-[360px_1fr] lg:h-[calc(100vh-9rem)]">        <Card
+          className={`${mobileChatOpen ? "hidden lg:flex" : "flex"} h-full min-h-0 overflow-hidden rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]`}
         >
-          <div className="flex h-full w-full flex-col">
-            <CardHeader className="space-y-3 border-b border-[color:var(--vooki-app-border-strong)] pb-4">
+          <div className="flex h-full min-h-0 w-full flex-col">
+            <CardHeader className="space-y-3 border-b border-[color:var(--vooki-app-border-strong)] pb-4 shrink-0">
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--vooki-app-text-muted)]" />
@@ -361,7 +467,7 @@ export function MessagesHub({
                 </TabsList>
               </Tabs>
             </CardHeader>
-            <CardContent className="flex-1 space-y-2 overflow-y-auto p-3">
+            <CardContent className="flex-1 min-h-0 space-y-2 overflow-y-auto p-3">
               {filteredConversations.map((conversation) => {
                 const isSelected = selectedId === conversation.id;
                 return (
@@ -369,41 +475,38 @@ export function MessagesHub({
                     key={conversation.id}
                     type="button"
                     onClick={() => openConversation(conversation.id)}
-                    className={`w-full rounded-[24px] border p-3 text-left transition-colors ${
+                    className={`w-full rounded-2xl border p-2.5 sm:rounded-[24px] sm:p-3 text-left transition-colors ${
                       isSelected
                         ? "border-[color:var(--vooki-accent-border)] bg-[color:var(--vooki-accent-soft)]"
                         : "border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] hover:bg-[color:var(--vooki-app-surface-hover)]"
                     }`}
                   >
-                    <div className="flex items-start gap-3">
-                      <div className="relative shrink-0">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[color:var(--vooki-violet)] text-sm font-semibold text-white">
-                          {conversation.avatar}
-                        </div>
-                        {conversation.online ? (
-                          <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[color:var(--vooki-app-surface-card)] bg-[color:var(--vooki-accent)]" />
-                        ) : null}
-                      </div>
+                    <div className="flex items-start gap-2.5 sm:gap-3">
+                      <ConversationAvatar
+                        conversation={conversation}
+                        online={conversation.online}
+                        size="sm"
+                      />
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="truncate text-sm font-medium text-[color:var(--vooki-app-text-strong)]">
+                        <div className="flex items-center justify-between gap-1 sm:gap-2">
+                          <p className="truncate text-xs sm:text-sm font-medium text-[color:var(--vooki-app-text-strong)]">
                             {conversation.name}
                           </p>
-                          <span className="text-xs text-[color:var(--vooki-app-text-muted)]">
+                          <span className="text-[10px] sm:text-xs text-[color:var(--vooki-app-text-muted)]">
                             {conversation.lastMessageAt}
                           </span>
                         </div>
-                        <p className="truncate text-xs text-[color:var(--vooki-app-text-muted)]">
+                        <p className="truncate text-[11px] sm:text-xs text-[color:var(--vooki-app-text-muted)]">
                           {conversation.context}
                         </p>
-                        <div className="mt-1.5 flex items-center justify-between">
-                          <p className="truncate text-xs text-[color:var(--vooki-app-text-soft)]">
+                        <div className="mt-1 flex items-center justify-between">
+                          <p className="truncate text-[11px] sm:text-xs text-[color:var(--vooki-app-text-soft)]">
                             {conversation.lastMessage}
                           </p>
                           <div className="ml-2 flex items-center gap-2">
                             <Dot className={`h-4 w-4 ${statusDotStyles[conversation.status]}`} />
                             {conversation.unreadCount > 0 ? (
-                              <Badge className="border-0 bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] hover:bg-[color:var(--vooki-accent)]">
+                              <Badge className="border-0 bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] hover:bg-[color:var(--vooki-accent)] px-1.5 py-0 text-[10px]">
                                 {conversation.unreadCount}
                               </Badge>
                             ) : null}
@@ -419,9 +522,9 @@ export function MessagesHub({
         </Card>
 
         <Card
-          className={`${mobileChatOpen ? "flex" : "hidden lg:flex"} rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]`}
+          className={`${mobileChatOpen ? "flex" : "hidden lg:flex"} h-full min-h-0 overflow-hidden rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]`}
         >
-          <div className="flex h-full w-full flex-col">
+          <div className="flex h-full min-h-0 w-full flex-col">
             {selectedConversation ? (
               <>
                 <CardHeader className="border-b border-[color:var(--vooki-app-border-strong)] pb-4">
@@ -435,14 +538,11 @@ export function MessagesHub({
                       >
                         <ArrowLeft className="h-4 w-4" />
                       </Button>
-                      <div className="relative shrink-0">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--vooki-violet)] text-sm font-semibold text-white">
-                          {selectedConversation.avatar}
-                        </div>
-                        {selectedConversation.online ? (
-                          <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[color:var(--vooki-app-surface-card)] bg-[color:var(--vooki-accent)]" />
-                        ) : null}
-                      </div>
+                      <ConversationAvatar
+                        conversation={selectedConversation}
+                        online={selectedConversation.online}
+                        size="md"
+                      />
                       <div className="min-w-0">
                         <CardTitle className="truncate text-base text-[color:var(--vooki-app-text-strong)]">
                           {selectedConversation.name}
@@ -462,7 +562,10 @@ export function MessagesHub({
                   </div>
                 </CardHeader>
 
-                <CardContent className="flex-1 space-y-3 overflow-y-auto p-4">
+                <CardContent
+                  ref={messagesContentRef}
+                  className="flex-1 min-h-0 space-y-3 overflow-y-auto p-4"
+                >
                   {cardActionError ? (
                     <div className="rounded-xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-warm-soft)] px-3 py-2 text-xs text-[color:var(--vooki-warm)]">
                       {cardActionError}
@@ -477,23 +580,33 @@ export function MessagesHub({
                       message.offerData?.promotionId
                     );
                     const isIncoming = message.sender === "other";
-                    
+
                     const messageInviteId = message.offerData?.inviteId;
-                    const messageInvite = messageInviteId ? selectedConversation?.invites?.[messageInviteId] : undefined;
-                    
-                    const messageKey = messageInviteId || message.offerData?.campaignId || "default";
-                    const isLatestStructured = message.id === latestStructuredMessageIdsByInvite[messageKey];
-                    
-                    const isPending = messageInvite 
-                      ? messageInvite.status === "pending" || messageInvite.status === "counter_offered"
+                    const messageInvite = messageInviteId
+                      ? selectedConversation?.invites?.[messageInviteId]
+                      : undefined;
+
+                    const messageKey =
+                      messageInviteId || message.offerData?.campaignId || "default";
+                    const isLatestStructured =
+                      message.id === latestStructuredMessageIdsByInvite[messageKey];
+
+                    const isPending = messageInvite
+                      ? messageInvite.status === "pending" ||
+                        messageInvite.status === "counter_offered"
                       : selectedConversation?.status === "pending";
-                    
+
                     const showAcceptRejectActions =
                       isPending &&
                       isLatestStructured &&
                       (!messageInvite || !message.offerData?.promotionId) &&
-                      ((role === "influencer" && isIncoming && (message.messageType === "offer" || message.messageType === "counter_offer")) ||
-                      ((role === "brand" || role === "manager") && isIncoming && message.messageType === "counter_offer"));
+                      ((role === "influencer" &&
+                        isIncoming &&
+                        (message.messageType === "offer" ||
+                          message.messageType === "counter_offer")) ||
+                        ((role === "brand" || role === "manager") &&
+                          isIncoming &&
+                          message.messageType === "counter_offer"));
 
                     const actions =
                       isStructured && isIncoming ? (
@@ -539,11 +652,7 @@ export function MessagesHub({
                                 variant="ghost"
                                 className="text-[color:var(--vooki-warm)] hover:bg-[color:var(--vooki-warm-soft)] hover:text-[color:var(--vooki-warm)]"
                                 onClick={() =>
-                                  handleStructuredAction(
-                                    "decline",
-                                    selectedConversation,
-                                    message
-                                  )
+                                  handleStructuredAction("decline", selectedConversation, message)
                                 }
                                 disabled={cardActionKey !== null}
                               >
