@@ -78,7 +78,7 @@ export default function BrandLayout({ children }: { children: React.ReactNode })
       settingsHref="/brand/settings"
       menuLinks={[
         { label: "Brand profile", href: "/brand/profile" },
-        { label: "Account settings", href: "/brand/settings" },
+        { label: "Settings", href: "/brand/settings" },
       ]}
     >
       {children}

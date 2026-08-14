@@ -18,6 +18,7 @@ import {
   forgotPassword,
   resetPassword,
   setPasswordForOAuth,
+  changePassword,
 } from "../controllers/auth/passowrd.controller";
 import { PassportUser } from "../types/passportUser";
 
@@ -134,5 +135,6 @@ authRouter.post("/check-username-unique", checkUsernameUnique);
 authRouter.post("/forgot-password", forgotPassword);
 authRouter.post("/reset-password", resetPassword);
 authRouter.post("/set-password-oauth", setPasswordForOAuth); // For OAuth users to add password
+authRouter.post("/change-password", authMiddleware, changePassword);
 
 export default authRouter;
