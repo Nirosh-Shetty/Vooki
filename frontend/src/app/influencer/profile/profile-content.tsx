@@ -229,17 +229,17 @@ function SocialConnectionCard({
   const metrics: PlatformMetric[] = isYouTube
     ? isYoutubeConnection(typedConnection)
       ? [
-          { label: "Subscribers", value: typedConnection.metrics?.subscribers },
-          { label: "Total views", value: typedConnection.metrics?.totalViews },
-          { label: "Videos", value: typedConnection.metrics?.videoCount },
-        ].filter((item) => item.value !== undefined && item.value !== null)
+        { label: "Subscribers", value: typedConnection.metrics?.subscribers },
+        { label: "Total views", value: typedConnection.metrics?.totalViews },
+        { label: "Videos", value: typedConnection.metrics?.videoCount },
+      ].filter((item) => item.value !== undefined && item.value !== null)
       : []
     : isInstagramConnection(typedConnection)
       ? [
-          { label: "Followers", value: typedConnection.metrics?.followers },
-          { label: "Posts", value: typedConnection.metrics?.mediaCount },
-          { label: "Reach", value: typedConnection.metrics?.reach },
-        ].filter((item) => item.value !== undefined && item.value !== null)
+        { label: "Followers", value: typedConnection.metrics?.followers },
+        { label: "Posts", value: typedConnection.metrics?.mediaCount },
+        { label: "Reach", value: typedConnection.metrics?.reach },
+      ].filter((item) => item.value !== undefined && item.value !== null)
       : [];
 
   const handle = isYouTube
@@ -282,11 +282,10 @@ function SocialConnectionCard({
           size="sm"
           onClick={() => onConnect(platform)}
           disabled={isConnecting}
-          className={`rounded-xl border transition-colors hover:cursor-pointer ${
-            typedConnection
+          className={`rounded-xl border transition-colors hover:cursor-pointer ${typedConnection
               ? "border-[color:var(--vooki-app-border-strong)] bg-transparent text-[color:var(--vooki-app-text-strong)] hover:bg-black/5 dark:hover:bg-white/10"
               : "border-transparent bg-zinc-700 text-white hover:bg-zinc-900 dark:bg-zinc-300 dark:text-zinc-900 dark:hover:bg-white shadow-sm"
-          }`}
+            }`}
         >
           {isConnecting ? "Connecting..." : typedConnection ? "Reconnect" : "Connect"}
         </Button>
@@ -526,7 +525,7 @@ export function ProfileContent() {
     profile?.influencerDetails?.summary ??
     "Build a standout Vooki profile that helps the right brands understand your audience, content and collaboration value.";
 
-  const heroAvatar = profile?.avatar || "/images/avatar2.png";
+  const heroAvatar = profile?.avatar || "/images/defaults/creator.svg";
 
   const connectEndpoints: Record<PlatformKey, string> = {
     youtube: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/social/connect/youtube`,
