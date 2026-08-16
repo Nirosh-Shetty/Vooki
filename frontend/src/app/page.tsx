@@ -10,10 +10,12 @@ function Reveal({
   children,
   className = "",
   delay = 0,
+  style = {},
 }: {
   children: ReactNode;
   className?: string;
   delay?: number;
+  style?: React.CSSProperties;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -39,6 +41,7 @@ function Reveal({
       ref={ref}
       className={className}
       style={{
+        ...style,
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(32px)",
         transition: `opacity 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}ms, transform 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
@@ -327,7 +330,7 @@ export default function LandingPage() {
         </Reveal>
 
         {/* Hero visual — conceptual flow */}
-        <Reveal delay={400}>
+        <Reveal delay={400} style={{ width: "100%", display: "flex", justifyContent: "center" }}>
           <div
             style={{
               marginTop: 80,
