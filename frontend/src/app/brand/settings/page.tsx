@@ -8,10 +8,10 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/context/auth-context"
-import { 
-  ShieldCheck, 
-  Briefcase, 
-  Users, 
+import {
+  ShieldCheck,
+  Briefcase,
+  Users,
   Save,
   Mail,
   Phone,
@@ -19,17 +19,18 @@ import {
   Smartphone,
   Eye,
   EyeOff,
-  Loader2
+  Loader2,
+  Info
 } from "lucide-react"
 
 export default function BrandSettingsPage() {
   const { user, refreshUser } = useAuth()
-  
+
   const [showPassword, setShowPassword] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [passwordSaving, setPasswordSaving] = useState(false)
-  const [message, setMessage] = useState<{type: 'success'|'error', text: string} | null>(null)
-  const [passwordMessage, setPasswordMessage] = useState<{type: 'success'|'error', text: string} | null>(null)
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
   const [accountData, setAccountData] = useState({
     contactName: "",
@@ -43,14 +44,27 @@ export default function BrandSettingsPage() {
     newPassword: ""
   })
 
+  const [defaultsData, setDefaultsData] = useState({
+    usageRights: "Content can be reposted natively on brand's social media channels (Instagram) for up to 6 months with credit to the creator.",
+    exclusivityPeriod: 30
+  })
+
   useEffect(() => {
     if (user) {
       setAccountData({
         contactName: user.name || "",
-        contactRole: (user as any).brandDetails?.pointsOfContact || "", // using this as a proxy for role for now
+        contactRole: (user as any).brandDetails?.contactRole || "",
         email: user.email || "",
         phone: user.phone ? String(user.phone) : ""
       })
+
+      const userDefaults = (user as any).brandDetails?.collaborationDefaults;
+      if (userDefaults) {
+        setDefaultsData({
+          usageRights: userDefaults.usageRights || "Content can be reposted natively on brand's social media channels (Instagram) for up to 6 months with credit to the creator.",
+          exclusivityPeriod: userDefaults.exclusivityPeriod ?? 30
+        })
+      }
     }
   }, [user])
 
@@ -60,6 +74,11 @@ export default function BrandSettingsPage() {
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPasswordData(prev => ({ ...prev, [e.target.name]: e.target.value }))
+  }
+
+  const handleDefaultsChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setDefaultsData(prev => ({ ...prev, [name]: name === "exclusivityPeriod" ? Number(value) : value }))
   }
 
   const handleSaveAccount = async () => {
@@ -75,7 +94,8 @@ export default function BrandSettingsPage() {
           email: accountData.email,
           phone: accountData.phone,
           brandDetails: {
-            pointsOfContact: accountData.contactRole
+            contactRole: accountData.contactRole,
+            collaborationDefaults: defaultsData
           }
         })
       })
@@ -132,9 +152,6 @@ export default function BrandSettingsPage() {
           <h1 className="text-3xl font-black tracking-tight text-[color:var(--vooki-app-text-strong)]">
             Settings
           </h1>
-          <p className="mt-1 text-sm font-medium text-[color:var(--vooki-app-text-soft)]">
-            Control your account, security, and workspace preferences.
-          </p>
         </div>
         <div className="flex items-center gap-4">
           {message && (
@@ -142,7 +159,7 @@ export default function BrandSettingsPage() {
               {message.text}
             </span>
           )}
-          <Button 
+          <Button
             onClick={handleSaveAccount}
             disabled={isSaving}
             className="h-11 rounded-xl bg-[color:var(--vooki-app-brand)] px-6 font-semibold text-white shadow-lg shadow-cyan-500/20 hover:bg-[color:var(--vooki-app-brand-hover)] transition-all"
@@ -155,21 +172,21 @@ export default function BrandSettingsPage() {
 
       <Tabs defaultValue="account" className="w-full">
         <TabsList className="mb-8 flex h-auto flex-wrap justify-start gap-2 bg-transparent p-0">
-          <TabsTrigger 
+          <TabsTrigger
             value="account"
             className="rounded-xl border border-transparent px-5 py-2.5 text-sm font-semibold text-[color:var(--vooki-app-text-soft)] data-[state=active]:border-[color:var(--vooki-app-border)] data-[state=active]:bg-[color:var(--vooki-app-surface)] data-[state=active]:text-[color:var(--vooki-app-text-strong)] data-[state=active]:shadow-sm transition-all"
           >
             <ShieldCheck className="mr-2 h-4 w-4" />
             Account & Security
           </TabsTrigger>
-          <TabsTrigger 
+          <TabsTrigger
             value="preferences"
             className="rounded-xl border border-transparent px-5 py-2.5 text-sm font-semibold text-[color:var(--vooki-app-text-soft)] data-[state=active]:border-[color:var(--vooki-app-border)] data-[state=active]:bg-[color:var(--vooki-app-surface)] data-[state=active]:text-[color:var(--vooki-app-text-strong)] data-[state=active]:shadow-sm transition-all"
           >
             <Briefcase className="mr-2 h-4 w-4" />
             Collaboration Defaults
           </TabsTrigger>
-          <TabsTrigger 
+          <TabsTrigger
             value="team"
             className="rounded-xl border border-transparent px-5 py-2.5 text-sm font-semibold text-[color:var(--vooki-app-text-soft)] data-[state=active]:border-[color:var(--vooki-app-border)] data-[state=active]:bg-[color:var(--vooki-app-surface)] data-[state=active]:text-[color:var(--vooki-app-text-strong)] data-[state=active]:shadow-sm transition-all"
           >
@@ -184,26 +201,26 @@ export default function BrandSettingsPage() {
             <div className="rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface)] p-6 shadow-sm backdrop-blur-md">
               <h2 className="mb-1 text-lg font-bold text-[color:var(--vooki-app-text-strong)]">Private Account Details</h2>
               <p className="mb-6 text-sm text-[color:var(--vooki-app-text-soft)]">These details are not visible to creators.</p>
-              
+
               <div className="space-y-5">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label htmlFor="contactName" className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">Primary Contact Name</Label>
-                    <Input 
-                      id="contactName" 
+                    <Input
+                      id="contactName"
                       value={accountData.contactName}
                       onChange={handleAccountChange}
-                      className="h-11 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] focus-visible:ring-[color:var(--vooki-app-brand)]" 
+                      className="h-11 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] focus-visible:ring-[color:var(--vooki-app-brand)]"
                     />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="contactRole" className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">Your Role</Label>
-                    <Input 
-                      id="contactRole" 
+                    <Input
+                      id="contactRole"
                       value={accountData.contactRole}
                       onChange={handleAccountChange}
                       placeholder="Head of Partnerships"
-                      className="h-11 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] focus-visible:ring-[color:var(--vooki-app-brand)]" 
+                      className="h-11 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] focus-visible:ring-[color:var(--vooki-app-brand)]"
                     />
                   </div>
                 </div>
@@ -212,12 +229,12 @@ export default function BrandSettingsPage() {
                   <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">Login Email</Label>
                   <div className="relative">
                     <Mail className="absolute left-3.5 top-3 h-5 w-5 text-[color:var(--vooki-app-text-muted)]" />
-                    <Input 
-                      id="email" 
+                    <Input
+                      id="email"
                       type="email"
                       value={accountData.email}
                       onChange={handleAccountChange}
-                      className="h-11 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] pl-11 focus-visible:ring-[color:var(--vooki-app-brand)]" 
+                      className="h-11 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] pl-11 focus-visible:ring-[color:var(--vooki-app-brand)]"
                     />
                   </div>
                 </div>
@@ -226,13 +243,13 @@ export default function BrandSettingsPage() {
                   <Label htmlFor="phone" className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">Phone Number</Label>
                   <div className="relative">
                     <Phone className="absolute left-3.5 top-3 h-5 w-5 text-[color:var(--vooki-app-text-muted)]" />
-                    <Input 
-                      id="phone" 
+                    <Input
+                      id="phone"
                       type="tel"
                       value={accountData.phone}
                       onChange={handleAccountChange}
                       placeholder="1234567890"
-                      className="h-11 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] pl-11 focus-visible:ring-[color:var(--vooki-app-brand)]" 
+                      className="h-11 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] pl-11 focus-visible:ring-[color:var(--vooki-app-brand)]"
                     />
                   </div>
                 </div>
@@ -241,52 +258,52 @@ export default function BrandSettingsPage() {
 
             <div className="rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface)] p-6 shadow-sm backdrop-blur-md">
               <h2 className="mb-4 text-lg font-bold text-[color:var(--vooki-app-text-strong)]">Security</h2>
-              
+
               <div className="space-y-6">
                 <div className="space-y-4 rounded-xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] p-4">
                   <h3 className="text-sm font-semibold text-[color:var(--vooki-app-text-strong)]">Change Password</h3>
                   <div className="space-y-3">
                     <div className="relative">
                       <Lock className="absolute left-3.5 top-3 h-5 w-5 text-[color:var(--vooki-app-text-muted)]" />
-                      <Input 
+                      <Input
                         type={showPassword ? "text" : "password"}
                         name="currentPassword"
                         value={passwordData.currentPassword}
                         onChange={handlePasswordChange}
                         placeholder="Current Password"
-                        className="h-11 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface)] pl-11 focus-visible:ring-[color:var(--vooki-app-brand)]" 
+                        className="h-11 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface)] pl-11 focus-visible:ring-[color:var(--vooki-app-brand)]"
                       />
                     </div>
                     <div className="relative">
                       <Lock className="absolute left-3.5 top-3 h-5 w-5 text-[color:var(--vooki-app-text-muted)]" />
-                      <Input 
+                      <Input
                         type={showPassword ? "text" : "password"}
                         name="newPassword"
                         value={passwordData.newPassword}
                         onChange={handlePasswordChange}
                         placeholder="New Password"
-                        className="h-11 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface)] pl-11 focus-visible:ring-[color:var(--vooki-app-brand)]" 
+                        className="h-11 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface)] pl-11 focus-visible:ring-[color:var(--vooki-app-brand)]"
                       />
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3.5 top-3 text-[color:var(--vooki-app-text-muted)] hover:text-[color:var(--vooki-app-text-strong)]"
                       >
                         {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                       </button>
                     </div>
-                    
+
                     <div className="flex items-center justify-between mt-2">
-                      <Button 
+                      <Button
                         onClick={handleUpdatePassword}
                         disabled={passwordSaving || !passwordData.currentPassword || !passwordData.newPassword}
-                        variant="outline" 
+                        variant="outline"
                         className="h-9 rounded-lg border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface)] text-xs font-semibold"
                       >
                         {passwordSaving ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
                         Update Password
                       </Button>
-                      
+
                       {passwordMessage && (
                         <span className={`text-xs font-medium ${passwordMessage.type === 'success' ? 'text-green-500' : 'text-red-500'}`}>
                           {passwordMessage.text}
@@ -319,40 +336,31 @@ export default function BrandSettingsPage() {
         <TabsContent value="preferences" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
           <div className="max-w-3xl space-y-6">
             <div className="rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface)] p-6 shadow-sm backdrop-blur-md">
-              <h2 className="mb-1 text-lg font-bold text-[color:var(--vooki-app-text-strong)]">Default Campaign Terms</h2>
-              <p className="mb-6 text-sm text-[color:var(--vooki-app-text-soft)]">These will be pre-filled when you create a new campaign or send an invite.</p>
-              
+              <h2 className="mb-6 text-lg font-bold text-[color:var(--vooki-app-text-strong)]">Default Campaign Terms</h2>
+
               <div className="space-y-6">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">Standard Usage Rights Requested</Label>
-                  <Textarea 
-                    defaultValue="Content can be reposted natively on brand's social media channels (Instagram, TikTok) for up to 6 months with credit to the creator."
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">Standard Usage Rights</Label>
+                  <Textarea
+                    name="usageRights"
+                    value={defaultsData.usageRights}
+                    onChange={handleDefaultsChange}
                     rows={3}
-                    className="rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] focus-visible:ring-[color:var(--vooki-app-brand)]"
+                    className="rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] focus-visible:ring-[color:var(--vooki-app-brand)] text-sm"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">Standard Revisions</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">Exclusivity Period</Label>
                   <div className="flex items-center gap-3">
-                    <Input 
-                      type="number" 
-                      defaultValue={1}
-                      className="h-11 w-24 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] focus-visible:ring-[color:var(--vooki-app-brand)]" 
+                    <Input
+                      type="number"
+                      name="exclusivityPeriod"
+                      value={defaultsData.exclusivityPeriod}
+                      onChange={handleDefaultsChange}
+                      className="h-11 w-28 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] focus-visible:ring-[color:var(--vooki-app-brand)] font-semibold"
                     />
-                    <span className="text-sm text-[color:var(--vooki-app-text-soft)]">rounds of revision included</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">Default Exclusivity Period</Label>
-                  <div className="flex items-center gap-3">
-                    <Input 
-                      type="number" 
-                      defaultValue={30}
-                      className="h-11 w-24 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] focus-visible:ring-[color:var(--vooki-app-brand)]" 
-                    />
-                    <span className="text-sm text-[color:var(--vooki-app-text-soft)]">days (post-publication)</span>
+                    <span className="text-sm font-medium text-[color:var(--vooki-app-text-soft)]">days post-publication</span>
                   </div>
                 </div>
               </div>

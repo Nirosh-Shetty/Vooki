@@ -53,6 +53,12 @@ export interface BrandProfile {
   summary?: string;
   activeCampaigns?: number;
   pointsOfContact?: number;
+  contactRole?: string;
+  collaborationDefaults?: {
+    usageRights?: string;
+    revisions?: number;
+    exclusivityPeriod?: number;
+  };
   about?: string;
   preferredCategories?: string[];
   whitelist?: Types.ObjectId[];

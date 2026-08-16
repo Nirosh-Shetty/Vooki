@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ArrowLeft, Camera, Check, Link2, Loader2, PlayCircle, Plus } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/context/auth-context"
+import imageCompression from "browser-image-compression"
 
 const socialPlatforms = ["Instagram", "TikTok", "YouTube", "Threads"] as const
 
@@ -121,9 +125,23 @@ export default function InfluencerProfileEditPage() {
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
-    const dataUrl = await fileToDataUrl(file)
-    setPhotoPreview(dataUrl)
-    setPhotoData(dataUrl)
+    
+    try {
+      const options = {
+        maxSizeMB: 0.2, // 200KB
+        maxWidthOrHeight: 800,
+        useWebWorker: true,
+      }
+      const compressedFile = await imageCompression(file, options)
+      const dataUrl = await fileToDataUrl(compressedFile)
+      setPhotoPreview(dataUrl)
+      setPhotoData(dataUrl)
+    } catch (error) {
+      console.error("Error compressing image:", error)
+      const dataUrl = await fileToDataUrl(file)
+      setPhotoPreview(dataUrl)
+      setPhotoData(dataUrl)
+    }
   }
 
   const handleSubmit = async () => {
