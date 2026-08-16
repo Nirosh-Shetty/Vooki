@@ -146,7 +146,7 @@ export default function LandingPage() {
                 borderRadius: "50%",
                 background: "var(--vooki-home-bg)",
                 position: "absolute",
-                top: "50%",
+                top: "35%",
                 left: "50%",
                 transform: "translate(-30%, -30%)",
               }}
@@ -968,7 +968,7 @@ export default function LandingPage() {
               e.currentTarget.style.transform = "translateY(0)";
             }}
           >
-            Get Started
+            Join Vooki
           </Link>
         </Reveal>
 
@@ -982,7 +982,7 @@ export default function LandingPage() {
               position: "relative",
             }}
           >
-            Free to start. No credit card required.
+            Free to join. No commission on your collaborations.
           </p>
         </Reveal>
       </section>
@@ -1020,7 +1020,7 @@ export default function LandingPage() {
                 borderRadius: "50%",
                 background: "var(--vooki-home-bg)",
                 position: "absolute",
-                top: "50%",
+                top: "35%",
                 left: "50%",
                 transform: "translate(-30%, -30%)",
               }}
