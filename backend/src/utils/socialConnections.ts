@@ -83,7 +83,8 @@ export const normalizeSocialConnection = (
         subscribers: pickNumber(rawMetrics.subscribers ?? rawMetrics.followers),
         totalViews: pickNumber(rawMetrics.totalViews ?? rawMetrics.views),
         videoCount: pickNumber(rawMetrics.videoCount),
-        commentCount: pickNumber(rawMetrics.commentCount ?? rawMetrics.engagement),
+        likes: pickNumber(rawMetrics.likes),
+        comments: pickNumber(rawMetrics.comments ?? rawMetrics.commentCount),
         hiddenSubscriberCount: pickBoolean(rawMetrics.hiddenSubscriberCount),
       }),
     };
@@ -105,6 +106,26 @@ export const normalizeSocialConnection = (
         mediaCount: pickNumber(rawMetrics.mediaCount ?? rawMetrics.views),
         reach: pickNumber(rawMetrics.reach),
         impressions: pickNumber(rawMetrics.impressions),
+        likes: pickNumber(rawMetrics.likes),
+        comments: pickNumber(rawMetrics.comments),
+      }),
+    };
+  }
+
+  if (platform === "facebook") {
+    return {
+      ...base,
+      platform: "facebook",
+      profile: compactRecord({
+        pageId: pickString(rawProfile.pageId),
+        pageName: pickString(rawProfile.pageName),
+        profileUrl: pickString(rawProfile.profileUrl),
+      }),
+      metrics: compactRecord({
+        followers: pickNumber(rawMetrics.followers),
+        likes: pickNumber(rawMetrics.likes),
+        comments: pickNumber(rawMetrics.comments),
+        engagement: pickNumber(rawMetrics.engagement),
       }),
     };
   }

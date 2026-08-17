@@ -1,6 +1,7 @@
 import express from "express";
 import {
   connectSocialAccount,
+  getConnectedAccounts,
   getSocialConnections,
   handleInstagramCallback,
   handleYoutubeCallback,
@@ -20,5 +21,6 @@ socialRouter.get("/connect/instagram", authMiddleware, requireRole("influencer")
 socialRouter.get("/connect/instagram/callback", handleInstagramCallback);
 socialRouter.patch("/metrics", authMiddleware, requireRole("influencer"), updateSocialMetrics);
 socialRouter.get("/connections", authMiddleware, requireRole("influencer"), getSocialConnections);
+socialRouter.get("/connections", authMiddleware, getConnectedAccounts);
 
 export default socialRouter;

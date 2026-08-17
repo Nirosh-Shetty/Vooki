@@ -41,7 +41,7 @@ const StatsConnectionSchema = new Schema(
 const InfluencerProfileSchema = new Schema(
   {
     followers: { type: Number, default: 0 },
-    niche: { type: String },
+    niche: { type: String, default: "General"},
     socialLinks: { type: Map, of: String },
     statsConnection: {
       type: Map,
@@ -53,6 +53,8 @@ const InfluencerProfileSchema = new Schema(
     audience: { type: String },
     engagement: { type: Number, default: 0 },
     collaborations: [{ type: Schema.Types.ObjectId, ref: "Collaboration" }],
+    languages : [{ type: String }],
+    location: { type: String },
   },
   { _id: false }
 );

@@ -173,28 +173,62 @@ export const handleYoutubeCallback = async (req: Request, res: Response) => {
   if (error) {
     return res.status(400).json({ message: "YouTube connection denied" });
   }
+
   await handleSocialCallback(state as string, res, async (userId) => {
     const oauth2Client = buildYoutubeClient();
     const { tokens } = await oauth2Client.getToken(code as string);
     oauth2Client.setCredentials(tokens);
+
     const youtube = google.youtube("v3");
+    const ytAnalytics = google.youtubeAnalytics("v2");
+
+    // 1. Fetch channel snippet & basic stats
     const response = await youtube.channels.list({
       auth: oauth2Client,
       part: ["snippet", "statistics"],
       mine: true,
     });
+
     const channel = response.data.items?.[0];
     if (!channel) {
       throw { status: 400, message: "Unable to fetch YouTube channel" };
     }
+
+    let totalLikes = 0;
+    let totalComments = 0;
+
+    // 2. Fetch channel-wide aggregate likes and comments
+    try {
+      const analyticsRes = await ytAnalytics.reports.query({
+        auth: oauth2Client,
+        ids: "channel==MINE",
+        startDate: "2005-01-01",
+        endDate: new Date().toISOString().split("T")[0],
+        metrics: "likes,comments",
+      });
+
+      const rows = analyticsRes.data.rows;
+      if (rows && rows.length > 0) {
+        totalLikes = Number(rows[0][0] || 0);
+        totalComments = Number(rows[0][1] || 0);
+      }
+    } catch (analyticsErr) {
+      console.warn("Analytics API query failed, skipping aggregate engagement:", analyticsErr);
+    }
+
+    // 3. Assign metrics directly without checking channel.statistics.commentCount
     const metrics = {
       subscribers: Number(channel.statistics?.subscriberCount || 0),
       totalViews: Number(channel.statistics?.viewCount || 0),
       videoCount: Number(channel.statistics?.videoCount || 0),
       hiddenSubscriberCount: Boolean(channel.statistics?.hiddenSubscriberCount),
+      likes: totalLikes,
+      comments: totalComments,
     };
+
     const user = await UserModel.findById(userId);
     if (!user) throw { status: 404, message: "User not found" };
+
     await saveSocialConnection(user, "youtube", {
       platform: "youtube",
       accessToken: tokens.access_token ?? undefined,
@@ -211,11 +245,11 @@ export const handleYoutubeCallback = async (req: Request, res: Response) => {
       metrics,
       lastSynced: new Date(),
     });
+
     setAuthTokenCookie(res, user);
     return res.redirect(`${process.env.FRONTEND_URL}/influencer/profile?connected=youtube`);
   });
 };
-
 export const startInstagramConnect = async (req: Request, res: Response) => {
   const userId = requireAuthUser(req, res);
   if (!userId) return;
@@ -330,4 +364,38 @@ export const updateSocialMetrics = async (req: Request, res: Response) => {
     lastSynced: new Date(),
   });
   return res.status(200).json({ message: "Stats updated", platform });
+};
+
+export const getConnectedAccounts = async (req: Request, res: Response) => {
+  const userId = requireAuthUser(req, res);
+  if (!userId) return;
+
+  // Use .lean() for read-only queries
+  const user = await UserModel.findById(userId).lean();
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  const connections: Record<string, SocialConnection> = {};
+  const statsMap = user.influencerProfile?.statsConnection;
+
+  if (statsMap) {
+    // If statsMap is a Map or a plain Object from lean()
+    const entries = statsMap instanceof Map 
+      ? Array.from(statsMap.entries()) 
+      : Object.entries(statsMap);
+
+    for (const [platformKey, conn] of entries) {
+      if (!conn) continue;
+
+      connections[platformKey] = {
+        platform: conn.platform || platformKey,
+        profile: conn.profile,
+        metrics: conn.metrics,
+        lastSynced: conn.lastSynced
+          ? conn.lastSynced instanceof Date ? conn.lastSynced : new Date(conn.lastSynced)
+          : null,
+      };
+    }
+  }
+
+  return res.status(200).json({ connections });
 };

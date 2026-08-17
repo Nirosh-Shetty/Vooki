@@ -9,6 +9,8 @@ export interface AuthUser {
   username: string;
   role: 'brand' | 'influencer' | 'manager';
   profilePicture?: string;
+  avatar?: string;
+  phone?: number | string;
   brandName?: string;
 }
 

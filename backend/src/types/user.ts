@@ -43,6 +43,8 @@ export interface InfluencerProfile {
     story?: number;
     youtubeIntegration?: number;
   };
+  languages?: string[];
+  location?: string;
 }
 
 export interface BrandProfile {

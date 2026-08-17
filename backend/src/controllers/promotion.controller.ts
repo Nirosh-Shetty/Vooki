@@ -37,10 +37,11 @@ const editableStatuses = new Set<PromotionStatus>([
   "accepted",
 ]);
 
-const formatPromotion = (promotion: any) => ({
+const formatPromotion = (promotion: any, brandName?: string) => ({
   id: String(promotion._id),
   campaignId: String(promotion.campaignId),
   brandId: String(promotion.brandId),
+  brandName: brandName || "Brand",
   influencerId: String(promotion.influencerId),
   campaignTitle: promotion.campaignTitle,
   product: promotion.product,
@@ -286,8 +287,22 @@ export const listPromotions = async (
       PromotionModel.countDocuments(query),
     ]);
 
+    const brandIds = Array.from(new Set(items.map((item: any) => String(item.brandId))));
+    const brands = brandIds.length
+      ? await UserModel.find(
+          { _id: { $in: brandIds } },
+          { name: 1, username: 1, "brandDetails.companyName": 1 }
+        ).lean()
+      : [];
+    const brandNameMap = new Map(
+      brands.map((brand: any) => [
+        String(brand._id),
+        brand?.brandDetails?.companyName || brand?.name || brand?.username || "Brand",
+      ])
+    );
+
     return res.status(200).json({
-      items: items.map(formatPromotion),
+      items: items.map((promotion: any) => formatPromotion(promotion, brandNameMap.get(String(promotion.brandId)))),
       pagination: {
         page: pageNum,
         limit: limitNum,
@@ -322,7 +337,12 @@ export const getPromotionById = async (
       return res.status(404).json({ message: "Promotion not found" });
     }
 
-    return res.status(200).json({ promotion: formatPromotion(promotion) });
+    const brand = await UserModel.findById(promotion.brandId)
+      .select("name username brandDetails.companyName")
+      .lean();
+    const brandName = brand?.brandDetails?.companyName || brand?.name || brand?.username || "Brand";
+
+    return res.status(200).json({ promotion: formatPromotion(promotion, brandName) });
   } catch (error) {
     console.error("Error fetching promotion:", error);
     return res.status(500).json({ message: "Internal server error" });

@@ -38,7 +38,7 @@ export default function BrandProfileEditPage() {
         industry: (user as any).brandDetails?.brandCategory || "",
         website: (user as any).brandDetails?.website || "",
         summary: (user as any).brandDetails?.summary || "",
-        logoUrl: user.profilePicture || user.avatar || ""
+        logoUrl: (user as any).profilePicture || (user as any).avatar || ""
       })
     }
   }, [user])
