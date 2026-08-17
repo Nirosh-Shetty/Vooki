@@ -146,7 +146,6 @@ export function ProfileContent() {
       );
       if (!res.ok) throw new Error("Failed to disconnect platform");
 
-      // Remove from local state immediately
       setSocialConnections((prev) => {
         const updated = { ...prev };
         delete updated[platform];
@@ -256,7 +255,6 @@ export function ProfileContent() {
 
     load();
 
-    // Auto-focus on connections tab and clear search param if redirected back from OAuth
     if (connectedPlatform) {
       setActiveTab("connections");
       window.history.replaceState({}, "", window.location.pathname);
@@ -325,7 +323,7 @@ export function ProfileContent() {
     liveCollabs.length > 0 ? liveCollabs : profile?.influencerDetails?.pastCollaborations || [];
   const reviews = liveReviews.length > 0 ? liveReviews : profile?.influencerDetails?.reviews || [];
 
-  const heroAvatar = profile?.avatar || "/images/avatar2.png";
+  const heroAvatar = profile?.avatar || "/images/defaults/creator.svg";
 
   const connectEndpoints: Record<PlatformKey, string> = {
     youtube: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/social/connect/youtube`,

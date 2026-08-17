@@ -6,12 +6,18 @@ export interface AuthUser {
   id: string;
   name: string;
   email: string;
+  phone?: string | number;
   username: string;
   role: 'brand' | 'influencer' | 'manager';
+  avatar?: string;
   profilePicture?: string;
   avatar?: string;
   phone?: number | string;
   brandName?: string;
+  brandDetails?: any;
+  influencerDetails?: any;
+  rating?: number;
+  totalReviews?: number;
 }
 
 export interface AuthContextType {

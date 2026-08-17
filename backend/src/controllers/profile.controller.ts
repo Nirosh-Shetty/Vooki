@@ -243,6 +243,12 @@ export const updateBrandProfile = async (req: Request, res: Response) => {
       collaborations: existingDetails.collaborations,
       activeCampaigns: Number(brandDetails?.activeCampaigns) || existingDetails.activeCampaigns,
       pointsOfContact: Number(brandDetails?.pointsOfContact) || existingDetails.pointsOfContact,
+      contactRole: applyLocaleSafeString(brandDetails?.contactRole) ?? existingDetails.contactRole,
+      collaborationDefaults: {
+        usageRights: applyLocaleSafeString(brandDetails?.collaborationDefaults?.usageRights) ?? existingDetails.collaborationDefaults?.usageRights,
+        revisions: Number(brandDetails?.collaborationDefaults?.revisions) || existingDetails.collaborationDefaults?.revisions,
+        exclusivityPeriod: Number(brandDetails?.collaborationDefaults?.exclusivityPeriod) || existingDetails.collaborationDefaults?.exclusivityPeriod,
+      }
     }
 
     user.brandProfile = nextBrandProfile

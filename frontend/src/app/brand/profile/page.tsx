@@ -38,7 +38,7 @@ export default function BrandProfilePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const heroAvatar = profile?.profilePicture || "/images/avatar.png"
+  const heroAvatar = profile?.profilePicture || "/images/defaults/brand.svg"
 
   useEffect(() => {
     const controller = new AbortController()

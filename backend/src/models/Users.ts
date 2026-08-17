@@ -68,6 +68,12 @@ const BrandProfileSchema = new Schema(
     collaborations: [{ type: Schema.Types.ObjectId, ref: "Collaboration" }],
     activeCampaigns: { type: Number, default: 0 },
     pointsOfContact: { type: Number, default: 0 },
+    contactRole: { type: String },
+    collaborationDefaults: {
+      usageRights: { type: String },
+      revisions: { type: Number },
+      exclusivityPeriod: { type: Number },
+    },
   },
   { _id: false }
 );

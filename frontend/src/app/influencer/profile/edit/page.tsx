@@ -168,15 +168,13 @@ export default function InfluencerProfileEditPage() {
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
-
     try {
-      const compressedDataUrl = await compressImage(file, 400, 0.8)
-      setPhotoPreview(compressedDataUrl)
-      setPhotoData(compressedDataUrl)
-      setStatus(null)
-    } catch (error) {
-      console.error("Error processing profile photo:", error)
-      setStatus({ type: "error", message: "Unable to process the selected image." })
+      const dataUrl = await compressImage(file)
+      setPhotoPreview(dataUrl)
+      setPhotoData(dataUrl)
+    } catch (err) {
+      console.error("Image processing error:", err)
+      setStatus({ type: "error", message: "Could not process selected image." })
     }
   }
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ProfilePreviewCard } from "@/components/settings/ProfilePreviewCard"
 import { useAuth } from "@/context/auth-context"
-import { 
-  Building2, 
+import imageCompression from "browser-image-compression"
+import {
+  Building2,
   Save,
   Globe,
   Camera,
@@ -18,7 +19,7 @@ import {
 
 export default function BrandProfileEditPage() {
   const { user, refreshUser } = useAuth()
-  
+
   const [profileData, setProfileData] = useState({
     brandName: "",
     industry: "",
@@ -26,9 +27,9 @@ export default function BrandProfileEditPage() {
     summary: "",
     logoUrl: ""
   })
-  
+
   const [isSaving, setIsSaving] = useState(false)
-  const [message, setMessage] = useState<{type: 'success'|'error', text: string} | null>(null)
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
   // Initialize form with user data
   useEffect(() => {
@@ -38,7 +39,11 @@ export default function BrandProfileEditPage() {
         industry: (user as any).brandDetails?.brandCategory || "",
         website: (user as any).brandDetails?.website || "",
         summary: (user as any).brandDetails?.summary || "",
+<<<<<<< HEAD
         logoUrl: (user as any).profilePicture || (user as any).avatar || ""
+=======
+        logoUrl: user.profilePicture || ""
+>>>>>>> 409f6d4669276ffe2b90fcfe341277bf874c64fe
       })
     }
   }, [user])
@@ -63,7 +68,8 @@ export default function BrandProfileEditPage() {
             brandCategory: profileData.industry,
             website: profileData.website,
             summary: profileData.summary
-          }
+          },
+          photo: profileData.logoUrl && profileData.logoUrl.startsWith('data:') ? profileData.logoUrl : undefined
         })
       })
 
@@ -79,6 +85,35 @@ export default function BrandProfileEditPage() {
       setMessage({ type: 'error', text: err.message })
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      try {
+        const options = {
+          maxSizeMB: 0.2,
+          maxWidthOrHeight: 800,
+          useWebWorker: true,
+        }
+        const compressedFile = await imageCompression(file, options)
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setProfileData(prev => ({ ...prev, logoUrl: reader.result as string }))
+        }
+        reader.readAsDataURL(compressedFile)
+      } catch (error) {
+        console.error("Error compressing image:", error)
+        // Fallback to uncompressed if compression fails
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setProfileData(prev => ({ ...prev, logoUrl: reader.result as string }))
+        }
+        reader.readAsDataURL(file)
+      }
     }
   }
 
@@ -104,7 +139,7 @@ export default function BrandProfileEditPage() {
               {message.text}
             </span>
           )}
-          <Button 
+          <Button
             onClick={handleSave}
             disabled={isSaving}
             className="h-11 rounded-xl bg-[color:var(--vooki-app-brand)] px-6 font-semibold text-white shadow-lg shadow-cyan-500/20 hover:bg-[color:var(--vooki-app-brand-hover)] transition-all"
@@ -121,7 +156,10 @@ export default function BrandProfileEditPage() {
             <h2 className="mb-4 text-lg font-bold text-[color:var(--vooki-app-text-strong)]">Brand Identity</h2>
             <div className="space-y-5">
               <div className="flex items-center gap-6">
-                <div className="relative flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] transition-colors hover:bg-[color:var(--vooki-app-border)]">
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="relative flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] transition-colors hover:bg-[color:var(--vooki-app-border)]"
+                >
                   {profileData.logoUrl ? (
                     <img src={profileData.logoUrl} alt="Logo" className="h-full w-full rounded-2xl object-cover" />
                   ) : (
@@ -134,7 +172,19 @@ export default function BrandProfileEditPage() {
                 <div>
                   <h4 className="text-sm font-semibold text-[color:var(--vooki-app-text-strong)]">Brand Logo</h4>
                   <p className="text-xs text-[color:var(--vooki-app-text-soft)] mt-1">Recommended: 400x400px. JPG, PNG, or GIF.</p>
-                  <Button variant="outline" size="sm" className="mt-2 h-8 rounded-lg border-[color:var(--vooki-app-border)] bg-transparent text-xs font-semibold text-[color:var(--vooki-app-text-strong)]">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleImageChange}
+                  />
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 h-8 rounded-lg border-[color:var(--vooki-app-border)] bg-transparent text-xs font-semibold text-[color:var(--vooki-app-text-strong)]"
+                  >
                     Upload Image
                   </Button>
                 </div>
@@ -143,22 +193,22 @@ export default function BrandProfileEditPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="brandName" className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">Brand Name</Label>
-                  <Input 
-                    id="brandName" 
+                  <Input
+                    id="brandName"
                     name="brandName"
                     value={profileData.brandName}
                     onChange={handleProfileChange}
-                    className="h-11 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] focus-visible:ring-[color:var(--vooki-app-brand)]" 
+                    className="h-11 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] focus-visible:ring-[color:var(--vooki-app-brand)]"
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="industry" className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">Industry / Niche</Label>
-                  <Input 
-                    id="industry" 
+                  <Input
+                    id="industry"
                     name="industry"
                     value={profileData.industry}
                     onChange={handleProfileChange}
-                    className="h-11 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] focus-visible:ring-[color:var(--vooki-app-brand)]" 
+                    className="h-11 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] focus-visible:ring-[color:var(--vooki-app-brand)]"
                   />
                 </div>
               </div>
@@ -167,20 +217,20 @@ export default function BrandProfileEditPage() {
                 <Label htmlFor="website" className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">Website URL</Label>
                 <div className="relative">
                   <Globe className="absolute left-3.5 top-3 h-5 w-5 text-[color:var(--vooki-app-text-muted)]" />
-                  <Input 
-                    id="website" 
+                  <Input
+                    id="website"
                     name="website"
                     value={profileData.website}
                     onChange={handleProfileChange}
-                    className="h-11 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] pl-11 focus-visible:ring-[color:var(--vooki-app-brand)]" 
+                    className="h-11 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] pl-11 focus-visible:ring-[color:var(--vooki-app-brand)]"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
                 <Label htmlFor="summary" className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">Brand Summary</Label>
-                <Textarea 
-                  id="summary" 
+                <Textarea
+                  id="summary"
                   name="summary"
                   value={profileData.summary}
                   onChange={handleProfileChange}
