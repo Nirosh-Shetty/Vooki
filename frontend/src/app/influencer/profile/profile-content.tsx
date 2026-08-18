@@ -18,6 +18,9 @@ import {
   Star,
   TrendingUp,
   Users,
+  Youtube,
+  Instagram,
+  Facebook,
 } from "lucide-react";
 
 import { Portfolio } from "./portfolio/Portfolio";
@@ -79,7 +82,7 @@ type InfluencerProfile = {
     socialLinks?: Record<string, string>;
     highlight?: string;
     audience?: string;
-    socialConnections?: Record<string, SocialConnectionEntry>;
+    socialConnection?: Record<string, SocialConnectionEntry>;
     portfolio?: PortfolioItem[];
     pastCollaborations?: CollabHistory[];
     reviews?: ReviewType[];
@@ -127,7 +130,7 @@ export function ProfileContent() {
   const searchParams = useSearchParams();
   const connectedPlatform = searchParams?.get("connected");
 
-  const [socialConnections, setSocialConnections] = useState<Record<string, SocialConnectionEntry>>(
+  const [socialConnection, setsocialConnection] = useState<Record<string, SocialConnectionEntry>>(
     {}
   );
 
@@ -146,14 +149,14 @@ export function ProfileContent() {
       );
       if (!res.ok) throw new Error("Failed to disconnect platform");
 
-      setSocialConnections((prev) => {
+      setsocialConnection((prev) => {
         const updated = { ...prev };
         delete updated[platform];
         return updated;
       });
 
-      if (profile?.influencerDetails?.socialConnections) {
-        delete profile.influencerDetails.socialConnections[platform];
+      if (profile?.influencerDetails?.socialConnection) {
+        delete profile.influencerDetails.socialConnection[platform];
       }
     } catch (err: unknown) {
       setConnectError(err instanceof Error ? err.message : "Failed to disconnect");
@@ -182,7 +185,7 @@ export function ProfileContent() {
       );
       if (!response.ok) return;
       const data = await response.json();
-      setSocialConnections(data.connections || {});
+      setsocialConnection(data.connections || {});
     } catch (err: unknown) {
       if (err instanceof DOMException && err.name === "AbortError") return;
     }
@@ -265,32 +268,35 @@ export function ProfileContent() {
 
   const connections: Record<string, SocialConnectionEntry> = useMemo(() => {
     return {
-      ...(profile?.influencerDetails?.socialConnections ?? {}),
-      ...socialConnections,
+      ...(profile?.influencerDetails?.socialConnection ?? {}),
+      ...socialConnection,
     };
-  }, [profile?.influencerDetails?.socialConnections, socialConnections]);
+  }, [profile?.influencerDetails?.socialConnection, socialConnection]);
 
   const connectedCount = SOCIAL_PLATFORMS.filter((platform) =>
     Boolean(connections[platform])
   ).length;
 
-  const totalFollowers = useMemo(() => {
+  const platformFollowers = useMemo(() => {
     const youtube = isYoutubeConnection(connections.youtube)
       ? (connections.youtube.metrics?.subscribers ?? 0)
-      : 0;
+      : null;
     const instagram = isInstagramConnection(connections.instagram)
       ? (connections.instagram.metrics?.followers ?? 0)
-      : 0;
+      : null;
     const facebook = isFacebookConnection(connections.facebook)
       ? (connections.facebook.metrics?.followers ?? 0)
-      : 0;
+      : null;
 
-    const calculatedTotal = youtube + instagram + facebook;
-    const manualTotal = profile?.influencerDetails?.followers ?? 0;
+    return { youtube, instagram, facebook };
+  }, [connections]);
 
-    if (calculatedTotal === 0 && manualTotal === 0 && connectedCount === 0) return undefined;
-    return Math.max(manualTotal, calculatedTotal);
-  }, [connections, profile, connectedCount]);
+  const totalFollowers = useMemo(() => {
+    const { youtube, instagram, facebook } = platformFollowers;
+    const total = (youtube ?? 0) + (instagram ?? 0) + (facebook ?? 0);
+    if (total === 0 && connectedCount === 0) return undefined;
+    return total;
+  }, [platformFollowers, connectedCount]);
 
   const derivedReviewCount = liveReviews.length || profile?.totalReviews || 0;
   const derivedRating =
@@ -299,7 +305,50 @@ export function ProfileContent() {
       : (profile?.rating ?? 0);
 
   const heroStats = [
-    { icon: Users, label: "Audience", value: formatMetric(totalFollowers) },
+    {
+      icon: Users,
+      label: "Audience",
+      value: formatMetric(totalFollowers),
+      customBreakdown: (
+        <div className="mt-2.5 flex items-center gap-3">
+          <div
+            className={`flex items-center gap-1 text-xs font-semibold ${
+              platformFollowers.youtube !== null
+                ? "text-[color:var(--vooki-app-text-strong)]"
+                : "text-[color:var(--vooki-app-text-soft)]/50"
+            }`}
+            title="YouTube Subscribers"
+          >
+            <Youtube className="h-3.5 w-3.5 text-red-500 shrink-0" />
+            <span>{platformFollowers.youtube !== null ? formatMetric(platformFollowers.youtube) : "-"}</span>
+          </div>
+
+          <div
+            className={`flex items-center gap-1 text-xs font-semibold ${
+              platformFollowers.instagram !== null
+                ? "text-[color:var(--vooki-app-text-strong)]"
+                : "text-[color:var(--vooki-app-text-soft)]/50"
+            }`}
+            title="Instagram Followers"
+          >
+            <Instagram className="h-3.5 w-3.5 text-pink-500 shrink-0" />
+            <span>{platformFollowers.instagram !== null ? formatMetric(platformFollowers.instagram) : "-"}</span>
+          </div>
+
+          <div
+            className={`flex items-center gap-1 text-xs font-semibold ${
+              platformFollowers.facebook !== null
+                ? "text-[color:var(--vooki-app-text-strong)]"
+                : "text-[color:var(--vooki-app-text-soft)]/50"
+            }`}
+            title="Facebook Followers"
+          >
+            <Facebook className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+            <span>{platformFollowers.facebook !== null ? formatMetric(platformFollowers.facebook) : "-"}</span>
+          </div>
+        </div>
+      ),
+    },
     {
       icon: TrendingUp,
       label: "Engagement",
@@ -474,19 +523,22 @@ export function ProfileContent() {
             {heroStats.map((stat) => (
               <div
                 key={stat.label}
-                className="group relative overflow-hidden rounded-2xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4 sm:p-5 transition-all duration-200 hover:border-[color:var(--vooki-app-active-border)] hover:shadow-xs"
+                className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4 sm:p-5 transition-all duration-200 hover:border-[color:var(--vooki-app-active-border)] hover:shadow-xs"
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-[color:var(--vooki-app-text-soft)]">
-                    {stat.label}
-                  </span>
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[color:var(--vooki-app-surface)] text-[color:var(--vooki-app-active-icon)] border border-[color:var(--vooki-app-border)]">
-                    <stat.icon className="h-3.5 w-3.5" />
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-[color:var(--vooki-app-text-soft)]">
+                      {stat.label}
+                    </span>
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[color:var(--vooki-app-surface)] text-[color:var(--vooki-app-active-icon)] border border-[color:var(--vooki-app-border)]">
+                      <stat.icon className="h-3.5 w-3.5" />
+                    </div>
                   </div>
+                  <p className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-[color:var(--vooki-app-text-strong)]">
+                    {stat.value}
+                  </p>
                 </div>
-                <p className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-[color:var(--vooki-app-text-strong)]">
-                  {stat.value}
-                </p>
+                {"customBreakdown" in stat && stat.customBreakdown}
               </div>
             ))}
           </div>

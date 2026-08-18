@@ -299,7 +299,7 @@ export function ConnectedAccounts({
     <div className="rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-6 shadow-sm flex flex-col lg:col-span-2">
       <div className="mb-6">
         <h3 className="text-sm font-bold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)]">
-          Connected Channels
+          Connected Accounts
         </h3>
         <p className="text-xs text-[color:var(--vooki-app-text-subtle)] mt-1">
           Connect your platforms to automatically sync real-time metrics to your media kit.
