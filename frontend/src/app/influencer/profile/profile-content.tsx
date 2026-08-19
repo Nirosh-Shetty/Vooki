@@ -63,6 +63,11 @@ type ReviewType = {
   date: string;
 };
 
+type ShowcaseItem = {
+  _id: string;
+  url: string;
+};
+
 type InfluencerProfile = {
   _id: string;
   role: "influencer";
@@ -83,7 +88,7 @@ type InfluencerProfile = {
     highlight?: string;
     audience?: string;
     socialConnection?: Record<string, SocialConnectionEntry>;
-    portfolio?: PortfolioItem[];
+    featuredContent?: ShowcaseItem[];
     pastCollaborations?: CollabHistory[];
     reviews?: ReviewType[];
   };
@@ -135,8 +140,6 @@ export function ProfileContent() {
   );
 
   const handleDisconnect = async (platform: PlatformKey) => {
-    if (!confirm(`Are you sure you want to disconnect ${platform}?`)) return;
-
     setConnectError(null);
     setDisconnecting(platform);
     try {
@@ -320,7 +323,9 @@ export function ProfileContent() {
             title="YouTube Subscribers"
           >
             <Youtube className="h-3.5 w-3.5 text-red-500 shrink-0" />
-            <span>{platformFollowers.youtube !== null ? formatMetric(platformFollowers.youtube) : "-"}</span>
+            <span>
+              {platformFollowers.youtube !== null ? formatMetric(platformFollowers.youtube) : "-"}
+            </span>
           </div>
 
           <div
@@ -332,7 +337,11 @@ export function ProfileContent() {
             title="Instagram Followers"
           >
             <Instagram className="h-3.5 w-3.5 text-pink-500 shrink-0" />
-            <span>{platformFollowers.instagram !== null ? formatMetric(platformFollowers.instagram) : "-"}</span>
+            <span>
+              {platformFollowers.instagram !== null
+                ? formatMetric(platformFollowers.instagram)
+                : "-"}
+            </span>
           </div>
 
           <div
@@ -344,7 +353,9 @@ export function ProfileContent() {
             title="Facebook Followers"
           >
             <Facebook className="h-3.5 w-3.5 text-blue-500 shrink-0" />
-            <span>{platformFollowers.facebook !== null ? formatMetric(platformFollowers.facebook) : "-"}</span>
+            <span>
+              {platformFollowers.facebook !== null ? formatMetric(platformFollowers.facebook) : "-"}
+            </span>
           </div>
         </div>
       ),
@@ -605,8 +616,19 @@ export function ProfileContent() {
             />
 
             <Portfolio
-              initialItems={profile.influencerDetails?.portfolio || []}
-              onUpdate={() => {}}
+              initialItems={profile.influencerDetails?.featuredContent || []}
+              onUpdate={(items) => {
+                setProfile((prev) => {
+                  if (!prev) return prev;
+                  return {
+                    ...prev,
+                    influencerDetails: {
+                      ...prev.influencerDetails,
+                      featuredContent: items,
+                    },
+                  };
+                });
+              }}
             />
           </div>
         )}

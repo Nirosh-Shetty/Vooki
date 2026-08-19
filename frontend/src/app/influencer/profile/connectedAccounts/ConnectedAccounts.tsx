@@ -1,6 +1,7 @@
 "use client";
 
-import { CheckCircle2, Facebook, Instagram, Youtube, RefreshCw, Unlink } from "lucide-react";
+import { useState } from "react";
+import { CheckCircle2, Facebook, Instagram, Youtube, RefreshCw, Unlink, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export type PlatformKey = "youtube" | "instagram" | "facebook";
@@ -96,6 +97,12 @@ export const formatMetric = (value?: number) => {
   return `${value}`;
 };
 
+const getPlatformTitle = (platform: PlatformKey) => {
+  if (platform === "youtube") return "YouTube";
+  if (platform === "instagram") return "Instagram";
+  return "Facebook";
+};
+
 // --- Internal Card Component ---
 function SocialPlatformRow({
   platform,
@@ -103,19 +110,19 @@ function SocialPlatformRow({
   isConnecting,
   isDisconnecting,
   onConnect,
-  onDisconnect,
+  onRequestDisconnect,
 }: {
   platform: PlatformKey;
   connection?: SocialConnectionEntry;
   isConnecting: boolean;
   isDisconnecting: boolean;
   onConnect: (platform: PlatformKey) => void;
-  onDisconnect?: (platform: PlatformKey) => void;
+  onRequestDisconnect?: (platform: PlatformKey) => void;
 }) {
   const isYouTube = platform === "youtube";
   const isInsta = platform === "instagram";
 
-  const title = isYouTube ? "YouTube" : isInsta ? "Instagram" : "Facebook";
+  const title = getPlatformTitle(platform);
   const Icon = isYouTube ? Youtube : isInsta ? Instagram : Facebook;
 
   const brandColorClass = isYouTube ? "text-red-500" : isInsta ? "text-pink-500" : "text-blue-600";
@@ -173,7 +180,7 @@ function SocialPlatformRow({
         <div className="flex items-center gap-1.5">
           {isConnected ? (
             <div className="flex items-center bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border-strong)] rounded-lg p-0.5 shadow-xs">
-              {/* Sync Button with Text */}
+              {/* Sync Button */}
               <button
                 type="button"
                 onClick={() => onConnect(platform)}
@@ -191,11 +198,11 @@ function SocialPlatformRow({
 
               <div className="h-3.5 w-px bg-[color:var(--vooki-app-border)]" />
 
-              {/* Explicit Disconnect Button with Text */}
-              {onDisconnect && (
+              {/* Trigger Disconnect Confirmation Modal */}
+              {onRequestDisconnect && (
                 <button
                   type="button"
-                  onClick={() => onDisconnect(platform)}
+                  onClick={() => onRequestDisconnect(platform)}
                   disabled={isConnecting || isDisconnecting}
                   title={`Disconnect ${title}`}
                   className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md text-red-500 hover:bg-red-500/10 hover:text-red-600 transition-colors disabled:opacity-50 cursor-pointer"
@@ -295,36 +302,79 @@ export function ConnectedAccounts({
   onConnect,
   onDisconnect,
 }: ConnectedAccountsProps) {
+  const [platformToDisconnect, setPlatformToDisconnect] = useState<PlatformKey | null>(null);
+
+  const confirmDisconnect = () => {
+    if (!platformToDisconnect) return;
+    onDisconnect?.(platformToDisconnect);
+    setPlatformToDisconnect(null);
+  };
+
   return (
-    <div className="rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-6 shadow-sm flex flex-col lg:col-span-2">
-      <div className="mb-6">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)]">
-          Connected Accounts
-        </h3>
-        <p className="text-xs text-[color:var(--vooki-app-text-subtle)] mt-1">
-          Connect your platforms to automatically sync real-time metrics to your media kit.
-        </p>
+    <>
+      <div className="rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-6 shadow-sm flex flex-col lg:col-span-2">
+        <div className="mb-6">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)]">
+            Connected Accounts
+          </h3>
+          <p className="text-xs text-[color:var(--vooki-app-text-subtle)] mt-1">
+            Connect your platforms to automatically sync real-time metrics to your media kit.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {SOCIAL_PLATFORMS.map((platform) => (
+            <SocialPlatformRow
+              key={platform}
+              platform={platform}
+              connection={connections[platform]}
+              isConnecting={connecting === platform}
+              isDisconnecting={disconnecting === platform}
+              onConnect={onConnect}
+              onRequestDisconnect={(p) => setPlatformToDisconnect(p)}
+            />
+          ))}
+        </div>
+
+        {connectError && (
+          <p className="mt-5 text-sm text-center text-red-500 font-medium bg-red-500/10 p-3 rounded-xl border border-red-500/20">
+            {connectError}
+          </p>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {SOCIAL_PLATFORMS.map((platform) => (
-          <SocialPlatformRow
-            key={platform}
-            platform={platform}
-            connection={connections[platform]}
-            isConnecting={connecting === platform}
-            isDisconnecting={disconnecting === platform}
-            onConnect={onConnect}
-            onDisconnect={onDisconnect}
-          />
-        ))}
-      </div>
-
-      {connectError && (
-        <p className="mt-5 text-sm text-center text-red-500 font-medium bg-red-500/10 p-3 rounded-xl border border-red-500/20">
-          {connectError}
-        </p>
+      {/* Disconnect Confirmation Modal */}
+      {platformToDisconnect && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-center zoom-in-95 animate-in duration-200">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
+              <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-500" />
+            </div>
+            <h3 className="text-lg font-bold mb-2">
+              Disconnect {getPlatformTitle(platformToDisconnect)}
+            </h3>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
+              Are you sure you want to disconnect your {getPlatformTitle(platformToDisconnect)} account? Live metrics will no longer sync automatically.
+            </p>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl"
+                onClick={() => setPlatformToDisconnect(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1 rounded-xl bg-red-600 hover:bg-red-700 text-white"
+                onClick={confirmDisconnect}
+              >
+                Disconnect
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
-    </div>
+    </>
   );
 }
