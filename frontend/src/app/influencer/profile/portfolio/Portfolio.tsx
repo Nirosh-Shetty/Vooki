@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, X, Star, AlertCircle, Video, Pencil, Loader2 } from "lucide-react";
+import { Plus, Trash2, X, Star, AlertCircle, Video, Pencil, Loader2, FolderKanban } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -204,7 +204,6 @@ export function Portfolio({ initialItems = [], onUpdate }: ShowcaseProps) {
         throw new Error(data.message || "Failed to update item");
       }
 
-      // If backend sends updated list, use that, otherwise manually map local state
       const updatedList: ShowcaseItem[] =
         data.featuredContent && data.featuredContent.length > 0
           ? data.featuredContent
@@ -263,7 +262,8 @@ export function Portfolio({ initialItems = [], onUpdate }: ShowcaseProps) {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-lg font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)] flex items-center gap-2">
-                Portfolio & Featured Content
+                <FolderKanban className="h-4 w-4 text-[color:var(--vooki-app-active-icon)]" />
+                <span>Portfolio & Featured Content</span>
               </h2>
               <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
                 Showcase up to {MAX_ITEMS} of your best performing posts, videos, or campaigns.

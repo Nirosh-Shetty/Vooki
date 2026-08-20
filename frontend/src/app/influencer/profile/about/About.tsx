@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles, Users, Globe, FileText } from "lucide-react";
+import { Sparkles, Users, Globe, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -15,7 +15,10 @@ export function AboutCard({ summary, highlight, audience, languages }: AboutCard
   return (
     <Card className="rounded-2xl sm:rounded-3xl border-[color:var(--vooki-app-border)] shadow-xs">
       <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-3">
-        <CardTitle className="text-base sm:text-lg">About You</CardTitle>
+        <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+          <User className="h-4 w-4 text-[color:var(--vooki-app-active-icon)]" />
+          <span>About You</span>
+        </CardTitle>
       </CardHeader>
 
       <CardContent className="p-4 sm:p-6 pt-2 sm:pt-3 space-y-4">
@@ -35,7 +38,6 @@ export function AboutCard({ summary, highlight, audience, languages }: AboutCard
             </div>
           </div>
         )}
-
 
         {/* Audience & Languages Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">

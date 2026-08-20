@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Facebook, Instagram, Youtube, RefreshCw, Unlink, AlertCircle } from "lucide-react";
+import { CheckCircle2, Facebook, Instagram, Youtube, RefreshCw, Unlink, AlertCircle, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export type PlatformKey = "youtube" | "instagram" | "facebook";
 
@@ -180,7 +181,6 @@ function SocialPlatformRow({
         <div className="flex items-center gap-1.5">
           {isConnected ? (
             <div className="flex items-center bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border-strong)] rounded-lg p-0.5 shadow-xs">
-              {/* Sync Button */}
               <button
                 type="button"
                 onClick={() => onConnect(platform)}
@@ -198,7 +198,6 @@ function SocialPlatformRow({
 
               <div className="h-3.5 w-px bg-[color:var(--vooki-app-border)]" />
 
-              {/* Trigger Disconnect Confirmation Modal */}
               {onRequestDisconnect && (
                 <button
                   type="button"
@@ -312,36 +311,39 @@ export function ConnectedAccounts({
 
   return (
     <>
-      <div className="rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-6 shadow-sm flex flex-col lg:col-span-2">
-        <div className="mb-6">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)]">
-            Connected Accounts
-          </h3>
+      <Card className="rounded-2xl sm:rounded-3xl border-[color:var(--vooki-app-border)] shadow-xs flex flex-col lg:col-span-2">
+        <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-3">
+          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+            <Link2 className="h-4 w-4 text-[color:var(--vooki-app-active-icon)]" />
+            <span>Connected Accounts</span>
+          </CardTitle>
           <p className="text-xs text-[color:var(--vooki-app-text-subtle)] mt-1">
             Connect your platforms to automatically sync real-time metrics to your media kit.
           </p>
-        </div>
+        </CardHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {SOCIAL_PLATFORMS.map((platform) => (
-            <SocialPlatformRow
-              key={platform}
-              platform={platform}
-              connection={connections[platform]}
-              isConnecting={connecting === platform}
-              isDisconnecting={disconnecting === platform}
-              onConnect={onConnect}
-              onRequestDisconnect={(p) => setPlatformToDisconnect(p)}
-            />
-          ))}
-        </div>
+        <CardContent className="p-4 sm:p-6 pt-2 sm:pt-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {SOCIAL_PLATFORMS.map((platform) => (
+              <SocialPlatformRow
+                key={platform}
+                platform={platform}
+                connection={connections[platform]}
+                isConnecting={connecting === platform}
+                isDisconnecting={disconnecting === platform}
+                onConnect={onConnect}
+                onRequestDisconnect={(p) => setPlatformToDisconnect(p)}
+              />
+            ))}
+          </div>
 
-        {connectError && (
-          <p className="mt-5 text-sm text-center text-red-500 font-medium bg-red-500/10 p-3 rounded-xl border border-red-500/20">
-            {connectError}
-          </p>
-        )}
-      </div>
+          {connectError && (
+            <p className="mt-5 text-sm text-center text-red-500 font-medium bg-red-500/10 p-3 rounded-xl border border-red-500/20">
+              {connectError}
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Disconnect Confirmation Modal */}
       {platformToDisconnect && (

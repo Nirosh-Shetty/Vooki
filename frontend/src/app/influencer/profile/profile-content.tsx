@@ -374,7 +374,7 @@ export function ProfileContent() {
     },
     {
       icon: LayoutDashboard,
-      label: "Connected Channels",
+      label: "Connected Accounts",
       value: `${connectedCount} / ${SOCIAL_PLATFORMS.length}`,
     },
   ];
