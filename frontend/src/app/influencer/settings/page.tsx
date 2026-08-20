@@ -43,7 +43,7 @@ export default function InfluencerSettingsPage() {
 
   useEffect(() => {
     if (user) {
-      const details = (user as any).influencerDetails || {}
+      const details = (user as any).influencerProfile || (user as any).influencerDetails || {}
       const notifs = (user as any).notificationPreferences || {}
       
       setPreferences({
@@ -98,12 +98,12 @@ export default function InfluencerSettingsPage() {
     setIsSaving(true)
     setMessage(null)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/profile/influencer`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/settings/influencer`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          influencerDetails: {
+          influencerProfile: {
             preferences: {
               minimumRate: { amount: preferences.minimumRate, currency: "INR" },
               contentBoundaries: preferences.contentBoundaries
@@ -133,7 +133,7 @@ export default function InfluencerSettingsPage() {
     setNotifications(prev => ({ ...prev, [key]: newValue }))
     
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/profile/influencer`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/settings/influencer`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
