@@ -51,6 +51,13 @@ export interface InfluencerProfile {
   languages?: string[];
   location?: string;
   featuredContent?: FeaturedContentItem[];
+  preferences?: {
+    minimumRate?: {
+      amount: number;
+      currency: string;
+    };
+    contentBoundaries?: string;
+  };
 }
 
 export interface BrandProfile {
@@ -114,6 +121,11 @@ export interface IUser extends Document {
   otp?: string;
   lastOtpSentAt?: Date;
   loginHistory: LoginMetadata[];
+  notificationPreferences?: {
+    newCollabInvites: boolean;
+    messageNotifications: boolean;
+    marketingUpdates: boolean;
+  };
   createdAt?: Date;
   updatedAt?: Date;
 }

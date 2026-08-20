@@ -166,7 +166,7 @@ export const updateInfluencerProfile = async (req: Request, res: Response) => {
       return res.status(403).json({ message: "Only influencers can update this profile" })
     }
 
-    const { name, username, email, phone, influencerDetails } = req.body
+    const { name, username, email, phone, influencerDetails, notificationPreferences } = req.body
     if (typeof name === "string") user.name = name.trim()
     if (typeof username === "string") user.username = username.trim()
     if (typeof email === "string") user.email = email.trim().toLowerCase()
@@ -195,6 +195,21 @@ export const updateInfluencerProfile = async (req: Request, res: Response) => {
       statsConnection: existingDetails.statsConnection,
       languages: Array.isArray(influencerDetails?.languages) ? influencerDetails.languages : existingDetails.languages,
       location: applyLocaleSafeString(influencerDetails?.location) ?? existingDetails.location,
+      preferences: {
+        minimumRate: {
+          amount: Number(influencerDetails?.preferences?.minimumRate?.amount) || existingDetails.preferences?.minimumRate?.amount || 0,
+          currency: applyLocaleSafeString(influencerDetails?.preferences?.minimumRate?.currency) || existingDetails.preferences?.minimumRate?.currency || "INR",
+        },
+        contentBoundaries: applyLocaleSafeString(influencerDetails?.preferences?.contentBoundaries) ?? existingDetails.preferences?.contentBoundaries ?? "",
+      }
+    }
+
+    if (notificationPreferences) {
+      user.notificationPreferences = {
+        newCollabInvites: notificationPreferences.newCollabInvites ?? user.notificationPreferences?.newCollabInvites ?? true,
+        messageNotifications: notificationPreferences.messageNotifications ?? user.notificationPreferences?.messageNotifications ?? true,
+        marketingUpdates: notificationPreferences.marketingUpdates ?? user.notificationPreferences?.marketingUpdates ?? false,
+      }
     }
 
     user.influencerProfile = nextInfluencerProfile

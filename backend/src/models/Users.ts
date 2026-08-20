@@ -58,6 +58,13 @@ const InfluencerProfileSchema = new Schema(
     followers: { type: Number, default: 0 },
     niche: { type: String, default: "General" },
     socialLinks: { type: Map, of: String },
+    preferences: {
+      minimumRate: {
+        amount: { type: Number, default: 0 },
+        currency: { type: String, default: "INR" }
+      },
+      contentBoundaries: { type: String, default: "" },
+    },
     statsConnection: {
       type: Map,
       of: StatsConnectionSchema,
@@ -166,6 +173,11 @@ const UserSchema = new Schema<IUser>(
     },
     lastOtpSentAt: Date,
     loginHistory: [LoginMetadataSchema],
+    notificationPreferences: {
+      newCollabInvites: { type: Boolean, default: true },
+      messageNotifications: { type: Boolean, default: true },
+      marketingUpdates: { type: Boolean, default: false },
+    },
   },
   {
     timestamps: true,

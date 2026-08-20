@@ -591,6 +591,7 @@ export const getCurrentUser = async (
         influencerDetails: user.influencerDetails,
         rating: user.rating,
         totalReviews: user.totalReviews,
+        notificationPreferences: user.notificationPreferences,
       },
     });
   } catch (error) {
