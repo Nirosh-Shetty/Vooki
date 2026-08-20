@@ -72,7 +72,7 @@ export default function BrandLayout({ children }: { children: React.ReactNode })
       accountName={name}
       accountMeta={user?.email || "Brand account"}
       accountInitials={initials || "B"}
-      accountAvatar={user?.profilePicture}
+      accountAvatar={user?.profilePicture || "/images/defaults/brand.svg"}
       sidebarItems={sidebarItems}
       mobilePrimary={mobilePrimary}
       settingsHref="/brand/settings"

@@ -313,8 +313,12 @@ export default function DiscoverProfilePage() {
           {/* Header Strip */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 rounded-3xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-card)] p-6 shadow-sm">
             <div className="flex items-center gap-5">
-              <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-[color:var(--vooki-app-border-strong)] bg-gradient-to-br from-[color:var(--vooki-app-surface-strong)] to-[color:var(--vooki-app-surface-card)] text-2xl font-black text-[color:var(--vooki-app-text-strong)] shadow-inner">
-                {profile.name.charAt(0)}
+              <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] overflow-hidden">
+                <img 
+                  src={profile.profilePicture || "/images/defaults/creator.svg"} 
+                  alt={profile.name} 
+                  className="h-full w-full object-cover" 
+                />
                 {profile.verified && (
                   <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[color:var(--vooki-app-bg)]">
                     <Sparkles className="h-3 w-3 text-[color:var(--vooki-accent)]" />

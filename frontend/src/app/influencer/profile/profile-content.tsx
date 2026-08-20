@@ -525,7 +525,7 @@ export function ProfileContent() {
     profile?.influencerDetails?.summary ??
     "Build a standout Vooki profile that helps the right brands understand your audience, content and collaboration value.";
 
-  const heroAvatar = profile?.avatar || "/images/defaults/creator.svg";
+  const heroAvatar = profile?.profilePicture || "/images/defaults/creator.svg";
 
   const connectEndpoints: Record<PlatformKey, string> = {
     youtube: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/social/connect/youtube`,

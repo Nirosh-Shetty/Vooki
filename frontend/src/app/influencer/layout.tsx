@@ -82,7 +82,7 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
       accountName={name}
       accountMeta={meta}
       accountInitials={initials || "CR"}
-      accountAvatar={user?.profilePicture}
+      accountAvatar={user?.profilePicture || "/images/defaults/creator.svg"}
       sidebarItems={sidebarItems}
       mobilePrimary={mobilePrimary}
       settingsHref="/influencer/settings"

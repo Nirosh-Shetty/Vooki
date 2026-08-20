@@ -69,7 +69,7 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
       accountName={name}
       accountMeta={user?.email || "Manager account"}
       accountInitials={initials || "MG"}
-      accountAvatar={user?.profilePicture}
+      accountAvatar={user?.profilePicture || "/images/defaults/creator.svg"}
       sidebarItems={sidebarItems}
       mobilePrimary={mobilePrimary}
       settingsHref="/manager/settings"

@@ -161,8 +161,8 @@ export function WorkspaceShell({
             )}
           >
             <div className="flex items-center gap-3 border-b border-[color:var(--vooki-app-border)] px-5 py-5">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-inverse-surface)] text-[color:var(--vooki-app-inverse-text)] shadow-[var(--vooki-shadow-app-soft)]">
-                <BrandIcon className="h-5 w-5" style={{ color: brandIconAccent }} />
+              <div className="flex h-11 w-11 overflow-hidden items-center justify-center rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-inverse-surface)] shadow-[var(--vooki-shadow-app-soft)] p-2">
+                <img src="/images/company_logo/Vooki_logo_bgRemovedSvg.svg" alt="Vooki" className="h-full w-full object-contain" />
               </div>
               {!collapsed && (
                 <div className="min-w-0">
@@ -223,8 +223,8 @@ export function WorkspaceShell({
                   </Button>
 
                   <div className="flex items-center gap-3 lg:hidden">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-inverse-surface)] text-[color:var(--vooki-app-inverse-text)] shadow-[var(--vooki-shadow-app-soft)]">
-                      <BrandIcon className="h-4 w-4" style={{ color: brandIconAccent }} />
+                    <div className="flex h-10 w-10 overflow-hidden items-center justify-center rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-inverse-surface)] shadow-[var(--vooki-shadow-app-soft)] p-2">
+                      <img src="/images/company_logo/Vooki_logo_bgRemovedSvg.svg" alt="Vooki" className="h-full w-full object-contain" />
                     </div>
                     <div>
                       <p className="text-sm font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)]">

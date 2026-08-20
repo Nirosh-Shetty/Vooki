@@ -222,18 +222,8 @@ export default function InfluencerProfileEditPage() {
           <div className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Profile photo</p>
             <div className="flex flex-wrap items-center gap-4">
-              <Avatar className="h-12 w-12">
-                {photoPreview ? (
-                  <AvatarImage src={photoPreview} alt="Profile preview" />
-                ) : (
-                  <AvatarFallback className="bg-slate-200 text-slate-900">
-                    {form.name
-                      .split(" ")
-                      .map((part) => part[0])
-                      .join("")
-                      .slice(0, 2)}
-                  </AvatarFallback>
-                )}
+              <Avatar className="h-12 w-12 border border-slate-200">
+                <AvatarImage src={photoPreview || "/images/defaults/creator.svg"} alt="Profile preview" />
               </Avatar>
               <label className="flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500 hover:text-slate-900">
                 Upload a photo

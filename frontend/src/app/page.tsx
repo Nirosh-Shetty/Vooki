@@ -130,31 +130,7 @@ export default function LandingPage() {
       >
         {/* Logo */}
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-          <div
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: "50%",
-              background: "var(--vooki-accent)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              position: "relative",
-            }}
-          >
-            <div
-              style={{
-                width: 10,
-                height: 10,
-                borderRadius: "50%",
-                background: "var(--vooki-home-bg)",
-                position: "absolute",
-                top: "35%",
-                left: "50%",
-                transform: "translate(-30%, -30%)",
-              }}
-            />
-          </div>
+          <img src="/images/company_logo/Vooki_logo_bgRemovedSvg.svg" alt="Vooki Logo" style={{ height: 32, width: "auto" }} />
           <span
             style={{
               fontSize: 18,
@@ -1007,28 +983,7 @@ export default function LandingPage() {
             marginBottom: 12,
           }}
         >
-          <div
-            style={{
-              width: 20,
-              height: 20,
-              borderRadius: "50%",
-              background: "var(--vooki-accent)",
-              position: "relative",
-            }}
-          >
-            <div
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: "50%",
-                background: "var(--vooki-home-bg)",
-                position: "absolute",
-                top: "35%",
-                left: "50%",
-                transform: "translate(-30%, -30%)",
-              }}
-            />
-          </div>
+          <img src="/images/company_logo/Vooki_logo_bgRemovedSvg.svg" alt="Vooki Logo" style={{ height: 24, width: "auto" }} />
           <span
             style={{
               fontSize: 15,

@@ -119,11 +119,11 @@ const UserSchema = new Schema<IUser>(
     avatar: { type: String, default: "" },
     isPremium: { type: Boolean, default: false },
     jwtVersion: { type: Number, default: 1 },
-    statsConnection: {
-      type: Map,
-      of: StatsConnectionSchema,
-      default: {},
-    },
+    // statsConnection: {
+    //   type: Map,
+    //   of: StatsConnectionSchema,
+    //   default: {},
+    // },
     oauthProviders: [OAuthProviderSchema],
     rating: { type: Number, default: 0 },
     totalReviews: { type: Number, default: 0 },
