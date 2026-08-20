@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { ChangeEvent, useEffect, useMemo, useState } from "react"
+import Link from "next/link";
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
   ArrowLeft,
@@ -14,28 +14,29 @@ import {
   Save,
   Sparkles,
   User,
-} from "lucide-react"
+  XCircle,
+} from "lucide-react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 type InfluencerFormState = {
-  name: string
-  username: string
-  email: string
-  phone: string
-  location: string
-  languages: string
-  niche: string
-  followers: string
-  highlight: string
-  bio: string
-  audience: string
-  engagement: string
-}
+  name: string;
+  username: string;
+  email: string;
+  phone: string;
+  location: string;
+  languages: string;
+  niche: string;
+  followers: string;
+  highlight: string;
+  bio: string;
+  audience: string;
+  engagement: string;
+};
 
 const emptyForm: InfluencerFormState = {
   name: "",
@@ -50,73 +51,83 @@ const emptyForm: InfluencerFormState = {
   bio: "",
   audience: "",
   engagement: "",
-}
+};
 
 // Client-side image compression to prevent 413 Payload Too Large
 const compressImage = (file: File, maxWidth = 400, quality = 0.8): Promise<string> => {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = (event) => {
-      const img = new Image()
+      const img = new Image();
       img.onload = () => {
-        const canvas = document.createElement("canvas")
-        const scale = Math.min(maxWidth / img.width, 1)
-        canvas.width = img.width * scale
-        canvas.height = img.height * scale
+        const canvas = document.createElement("canvas");
+        const scale = Math.min(maxWidth / img.width, 1);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
 
-        const ctx = canvas.getContext("2d")
+        const ctx = canvas.getContext("2d");
         if (!ctx) {
-          reject(new Error("Unable to create canvas context"))
-          return
+          reject(new Error("Unable to create canvas context"));
+          return;
         }
 
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-        resolve(canvas.toDataURL("image/webp", quality))
-      }
-      img.onerror = () => reject(new Error("Failed to load image file"))
-      img.src = event.target?.result as string
-    }
-    reader.onerror = () => reject(new Error("Failed to read file"))
-    reader.readAsDataURL(file)
-  })
-}
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/webp", quality));
+      };
+      img.onerror = () => reject(new Error("Failed to load image file"));
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsDataURL(file);
+  });
+};
 
 const parseOptionalNumber = (value: string | undefined | null): number | undefined => {
-  const trimmed = String(value ?? "").trim()
-  if (!trimmed) return undefined
-  const number = Number(trimmed)
-  return Number.isNaN(number) ? undefined : number
-}
+  const trimmed = String(value ?? "").trim();
+  if (!trimmed) return undefined;
+  const number = Number(trimmed);
+  return Number.isNaN(number) ? undefined : number;
+};
 
 export default function InfluencerProfileEditPage() {
-  const [form, setForm] = useState<InfluencerFormState>(emptyForm)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [status, setStatus] = useState<{ type: "success" | "error" | "info"; message: string } | null>(null)
+  const [form, setForm] = useState<InfluencerFormState>(emptyForm);
+  const [initialUsername, setInitialUsername] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<{
+    type: "success" | "error" | "info";
+    message: string;
+  } | null>(null);
 
-  const [photoPreview, setPhotoPreview] = useState("")
-  const [photoData, setPhotoData] = useState<string | null>(null)
+  // Username validation state
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [isUsernameAvailable, setIsUsernameAvailable] = useState<boolean | null>(null);
+
+  const [photoPreview, setPhotoPreview] = useState("");
+  const [photoData, setPhotoData] = useState<string | null>(null);
 
   useEffect(() => {
-    const controller = new AbortController()
+    const controller = new AbortController();
 
     const loadProfile = async () => {
-      setLoading(true)
+      setLoading(true);
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/profile/me`, {
           credentials: "include",
           signal: controller.signal,
-        })
+        });
 
-        if (!response.ok) throw new Error("Unable to load profile")
-        const data = await response.json()
-        if (data.role !== "influencer") throw new Error("Expected influencer account")
+        if (!response.ok) throw new Error("Unable to load profile");
+        const data = await response.json();
+        if (data.role !== "influencer") throw new Error("Expected influencer account");
 
-        const details = data.influencerDetails ?? {}
+        const details = data.influencerDetails ?? {};
+        const fetchedUsername = String(data.username ?? "");
 
+        setInitialUsername(fetchedUsername);
         setForm({
           name: String(data.name ?? ""),
-          username: String(data.username ?? ""),
+          username: fetchedUsername,
           email: String(data.email ?? ""),
           phone: String(data.phone ?? ""),
           location: String(details.location ?? ""),
@@ -129,72 +140,118 @@ export default function InfluencerProfileEditPage() {
           bio: String(details.bio ?? details.summary ?? ""),
           audience: String(details.audience ?? ""),
           engagement: String(details.engagement ?? ""),
-        })
+        });
 
         if (data.avatar) {
-          setPhotoPreview(String(data.avatar))
+          setPhotoPreview(String(data.avatar));
         }
       } catch (error) {
-        if (error instanceof Error && error.name === "AbortError") return
-        console.error("Error loading influencer profile:", error)
-        setStatus({ type: "error", message: "Unable to load your profile. Try refreshing." })
+        if (error instanceof Error && error.name === "AbortError") return;
+        console.error("Error loading influencer profile:", error);
+        setStatus({ type: "error", message: "Unable to load your profile. Try refreshing." });
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
+    };
+
+    loadProfile();
+    return () => controller.abort();
+  }, []);
+
+  // Debounced username availability checker
+  useEffect(() => {
+    const trimmed = form.username.trim();
+
+    if (!trimmed || trimmed === initialUsername) {
+      setIsCheckingUsername(false);
+      setIsUsernameAvailable(null);
+      return;
     }
 
-    loadProfile()
-    return () => controller.abort()
-  }, [])
+    setIsCheckingUsername(true);
+    setIsUsernameAvailable(null);
+
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/influencer/check-username/${encodeURIComponent(trimmed)}`,
+          {
+            credentials: "include",
+            signal: controller.signal,
+          }
+        );
+        const data = await res.json();
+        setIsUsernameAvailable(Boolean(data.available));
+      } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") return;
+        setIsUsernameAvailable(null);
+      } finally {
+        setIsCheckingUsername(false);
+      }
+    }, 400);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [form.username, initialUsername]);
 
   const missingFields = useMemo(() => {
-    const missing: string[] = []
-    if (!String(form.name ?? "").trim()) missing.push("Full Name")
-    if (!String(form.username ?? "").trim()) missing.push("Username")
-    if (!String(form.location ?? "").trim()) missing.push("Location")
-    if (!String(form.niche ?? "").trim()) missing.push("Niche")
-    return missing
-  }, [form.name, form.username, form.location, form.niche])
+    const missing: string[] = [];
+    if (!String(form.name ?? "").trim()) missing.push("Full Name");
+    if (!String(form.username ?? "").trim()) missing.push("Username");
+    if (!String(form.location ?? "").trim()) missing.push("Location");
+    if (!String(form.niche ?? "").trim()) missing.push("Niche");
+    return missing;
+  }, [form.name, form.username, form.location, form.niche]);
 
-  const readyToSave = missingFields.length === 0
+  const readyToSave =
+    missingFields.length === 0 && isUsernameAvailable !== false && !isCheckingUsername;
 
   const handleFieldChange = (field: keyof InfluencerFormState, value: string) => {
     setForm((previous) => ({
       ...previous,
       [field]: value,
-    }))
-  }
+    }));
+  };
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
+    const file = event.target.files?.[0];
+    if (!file) return;
     try {
-      const dataUrl = await compressImage(file)
-      setPhotoPreview(dataUrl)
-      setPhotoData(dataUrl)
+      const dataUrl = await compressImage(file);
+      setPhotoPreview(dataUrl);
+      setPhotoData(dataUrl);
     } catch (err) {
-      console.error("Image processing error:", err)
-      setStatus({ type: "error", message: "Could not process selected image." })
+      console.error("Image processing error:", err);
+      setStatus({ type: "error", message: "Could not process selected image." });
     }
-  }
+  };
 
   const handleSubmit = async () => {
     if (!readyToSave) {
+      if (isUsernameAvailable === false) {
+        setStatus({ type: "error", message: "The chosen username is already taken." });
+        return;
+      }
       setStatus({
         type: "error",
         message: `Please complete required fields: ${missingFields.join(", ")}`,
-      })
-      return
+      });
+      return;
     }
 
-    setSaving(true)
-    setStatus(null)
+    setSaving(true);
+    setStatus(null);
 
     try {
       const payload = {
         name: String(form.name ?? "").trim(),
         username: String(form.username ?? "").trim(),
-        email: String(form.email ?? "").trim().toLowerCase(),
+        email: String(form.email ?? "")
+          .trim()
+          .toLowerCase(),
         phone: String(form.phone ?? "").trim(),
         influencerDetails: {
           location: String(form.location ?? "").trim(),
@@ -211,39 +268,44 @@ export default function InfluencerProfileEditPage() {
           engagement: parseOptionalNumber(form.engagement),
         },
         photo: photoData || undefined,
-      }
+      };
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/profile/influencer`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      })
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/profile/influencer`,
+        {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null)
-        throw new Error(errorData?.message || `Server responded with status ${response.status}`)
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || `Server responded with status ${response.status}`);
       }
 
-      setStatus({ type: "success", message: "Profile details updated successfully!" })
-      setPhotoData(null)
+      setInitialUsername(form.username.trim());
+      setIsUsernameAvailable(null);
+      setStatus({ type: "success", message: "Profile details updated successfully!" });
+      setPhotoData(null);
     } catch (error) {
-      console.error("Error updating influencer profile:", error)
+      console.error("Error updating influencer profile:", error);
       setStatus({
         type: "error",
         message: error instanceof Error ? error.message : "Couldn't save your profile. Try again.",
-      })
+      });
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const parsedLanguages = useMemo(() => {
     return form.languages
       .split(",")
       .map((l) => l.trim())
-      .filter(Boolean)
-  }, [form.languages])
+      .filter(Boolean);
+  }, [form.languages]);
 
   if (loading) {
     return (
@@ -255,7 +317,7 @@ export default function InfluencerProfileEditPage() {
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -323,7 +385,12 @@ export default function InfluencerProfileEditPage() {
                   <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface)] px-3.5 py-2 text-xs font-semibold text-[color:var(--vooki-app-text-strong)] transition-all shadow-xs hover:bg-[color:var(--vooki-app-surface-strong)]">
                     <Camera className="h-3.5 w-3.5 text-[color:var(--vooki-app-active-icon)]" />
                     Upload Profile Picture
-                    <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
                   </label>
                 </div>
                 <p className="text-[11px] text-[color:var(--vooki-app-text-subtle)] text-center sm:text-left">
@@ -346,16 +413,47 @@ export default function InfluencerProfileEditPage() {
                 />
               </div>
 
+              {/* Username Input with Validation Feedback */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)]">
                   Creator Handle / Username *
                 </label>
-                <Input
-                  className="rounded-xl bg-[color:var(--vooki-app-surface-strong)] border-[color:var(--vooki-app-border-strong)]"
-                  value={form.username}
-                  onChange={(e) => handleFieldChange("username", e.target.value)}
-                  placeholder="creator_nirosh"
-                />
+                <div className="relative">
+                  <Input
+                    className={`rounded-xl bg-[color:var(--vooki-app-surface-strong)] pr-9 transition-colors ${
+                      isUsernameAvailable === false
+                        ? "border-red-500 focus-visible:ring-red-500"
+                        : isUsernameAvailable === true
+                          ? "border-emerald-500 focus-visible:ring-emerald-500"
+                          : "border-[color:var(--vooki-app-border-strong)]"
+                    }`}
+                    value={form.username}
+                    onChange={(e) => handleFieldChange("username", e.target.value)}
+                    placeholder="creator_nirosh"
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    {isCheckingUsername && (
+                      <Loader2 className="h-4 w-4 animate-spin text-[color:var(--vooki-app-text-soft)]" />
+                    )}
+                    {!isCheckingUsername && isUsernameAvailable === true && (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 stroke-[2.5]" />
+                    )}
+                    {!isCheckingUsername && isUsernameAvailable === false && (
+                      <XCircle className="h-4 w-4 text-red-500 stroke-[2.5]" />
+                    )}
+                  </div>
+                </div>
+
+                {!isCheckingUsername && isUsernameAvailable === false && (
+                  <p className="text-[11px] font-medium text-red-500">
+                    This username is already taken.
+                  </p>
+                )}
+                {!isCheckingUsername && isUsernameAvailable === true && (
+                  <p className="text-[11px] font-medium text-emerald-500 flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3 inline" /> Username is available!
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1.5">
@@ -402,7 +500,9 @@ export default function InfluencerProfileEditPage() {
                 <label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)]">
                   Key Highlight / One-Liner Pitch
                 </label>
-                <span className="text-[10px] text-[color:var(--vooki-app-text-subtle)]">Shows as banner in About</span>
+                <span className="text-[10px] text-[color:var(--vooki-app-text-subtle)]">
+                  Shows as banner in About
+                </span>
               </div>
               <Input
                 className="rounded-xl bg-[color:var(--vooki-app-surface-strong)] border-[color:var(--vooki-app-border-strong)]"
@@ -447,8 +547,8 @@ export default function InfluencerProfileEditPage() {
       <div className="sticky bottom-4 z-40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface)]/95 p-3.5 sm:p-4 shadow-xl backdrop-blur-md">
         <div className="flex items-center gap-2">
           <Button
-            className="flex-1 sm:flex-none rounded-xl border border-[color:var(--vooki-app-active-border)] bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] hover:bg-[color:var(--vooki-app-active-border)] text-xs sm:text-sm font-semibold h-10 px-5 transition-all shadow-xs cursor-pointer"
-            disabled={loading || saving}
+            className="flex-1 sm:flex-none rounded-xl border border-[color:var(--vooki-app-active-border)] bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] hover:bg-[color:var(--vooki-app-active-border)] text-xs sm:text-sm font-semibold h-10 px-5 transition-all shadow-xs cursor-pointer disabled:opacity-50"
+            disabled={loading || saving || !readyToSave}
             onClick={handleSubmit}
           >
             {saving ? (
@@ -477,7 +577,11 @@ export default function InfluencerProfileEditPage() {
           {!readyToSave && (
             <span className="flex items-center gap-1.5 font-medium text-amber-600 dark:text-amber-400">
               <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-              Missing: {missingFields.join(", ")}
+              {isUsernameAvailable === false
+                ? "Username unavailable"
+                : isCheckingUsername
+                  ? "Verifying username..."
+                  : `Missing: ${missingFields.join(", ")}`}
             </span>
           )}
 
@@ -487,8 +591,8 @@ export default function InfluencerProfileEditPage() {
                 status.type === "success"
                   ? "text-emerald-600 dark:text-emerald-400"
                   : status.type === "error"
-                  ? "text-red-500"
-                  : "text-[color:var(--vooki-app-text-strong)]"
+                    ? "text-red-500"
+                    : "text-[color:var(--vooki-app-text-strong)]"
               }`}
             >
               {status.type === "success" && <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />}
@@ -499,5 +603,5 @@ export default function InfluencerProfileEditPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
