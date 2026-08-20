@@ -383,7 +383,7 @@ export function ProfileContent() {
     liveCollabs.length > 0 ? liveCollabs : profile?.influencerDetails?.pastCollaborations || [];
   const reviews = liveReviews.length > 0 ? liveReviews : profile?.influencerDetails?.reviews || [];
 
-  const heroAvatar = profile?.profilePicture || "/images/defaults/creator.svg";
+  const heroAvatar = profile?.avatar || "/images/defaults/creator.svg";
 
   const connectEndpoints: Record<PlatformKey, string> = {
     youtube: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/social/connect/youtube`,
