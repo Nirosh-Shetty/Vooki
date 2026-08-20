@@ -1,4 +1,3 @@
-
 import { Types, Document } from "mongoose";
 
 export interface OAuthProvider {
@@ -20,6 +19,12 @@ export interface StatsConnection {
 }
 
 export type SocialConnection = StatsConnection;
+
+export interface FeaturedContentItem {
+  _id: Types.ObjectId;
+  url: string;
+  createdAt?: Date;
+}
 
 export interface InfluencerProfile {
   followers?: number;
@@ -43,6 +48,9 @@ export interface InfluencerProfile {
     story?: number;
     youtubeIntegration?: number;
   };
+  languages?: string[];
+  location?: string;
+  featuredContent?: FeaturedContentItem[];
 }
 
 export interface BrandProfile {

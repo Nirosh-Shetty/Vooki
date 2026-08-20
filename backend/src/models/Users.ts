@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Types } from "mongoose";
 import { IUser } from "../types/user";
 
 const LoginMetadataSchema = new Schema(
@@ -38,10 +38,25 @@ const StatsConnectionSchema = new Schema(
   { _id: false }
 );
 
+const FeaturedContentSchema = new Schema(
+  {
+    url: {
+      type: String,
+      required: [true, "Content URL is required"],
+      trim: true,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  { _id: true }
+);
+
 const InfluencerProfileSchema = new Schema(
   {
     followers: { type: Number, default: 0 },
-    niche: { type: String },
+    niche: { type: String, default: "General" },
     socialLinks: { type: Map, of: String },
     statsConnection: {
       type: Map,
@@ -53,6 +68,16 @@ const InfluencerProfileSchema = new Schema(
     audience: { type: String },
     engagement: { type: Number, default: 0 },
     collaborations: [{ type: Schema.Types.ObjectId, ref: "Collaboration" }],
+    languages: [{ type: String }],
+    featuredContent: {
+      type: [FeaturedContentSchema],
+      validate: {
+        validator: (value: any[]) => value.length <= 5,
+        message: "You can feature a maximum of 5 content items.",
+      },
+      default: [],
+    },
+    location: { type: String },
   },
   { _id: false }
 );
@@ -127,11 +152,11 @@ const UserSchema = new Schema<IUser>(
     oauthProviders: [OAuthProviderSchema],
     rating: { type: Number, default: 0 },
     totalReviews: { type: Number, default: 0 },
-    influencerProfile: { type: InfluencerProfileSchema, default: {} },
-    brandProfile: { type: BrandProfileSchema, default: {} },
-    managerProfile: { type: ManagerProfileSchema, default: {} },
-    influencerDetails: { type: InfluencerProfileSchema, default: {} },
-    brandDetails: { type: BrandProfileSchema, default: {} },
+    influencerProfile: { type: InfluencerProfileSchema, default: () => ({}) },
+    brandProfile: { type: BrandProfileSchema, default: () => ({}) },
+    managerProfile: { type: ManagerProfileSchema, default: () => ({}) },
+    influencerDetails: { type: InfluencerProfileSchema, default: () => ({}) },
+    brandDetails: { type: BrandProfileSchema, default: () => ({}) },
     isVerified: { type: Boolean, default: false },
     reservationExpiresAt: { type: Date, default: null },
     isTempAccount: { type: Boolean, default: false },

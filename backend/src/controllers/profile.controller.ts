@@ -172,6 +172,8 @@ export const updateInfluencerProfile = async (req: Request, res: Response) => {
     if (typeof email === "string") user.email = email.trim().toLowerCase()
     if (phone) user.phone = Number(phone)
 
+    console.log("Incoming influencerDetails:", influencerDetails)
+
     const existingDetails = user.influencerDetails || {}
     const links = sanitizeSocialLinks(existingDetails.socialLinks)
     if (influencerDetails?.socialLinks) {
@@ -191,6 +193,8 @@ export const updateInfluencerProfile = async (req: Request, res: Response) => {
       engagement: Number(influencerDetails?.engagement) || existingDetails.engagement,
       socialLinks: links,
       statsConnection: existingDetails.statsConnection,
+      languages: Array.isArray(influencerDetails?.languages) ? influencerDetails.languages : existingDetails.languages,
+      location: applyLocaleSafeString(influencerDetails?.location) ?? existingDetails.location,
     }
 
     user.influencerProfile = nextInfluencerProfile
