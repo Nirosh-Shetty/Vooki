@@ -72,9 +72,11 @@ export function ReviewsCard({ reviews, rating, totalReviews }: ReviewsCardProps)
                 </div>
 
                 <div className="relative pl-3 border-l-2 border-[color:var(--vooki-app-active-border)]/40 my-2">
-                  <p className="text-xs sm:text-sm text-[color:var(--vooki-app-text-strong)] leading-relaxed">
-                    "{review.text}"
-                  </p>
+                  {review.text && review.text.length > 0 && (
+                    <p className="text-xs sm:text-sm text-[color:var(--vooki-app-text-strong)] leading-relaxed">
+                      "{review.text}"
+                    </p>
+                  )}
                 </div>
 
                 <p className="text-[10px] sm:text-xs text-[color:var(--vooki-app-text-subtle)] mt-2 text-right">

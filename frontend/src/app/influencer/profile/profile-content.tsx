@@ -77,7 +77,7 @@ type InfluencerProfile = {
   profilePicture?: string;
   rating?: number;
   totalReviews?: number;
-  influencerDetails?: {
+  influencerProfile?: {
     niche?: string;
     location?: string;
     languages?: string[];
@@ -158,8 +158,8 @@ export function ProfileContent() {
         return updated;
       });
 
-      if (profile?.influencerDetails?.socialConnection) {
-        delete profile.influencerDetails.socialConnection[platform];
+      if (profile?.influencerProfile?.socialConnection) {
+        delete profile.influencerProfile.socialConnection[platform];
       }
     } catch (err: unknown) {
       setConnectError(err instanceof Error ? err.message : "Failed to disconnect");
@@ -219,7 +219,7 @@ export function ProfileContent() {
           id: promotion.id,
           author: promotion.brandName || "Brand",
           rating: Number(promotion.brandRating?.score || 0),
-          text: promotion.brandRating?.review || "Great collaboration and smooth communication.",
+          text: promotion.brandRating?.review || "",
           date: formatHistoryDate(
             promotion.deliverySubmission?.reviewedAt || promotion.updatedAt || promotion.createdAt
           ),
@@ -271,10 +271,10 @@ export function ProfileContent() {
 
   const connections: Record<string, SocialConnectionEntry> = useMemo(() => {
     return {
-      ...(profile?.influencerDetails?.socialConnection ?? {}),
+      ...(profile?.influencerProfile?.socialConnection ?? {}),
       ...socialConnection,
     };
-  }, [profile?.influencerDetails?.socialConnection, socialConnection]);
+  }, [profile?.influencerProfile?.socialConnection, socialConnection]);
 
   const connectedCount = SOCIAL_PLATFORMS.filter((platform) =>
     Boolean(connections[platform])
@@ -363,8 +363,8 @@ export function ProfileContent() {
     {
       icon: TrendingUp,
       label: "Engagement",
-      value: profile?.influencerDetails?.engagement
-        ? `${profile.influencerDetails.engagement.toFixed(1)}%`
+      value: profile?.influencerProfile?.engagement
+        ? `${profile.influencerProfile.engagement.toFixed(1)}%`
         : "-",
     },
     {
@@ -380,8 +380,8 @@ export function ProfileContent() {
   ];
 
   const previousCollaborations =
-    liveCollabs.length > 0 ? liveCollabs : profile?.influencerDetails?.pastCollaborations || [];
-  const reviews = liveReviews.length > 0 ? liveReviews : profile?.influencerDetails?.reviews || [];
+    liveCollabs.length > 0 ? liveCollabs : profile?.influencerProfile?.pastCollaborations || [];
+  const reviews = liveReviews.length > 0 ? liveReviews : profile?.influencerProfile?.reviews || [];
 
   const heroAvatar = profile?.avatar || "/images/defaults/creator.svg";
 
@@ -482,17 +482,17 @@ export function ProfileContent() {
                     @{profile.username || "creator"}
                   </span>
 
-                  {profile.influencerDetails?.location && (
+                  {profile.influencerProfile?.location && (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[color:var(--vooki-app-surface-strong)] border border-[color:var(--vooki-app-border-strong)] backdrop-blur-sm">
                       <MapPin className="h-3.5 w-3.5 text-[color:var(--vooki-app-active-icon)]" />
-                      {profile.influencerDetails.location}
+                      {profile.influencerProfile.location}
                     </span>
                   )}
 
-                  {profile.influencerDetails?.niche && (
+                  {profile.influencerProfile?.niche && (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[color:var(--vooki-app-active-bg)]/40 border border-[color:var(--vooki-app-active-border)] text-[color:var(--vooki-app-text-strong)] font-semibold backdrop-blur-sm">
                       <Award className="h-3.5 w-3.5 text-[color:var(--vooki-app-active-icon)]" />
-                      {profile.influencerDetails.niche}
+                      {profile.influencerProfile.niche}
                     </span>
                   )}
                 </div>
@@ -510,7 +510,7 @@ export function ProfileContent() {
               </Button>
               <Button
                 className="flex-1 sm:flex-none rounded-xl border border-[color:var(--vooki-app-active-border)] bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] hover:bg-[color:var(--vooki-app-active-border)] text-xs sm:text-sm font-semibold h-10 px-5 shadow-xs transition-all cursor-pointer"
-                onClick={() => window.open(`/creator/${profile._id}`)}
+                onClick={() => window.open(`/creator/${profile.username}`)}
               >
                 <ExternalLink className="mr-2 h-4 w-4" /> Preview
               </Button>
@@ -587,10 +587,10 @@ export function ProfileContent() {
         {activeTab === "about" && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
             <AboutCard
-              summary={profile.influencerDetails?.summary}
-              highlight={profile.influencerDetails?.highlight}
-              audience={profile.influencerDetails?.audience}
-              languages={profile.influencerDetails?.languages}
+              summary={profile.influencerProfile?.summary}
+              highlight={profile.influencerProfile?.highlight}
+              audience={profile.influencerProfile?.audience}
+              languages={profile.influencerProfile?.languages}
             />
 
             <CollaborationsCard collaborations={previousCollaborations} />
@@ -616,14 +616,14 @@ export function ProfileContent() {
             />
 
             <Portfolio
-              initialItems={profile.influencerDetails?.featuredContent || []}
+              initialItems={profile.influencerProfile?.featuredContent || []}
               onUpdate={(items) => {
                 setProfile((prev) => {
                   if (!prev) return prev;
                   return {
                     ...prev,
-                    influencerDetails: {
-                      ...prev.influencerDetails,
+                    influencerProfile: {
+                      ...prev.influencerProfile,
                       featuredContent: items,
                     },
                   };

@@ -175,6 +175,8 @@ export const updateInfluencerProfile = async (req: Request, res: Response) => {
     console.log("Incoming influencerProfile:", influencerProfile)
 
     const existingDetails = user.influencerProfile || {}
+
+    console.log("Existing influencerProfile:", existingDetails)
     const links = sanitizeSocialLinks(existingDetails.socialLinks)
     if (influencerProfile?.socialLinks) {
       const incoming = sanitizeSocialLinks(influencerProfile.socialLinks)
@@ -211,6 +213,8 @@ export const updateInfluencerProfile = async (req: Request, res: Response) => {
         marketingUpdates: notificationPreferences.marketingUpdates ?? user.notificationPreferences?.marketingUpdates ?? false,
       }
     }
+
+    console.log("Updating influencerProfile to:", nextInfluencerProfile)
 
     user.influencerProfile = nextInfluencerProfile
     user.influencerProfile = nextInfluencerProfile
