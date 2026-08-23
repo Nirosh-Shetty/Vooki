@@ -10,6 +10,10 @@ export interface IConversation extends Document {
   promotionId?: string;
   campaignTitle?: string;
   status: "active" | "archived" | "closed";
+  isStoppedByBrand?: boolean; // Brand can pause/stop messages from creator
+  stoppedBy?: string | null;  // User ID who paused the thread
+  stoppedAt?: Date | null;    // Timestamp when thread was paused
+  initiatedByRole?: "brand" | "influencer" | "manager";
   updatedAt: Date;
   createdAt: Date;
 }
@@ -67,6 +71,28 @@ const ConversationSchema = new Schema<IConversation>(
       enum: ["active", "archived", "closed"],
       default: "active",
       index: true,
+    },
+
+    isStoppedByBrand: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
+    stoppedBy: {
+      type: String,
+      default: null,
+    },
+
+    stoppedAt: {
+      type: Date,
+      default: null,
+    },
+
+    initiatedByRole: {
+      type: String,
+      enum: ["brand", "influencer", "manager"],
+      default: "brand",
     },
   },
   { timestamps: true }

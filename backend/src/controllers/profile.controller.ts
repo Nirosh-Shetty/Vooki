@@ -166,7 +166,7 @@ export const updateInfluencerProfile = async (req: Request, res: Response) => {
       return res.status(403).json({ message: "Only influencers can update this profile" })
     }
 
-    const { name, username, email, phone, influencerDetails, notificationPreferences } = req.body
+    const { name, username, email, phone, influencerDetails,influencerProfile, notificationPreferences } = req.body
     if (typeof name === "string") user.name = name.trim()
     if (typeof username === "string") user.username = username.trim()
     if (typeof email === "string") user.email = email.trim().toLowerCase()
@@ -184,7 +184,7 @@ export const updateInfluencerProfile = async (req: Request, res: Response) => {
         links.set(key, value)
       }
     }
-
+    console.log(influencerProfile?.languages,"Langggggggg");
     const nextInfluencerProfile = {
       ...existingDetails,
       followers: influencerProfile?.followers ?? existingDetails.followers,
@@ -195,8 +195,8 @@ export const updateInfluencerProfile = async (req: Request, res: Response) => {
       engagement: Number(influencerProfile?.engagement) || existingDetails.engagement,
       socialLinks: links,
       statsConnection: existingDetails.statsConnection,
-      languages: Array.isArray(influencerDetails?.languages) ? influencerDetails.languages : existingDetails.languages,
-      location: applyLocaleSafeString(influencerDetails?.location) ?? existingDetails.location,
+      languages: Array.isArray(influencerProfile?.languages) ? influencerProfile.languages : existingDetails.languages,
+      location: applyLocaleSafeString(influencerProfile?.location) ?? existingDetails.location,
       preferences: {
         minimumRate: {
           amount: Number(influencerDetails?.preferences?.minimumRate?.amount) || existingDetails.preferences?.minimumRate?.amount || 0,

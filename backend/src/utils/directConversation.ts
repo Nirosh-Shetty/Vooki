@@ -1,5 +1,6 @@
 import ConversationModel from "../models/Conversation";
 import MessageModel from "../models/Message";
+import DiscoverInviteModel from "../models/DiscoverInvite";
 
 export const buildConversationParticipants = (userId: string, otherUserId: string) =>
   [String(userId), String(otherUserId)].sort();
@@ -9,6 +10,29 @@ const clearLegacyConversationContext = (conversation: any) => {
   conversation.campaignId = "";
   conversation.promotionId = "";
   conversation.campaignTitle = "";
+};
+
+export const cleanupEmptyDirectConversations = async (userId: string, keepConversationId?: string) => {
+  try {
+    const directConversations = await ConversationModel.find({
+      participants: String(userId),
+      threadType: "direct",
+      $or: [{ campaignId: "" }, { campaignId: { $exists: false } }, { campaignId: null }],
+    });
+
+    for (const conv of directConversations) {
+      if (keepConversationId && String(conv._id) === String(keepConversationId)) {
+        continue;
+      }
+      const msgCount = await MessageModel.countDocuments({ conversationId: conv._id, isDeleted: false });
+      const inviteCount = await DiscoverInviteModel.countDocuments({ conversationId: String(conv._id) });
+      if (msgCount === 0 && inviteCount === 0) {
+        await conv.deleteOne();
+      }
+    }
+  } catch (err) {
+    console.error("Error cleaning up empty direct conversations:", err);
+  }
 };
 
 export const reconcileDirectConversationThreads = async (participants: string[]) => {
@@ -75,7 +99,11 @@ export const reconcileDirectConversationThreads = async (participants: string[])
 export const findOrCreateDirectConversation = async (userId: string, otherUserId: string) => {
   const participants = buildConversationParticipants(userId, otherUserId);
   const existingConversation = await reconcileDirectConversationThreads(participants);
-  if (existingConversation) return existingConversation;
+  if (existingConversation) {
+    existingConversation.lastMessageAt = new Date();
+    await existingConversation.save();
+    return existingConversation;
+  }
 
   return ConversationModel.create({
     participants,
@@ -84,6 +112,7 @@ export const findOrCreateDirectConversation = async (userId: string, otherUserId
     campaignId: "",
     promotionId: "",
     campaignTitle: "",
+    lastMessageAt: new Date(),
   });
 };
 
