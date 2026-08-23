@@ -538,7 +538,7 @@ export function ProfileContent() {
               >
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-[color:var(--vooki-app-text-soft)]">
+                    <span className="text-xs font-bold">
                       {stat.label}
                     </span>
                     <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[color:var(--vooki-app-surface)] text-[color:var(--vooki-app-active-icon)] border border-[color:var(--vooki-app-border)]">

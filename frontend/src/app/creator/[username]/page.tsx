@@ -105,7 +105,6 @@ function getInstagramEmbedUrl(url: string): string | null {
     if (match) {
       const type = match[1];
       const id = match[2];
-      // &theme=dark removes the white card background in dark mode
       return `https://www.instagram.com/${type}/${id}/embed/?cr=1&v=14&wp=540&rd=${encodeURIComponent(
         typeof window !== "undefined" ? window.location.origin : ""
       )}`;
@@ -158,7 +157,6 @@ function renderSocialEmbed(url: string) {
   if (igEmbedUrl) {
     return (
       <div className="relative w-full h-full overflow-hidden bg-white">
-        {/* -mt-[56px] trims the top profile avatar/name header, pulling the like bar into view */}
         <iframe
           src={igEmbedUrl}
           title="Instagram post"
@@ -192,7 +190,7 @@ export default function CreatorPublicProfile() {
 
   const [data, setData] = useState<PublicProfileData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"about" | "portfolio">("about");
+  const [activeTab, setActiveTab] = useState<"about" | "media">("about");
   const [copied, setCopied] = useState(false);
   const [isDark, setIsDark] = useState(false);
 
@@ -298,8 +296,6 @@ export default function CreatorPublicProfile() {
 
   const { profile } = data;
   const ytStats = profile.stats?.youtube;
-  const igStats = profile.stats?.instagram;
-  const fbStats = profile.stats?.facebook;
 
   const uniqueBrandsCount = new Set(profile.collaborations.map((c) => c.brandName)).size;
   const hasInstagram = profile.featuredContent?.some((i) => i.url.includes("instagram.com"));
@@ -378,7 +374,7 @@ export default function CreatorPublicProfile() {
                 </div>
               </div>
 
-              {/* Action Buttons: Share & Theme Switcher */}
+              {/* Action Buttons */}
               <div className="flex items-center gap-2.5 w-full sm:w-auto justify-center sm:justify-end sm:pb-1">
                 <button
                   type="button"
@@ -408,16 +404,13 @@ export default function CreatorPublicProfile() {
               </div>
             </div>
 
-            {/* Metric Stat Cards Grid (3 Columns) */}
             {/* Metric Stat Cards Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 pt-1">
-              {/* 1. Audience (Full Width on Mobile, 1 Column on Desktop) */}
+              {/* Audience */}
               <div className="col-span-2 lg:col-span-1 group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4 sm:p-5 transition-all duration-200 hover:border-[color:var(--vooki-app-active-border)] hover:shadow-xs">
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-[color:var(--vooki-app-text-soft)]">
-                      Audience
-                    </span>
+                    <span className="text-xs font-bold">Audience</span>
                     <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[color:var(--vooki-app-surface)] text-[color:var(--vooki-app-active-icon)] border border-[color:var(--vooki-app-border)]">
                       <Users className="h-3.5 w-3.5" />
                     </div>
@@ -443,13 +436,11 @@ export default function CreatorPublicProfile() {
                 </div>
               </div>
 
-              {/* 2. Engagement (Half Width on Mobile, 1 Column on Desktop) */}
+              {/* Engagement */}
               <div className="col-span-1 group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4 sm:p-5 transition-all duration-200 hover:border-[color:var(--vooki-app-active-border)] hover:shadow-xs">
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-[color:var(--vooki-app-text-soft)]">
-                      Engagement
-                    </span>
+                    <span className="text-xs font-bold">Engagement</span>
                     <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[color:var(--vooki-app-surface)] text-[color:var(--vooki-app-active-icon)] border border-[color:var(--vooki-app-border)]">
                       <TrendingUp className="h-3.5 w-3.5" />
                     </div>
@@ -463,13 +454,11 @@ export default function CreatorPublicProfile() {
                 </span>
               </div>
 
-              {/* 3. Rating (Half Width on Mobile, 1 Column on Desktop) */}
+              {/* Rating */}
               <div className="col-span-1 group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4 sm:p-5 transition-all duration-200 hover:border-[color:var(--vooki-app-active-border)] hover:shadow-xs">
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-[color:var(--vooki-app-text-soft)]">
-                      Rating
-                    </span>
+                    <span className="text-xs font-bold">Rating</span>
                     <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[color:var(--vooki-app-surface)] text-amber-500 border border-[color:var(--vooki-app-border)]">
                       <Star className="h-3.5 w-3.5" />
                     </div>
@@ -506,29 +495,28 @@ export default function CreatorPublicProfile() {
               }`}
             >
               <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              About & Collabs
+              About
             </button>
 
             <button
               type="button"
-              onClick={() => setActiveTab("portfolio")}
+              onClick={() => setActiveTab("media")}
               className={`pb-3 text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-                activeTab === "portfolio"
+                activeTab === "media"
                   ? "border-b-2 border-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-text-strong)]"
                   : "border-b-2 border-transparent text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)]"
               }`}
             >
               <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              Connections & Portfolio
+              Media
             </button>
           </div>
 
-          {/* ================= Tab Content: About & Collabs ================= */}
+          {/* ================= Tab Content: About ================= */}
           {activeTab === "about" && (
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
               {/* About You Card */}
               <section className="rounded-2xl sm:rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface)] shadow-xs">
-                {/* Card Header */}
                 <div className="p-4 sm:p-6 pb-2 sm:pb-3">
                   <h2 className="text-base sm:text-lg font-bold text-[color:var(--vooki-app-text-strong)] flex items-center gap-2">
                     <Users className="h-4 w-4 text-[color:var(--vooki-app-active-icon)]" />
@@ -536,7 +524,6 @@ export default function CreatorPublicProfile() {
                   </h2>
                 </div>
 
-                {/* Card Content */}
                 <div className="p-4 sm:p-6 pt-2 sm:pt-3 space-y-4">
                   {/* Creator Highlight Banner */}
                   {profile.highlight && (
@@ -601,144 +588,151 @@ export default function CreatorPublicProfile() {
                 </div>
               </section>
 
-              {/* Previous Collaborations */}
-              <section className="rounded-3xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface)] p-6 sm:p-8 space-y-4 shadow-xs">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-base font-bold text-[color:var(--vooki-app-text-strong)] flex items-center gap-2">
-                    <Megaphone className="w-4 h-4 text-[color:var(--vooki-app-active-icon)]" />{" "}
-                    Previous Collaborations
-                  </h2>
-                  <span className="text-xs bg-[color:var(--vooki-app-surface-strong)] border border-[color:var(--vooki-app-border-strong)] text-[color:var(--vooki-app-text-soft)] font-medium px-3 py-1 rounded-full">
-                    {uniqueBrandsCount} Brands
-                  </span>
-                </div>
+              {/* Previous Collaborations & Reviews Side-by-Side */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                {/* 1. Previous Collaborations */}
+                <section className="h-[420px] flex flex-col rounded-3xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface)] p-5 sm:p-6 shadow-xs">
+                  <div className="flex items-center justify-between pb-3 shrink-0">
+                    <h2 className="text-base font-bold text-[color:var(--vooki-app-text-strong)] flex items-center gap-2">
+                      <Megaphone className="w-4 h-4 text-[color:var(--vooki-app-active-icon)]" />
+                      Previous Collaborations
+                    </h2>
+                    <span className="text-xs bg-[color:var(--vooki-app-surface-strong)] border border-[color:var(--vooki-app-border-strong)] text-[color:var(--vooki-app-text-soft)] font-medium px-3 py-1 rounded-full">
+                      {uniqueBrandsCount} Brands
+                    </span>
+                  </div>
 
-                <div className="space-y-3">
-                  {profile.collaborations.length === 0 ? (
-                    <p className="text-xs text-[color:var(--vooki-app-text-muted)] py-6 text-center">
-                      No collaborations recorded yet.
-                    </p>
-                  ) : (
-                    profile.collaborations.map((collab, idx) => (
-                      <div
-                        key={idx}
-                        className="bg-[color:var(--vooki-app-surface-strong)] border border-[color:var(--vooki-app-border-strong)] rounded-2xl p-4 flex items-center justify-between"
-                      >
-                        <div className="flex items-center gap-3.5">
-                          <div className="w-10 h-10 rounded-xl bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border)] flex items-center justify-center text-[color:var(--vooki-app-text-soft)]">
-                            <Megaphone className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-bold text-sm text-[color:var(--vooki-app-text-strong)]">
-                                {collab.brandName}
-                              </span>
-                              {collab.isVerified && (
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                              )}
-                            </div>
-                            <p className="text-xs text-[color:var(--vooki-app-text-muted)]">
-                              {collab.campaignTitle}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-xs text-[color:var(--vooki-app-text-muted)]">
-                          <Calendar className="w-3.5 h-3.5" />
-                          <span>
-                            {new Date(collab.date).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                          </span>
-                        </div>
+                  <div className="flex-1 overflow-y-auto space-y-3 pr-1.5">
+                    {profile.collaborations.length === 0 ? (
+                      <div className="h-full flex items-center justify-center">
+                        <p className="text-xs text-[color:var(--vooki-app-text-muted)] py-6 text-center">
+                          No collaborations recorded yet.
+                        </p>
                       </div>
-                    ))
-                  )}
-                </div>
-              </section>
-
-              {/* Reviews & Feedback */}
-              <section className="rounded-3xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface)] p-6 sm:p-8 space-y-4 shadow-xs">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-base font-bold text-[color:var(--vooki-app-text-strong)] flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-amber-500" /> Reviews & Feedback
-                  </h2>
-                  {averageRating !== null && (
-                    <div className="flex items-center gap-1 text-xs bg-[color:var(--vooki-app-surface-strong)] border border-[color:var(--vooki-app-border-strong)] text-[color:var(--vooki-app-text-strong)] font-bold px-2.5 py-1 rounded-full">
-                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                      <span>{averageRating}</span>
-                      <span className="text-[color:var(--vooki-app-text-muted)] font-normal">
-                        ({reviewCount})
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  {profile.reviews.length === 0 ? (
-                    <p className="text-xs text-[color:var(--vooki-app-text-muted)] py-6 text-center">
-                      No reviews submitted yet.
-                    </p>
-                  ) : (
-                    profile.reviews.map((rev, idx) => {
-                      const starCount = rev.score || rev.rating || 0;
-                      return (
+                    ) : (
+                      profile.collaborations.map((collab, idx) => (
                         <div
                           key={idx}
-                          className="bg-[color:var(--vooki-app-surface-strong)] border border-[color:var(--vooki-app-border-strong)] rounded-2xl p-4 space-y-2.5"
+                          className="bg-[color:var(--vooki-app-surface-strong)] border border-[color:var(--vooki-app-border-strong)] rounded-2xl p-4 flex items-center justify-between"
                         >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-7 h-7 rounded-lg bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border)] flex items-center justify-center text-[10px] font-bold text-[color:var(--vooki-app-text-strong)]">
-                                BR
-                              </div>
-                              <span className="font-bold text-sm text-[color:var(--vooki-app-text-strong)]">
-                                {rev.brandName}
-                              </span>
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-10 h-10 rounded-xl bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border)] flex items-center justify-center text-[color:var(--vooki-app-text-soft)] shrink-0">
+                              <Megaphone className="w-4 h-4" />
                             </div>
-                            <div className="flex gap-0.5">
-                              {[1, 2, 3, 4, 5].map((star) => (
-                                <Star
-                                  key={star}
-                                  className={`w-3.5 h-3.5 ${
-                                    star <= starCount
-                                      ? "fill-amber-400 text-amber-400"
-                                      : "text-[color:var(--vooki-app-border-strong)]"
-                                  }`}
-                                />
-                              ))}
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-sm text-[color:var(--vooki-app-text-strong)]">
+                                  {collab.brandName}
+                                </span>
+                                {collab.isVerified && (
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                                )}
+                              </div>
+                              <p className="text-xs text-[color:var(--vooki-app-text-muted)]">
+                                {collab.campaignTitle}
+                              </p>
                             </div>
                           </div>
-
-                          {rev.review ? (
-                            <p className="text-xs text-[color:var(--vooki-app-text-soft)] italic pl-2.5 border-l-2 border-[color:var(--vooki-app-active-border)]">
-                              "{rev.review}"
-                            </p>
-                          ) : (
-                            <p className="text-xs text-[color:var(--vooki-app-text-muted)] italic pl-2.5 border-l-2 border-[color:var(--vooki-app-border)]">
-                              Completed campaign without written review.
-                            </p>
-                          )}
-
-                          <div className="text-right text-[11px] text-[color:var(--vooki-app-text-muted)]">
-                            {new Date(rev.date).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
+                          <div className="flex items-center gap-1.5 text-xs text-[color:var(--vooki-app-text-muted)] shrink-0">
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span>
+                              {new Date(collab.date).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })}
+                            </span>
                           </div>
                         </div>
-                      );
-                    })
-                  )}
-                </div>
-              </section>
+                      ))
+                    )}
+                  </div>
+                </section>
+
+                {/* 2. Reviews & Feedback */}
+                <section className="h-[420px] flex flex-col rounded-3xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface)] p-5 sm:p-6 shadow-xs">
+                  <div className="flex items-center justify-between pb-3 shrink-0">
+                    <h2 className="text-base font-bold text-[color:var(--vooki-app-text-strong)] flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-amber-500" /> Reviews & Feedback
+                    </h2>
+                    {averageRating !== null && (
+                      <div className="flex items-center gap-1 text-xs bg-[color:var(--vooki-app-surface-strong)] border border-[color:var(--vooki-app-border-strong)] text-[color:var(--vooki-app-text-strong)] font-bold px-2.5 py-1 rounded-full">
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                        <span>{averageRating}</span>
+                        <span className="text-[color:var(--vooki-app-text-muted)] font-normal">
+                          ({reviewCount})
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto space-y-3 pr-1.5">
+                    {profile.reviews.length === 0 ? (
+                      <div className="h-full flex items-center justify-center">
+                        <p className="text-xs text-[color:var(--vooki-app-text-muted)] py-6 text-center">
+                          No reviews submitted yet.
+                        </p>
+                      </div>
+                    ) : (
+                      profile.reviews.map((rev, idx) => {
+                        const starCount = rev.score || rev.rating || 0;
+                        return (
+                          <div
+                            key={idx}
+                            className="bg-[color:var(--vooki-app-surface-strong)] border border-[color:var(--vooki-app-border-strong)] rounded-2xl p-4 space-y-2.5"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-7 h-7 rounded-lg bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border)] flex items-center justify-center text-[10px] font-bold text-[color:var(--vooki-app-text-strong)]">
+                                  BR
+                                </div>
+                                <span className="font-bold text-sm text-[color:var(--vooki-app-text-strong)]">
+                                  {rev.brandName}
+                                </span>
+                              </div>
+                              <div className="flex gap-0.5">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <Star
+                                    key={star}
+                                    className={`w-3.5 h-3.5 ${
+                                      star <= starCount
+                                        ? "fill-amber-400 text-amber-400"
+                                        : "text-[color:var(--vooki-app-border-strong)]"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+
+                            {rev.review ? (
+                              <p className="text-xs text-[color:var(--vooki-app-text-soft)] italic pl-2.5 border-l-2 border-[color:var(--vooki-app-active-border)]">
+                                "{rev.review}"
+                              </p>
+                            ) : (
+                              <p className="text-xs text-[color:var(--vooki-app-text-muted)] italic pl-2.5 border-l-2 border-[color:var(--vooki-app-border)]">
+                                Completed campaign without written review.
+                              </p>
+                            )}
+
+                            <div className="text-right text-[11px] text-[color:var(--vooki-app-text-muted)]">
+                              {new Date(rev.date).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </section>
+              </div>
             </div>
           )}
 
-          {/* ================= Tab Content: Connections & Work ================= */}
-          {activeTab === "portfolio" && (
+          {/* ================= Tab Content: Media ================= */}
+          {activeTab === "media" && (
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
               {/* Connected Accounts */}
               <section className="rounded-3xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface)] p-6 sm:p-8 space-y-4 shadow-xs">
@@ -747,7 +741,7 @@ export default function CreatorPublicProfile() {
                     <Layers className="w-4 h-4" /> Connected Accounts
                   </h2>
                   <p className="text-xs text-[color:var(--vooki-app-text-muted)] pt-0.5">
-                    Live verified social channels synced via OAuth.
+                    Verified social accounts synced via OAuth.
                   </p>
                 </div>
 
@@ -883,7 +877,7 @@ export default function CreatorPublicProfile() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-base font-bold text-[color:var(--vooki-app-text-strong)] flex items-center gap-2">
-                      <Globe className="w-4 h-4" /> Portfolio & Featured Content
+                      <Globe className="w-4 h-4" /> Featured Media & Portfolio
                     </h2>
                     <p className="text-xs text-[color:var(--vooki-app-text-muted)] pt-0.5">
                       Showcase of verified top-performing posts and videos.
@@ -901,7 +895,6 @@ export default function CreatorPublicProfile() {
                         key={item._id || index}
                         className="relative group rounded-2xl overflow-hidden border border-[color:var(--vooki-app-border-strong)] h-[600px] w-full max-w-[400px] flex flex-col bg-black shadow-sm"
                       >
-                        {/* Embed Frame */}
                         <div className="w-full h-full flex items-center justify-center overflow-hidden bg-black">
                           {renderSocialEmbed(item.url)}
                         </div>

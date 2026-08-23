@@ -9,6 +9,9 @@ interface ConversationData {
   lastMessage: string;
   lastMessageAt?: string;
   status: "active" | "archived" | "closed";
+  isStoppedByBrand?: boolean;
+  stoppedBy?: string | null;
+  stoppedAt?: string | null;
   unreadCount: number;
   threadType: "direct" | "campaign" | "collaboration";
   campaignId?: string;
@@ -127,8 +130,8 @@ class MessagingAPI {
       });
       return response.data;
     } catch (error) {
-      console.error("Error marking messages as read:", error);
-      throw error;
+      console.warn("Mark as read API notice:", error);
+      return null;
     }
   }
 
@@ -152,6 +155,33 @@ class MessagingAPI {
       return response.data;
     } catch (error) {
       console.error("Error archiving conversation:", error);
+      throw error;
+    }
+  }
+
+  async deleteEmptyConversation(conversationId: string) {
+    try {
+      const response = await this.api.delete(`/conversations/${conversationId}/empty`);
+      return response.data;
+    } catch (error) {
+      console.warn("Delete empty conversation notice:", error);
+      return null;
+    }
+  }
+
+  async toggleStopCreatorMessages(conversationId: string, stopped?: boolean) {
+    try {
+      const response = await this.api.post<{
+        message: string;
+        isStoppedByBrand: boolean;
+        stoppedBy?: string;
+        stoppedAt?: string;
+      }>(`/conversations/${conversationId}/toggle-stop`, {
+        stopped,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error toggling creator messages:", error);
       throw error;
     }
   }

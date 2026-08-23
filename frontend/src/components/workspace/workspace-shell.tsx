@@ -254,9 +254,10 @@ export function WorkspaceShell({
                     <Bell className="h-5 w-5" />
                   </Button>
 
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                  <DropdownMenu modal={false}>
+                    <DropdownMenuTrigger asChild id="workspace-account-menu-trigger">
                       <Button
+                        id="workspace-account-menu-button"
                         variant="ghost"
                         className="h-auto rounded-full border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-card)] px-2 py-1.5 text-[color:var(--vooki-app-text-strong)] shadow-[var(--vooki-shadow-app-soft)] hover:bg-[color:var(--vooki-app-surface-strong)]"
                       >
@@ -279,6 +280,7 @@ export function WorkspaceShell({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                       align="end"
+                      id="workspace-account-menu-content"
                       className="w-60 rounded-2xl border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)]"
                     >
                       <DropdownMenuLabel className="px-3 py-2 text-[color:var(--vooki-app-text-subtle)]">
