@@ -11,8 +11,6 @@ export interface AuthUser {
   role: 'brand' | 'influencer' | 'manager';
   avatar?: string;
   profilePicture?: string;
-  avatar?: string;
-  phone?: number | string;
   brandName?: string;
   brandDetails?: any;
   influencerDetails?: any;

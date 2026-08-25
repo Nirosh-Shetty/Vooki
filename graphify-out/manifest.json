@@ -15,8 +15,8 @@
     "semantic_hash": ""
   },
   "backend/src/controllers/auth/auth.controller.ts": {
-    "mtime": 1787247660.3973393,
-    "ast_hash": "6ce52bcf9f0937565adfd963d1828f99",
+    "mtime": 1787249434.8159182,
+    "ast_hash": "804a24a0e81d0c9c34283327ff24af47",
     "semantic_hash": ""
   },
   "backend/src/controllers/auth/passowrd.controller.ts": {
@@ -70,8 +70,8 @@
     "semantic_hash": ""
   },
   "backend/src/controllers/profile.controller.ts": {
-    "mtime": 1787246030.1879401,
-    "ast_hash": "102e4bb9408c8a871b580f4f703626e9",
+    "mtime": 1787249558.7269416,
+    "ast_hash": "cd854c1df50d96c8dff35e38f390bd82",
     "semantic_hash": ""
   },
   "backend/src/controllers/promotion.controller.ts": {
@@ -140,8 +140,8 @@
     "semantic_hash": ""
   },
   "backend/src/routes/Route.ts": {
-    "mtime": 1787244769.7560682,
-    "ast_hash": "68271414da8b1787d4250f99dadee084",
+    "mtime": 1787249576.4166837,
+    "ast_hash": "62b6011eb80bcd7ae885bc3816317bd2",
     "semantic_hash": ""
   },
   "backend/src/routes/auth.route.ts": {
@@ -520,8 +520,8 @@
     "semantic_hash": ""
   },
   "frontend/src/app/influencer/dashboard/page.tsx": {
-    "mtime": 1784782238.1347973,
-    "ast_hash": "ef95224b4b12035ca7d6b2a89df1a644",
+    "mtime": 1787249639.578813,
+    "ast_hash": "3104dda67cf0e559d081a4604711606d",
     "semantic_hash": ""
   },
   "frontend/src/app/influencer/earnings/page.tsx": {
@@ -535,8 +535,8 @@
     "semantic_hash": ""
   },
   "frontend/src/app/influencer/layout.tsx": {
-    "mtime": 1786890198.9537144,
-    "ast_hash": "68227545a14c94f381cadb70d212a3be",
+    "mtime": 1787248299.8230934,
+    "ast_hash": "5cb8a11417897b03bcb8afddcbae8b8c",
     "semantic_hash": ""
   },
   "frontend/src/app/influencer/messages/page.tsx": {
@@ -575,13 +575,13 @@
     "semantic_hash": ""
   },
   "frontend/src/app/influencer/profile/profile-content.tsx": {
-    "mtime": 1787244769.7762885,
-    "ast_hash": "0f549c9cc2c9fd930483a9279750c37e",
+    "mtime": 1787248299.827011,
+    "ast_hash": "460664f8e52a9c479aabca8727860cfd",
     "semantic_hash": ""
   },
   "frontend/src/app/influencer/settings/page.tsx": {
-    "mtime": 1787247454.9304206,
-    "ast_hash": "08d8fb3db2c6dd8a4221b2a5ef8374e3",
+    "mtime": 1787249587.5042984,
+    "ast_hash": "fd438c376d9e8cc8fb60f5da55d07fad",
     "semantic_hash": ""
   },
   "frontend/src/app/layout.tsx": {
@@ -800,8 +800,8 @@
     "semantic_hash": ""
   },
   "frontend/src/context/auth-context.tsx": {
-    "mtime": 1787244769.7762885,
-    "ast_hash": "7885352473056288ba129398899ba629",
+    "mtime": 1787249912.705765,
+    "ast_hash": "9f5d93811edd97ac1d56c82e62fd1d54",
     "semantic_hash": ""
   },
   "frontend/src/hooks/use-mobile.tsx": {
@@ -1020,8 +1020,8 @@
     "semantic_hash": ""
   },
   "frontend/src/app/influencer/profile/about/About.tsx": {
-    "mtime": 1787244769.7666633,
-    "ast_hash": "6e54500109016ae4fbff3e69cb536907",
+    "mtime": 1787248299.8258767,
+    "ast_hash": "ef21137150d39119ccdf2474ff79ae99",
     "semantic_hash": ""
   },
   "frontend/src/app/influencer/profile/collaboration/Collaboration.tsx": {
@@ -1030,13 +1030,13 @@
     "semantic_hash": ""
   },
   "frontend/src/app/influencer/profile/connectedAccounts/ConnectedAccounts.tsx": {
-    "mtime": 1787244769.771278,
-    "ast_hash": "c1d38d9b51ad21cd2eee677e105b1b93",
+    "mtime": 1787248299.827011,
+    "ast_hash": "ffab3861e021a32d893666bd6a85bf12",
     "semantic_hash": ""
   },
   "frontend/src/app/influencer/profile/portfolio/Portfolio.tsx": {
-    "mtime": 1787244769.7746756,
-    "ast_hash": "1872c2ef413ce3af10fe77888b5ab0a8",
+    "mtime": 1787248299.827011,
+    "ast_hash": "270b57bd5ddde93fe022aca51811b61a",
     "semantic_hash": ""
   },
   "frontend/src/app/influencer/profile/quicklink/QuickLink.tsx": {
@@ -1052,6 +1052,21 @@
   "BACKLOG.md": {
     "mtime": 1787246002.8852627,
     "ast_hash": "415ec816ac748f1c30d2766528901416",
+    "semantic_hash": ""
+  },
+  "backend/src/controllers/settings.controller.ts": {
+    "mtime": 1787249546.9675722,
+    "ast_hash": "6b50d9583c572c33f17d1e39ba001ca7",
+    "semantic_hash": ""
+  },
+  "backend/src/routes/settings.route.ts": {
+    "mtime": 1787249567.0601137,
+    "ast_hash": "bb40026e531b9aa9d06ef6ccfbc775ec",
+    "semantic_hash": ""
+  },
+  "implementation_plan for currency.md": {
+    "mtime": 1787249789.5847373,
+    "ast_hash": "c58ee812129a2b65bb9b05644b368b27",
     "semantic_hash": ""
   }
 }
