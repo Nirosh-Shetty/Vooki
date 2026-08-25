@@ -131,6 +131,50 @@ export function MessagesHubContent({
     [fetchConversations, sendMessage]
   );
 
+function formatWhatsAppTime(dateInput?: string | Date | null): string {
+  if (!dateInput) return "";
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return "";
+
+  const now = new Date();
+
+  const isToday =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday =
+    date.getDate() === yesterday.getDate() &&
+    date.getMonth() === yesterday.getMonth() &&
+    date.getFullYear() === yesterday.getFullYear();
+
+  if (isToday) {
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${hours}:${minutes}`;
+  }
+
+  if (isYesterday) {
+    return "Yesterday";
+  }
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = String(date.getFullYear()).slice(-2);
+  return `${day}/${month}/${year}`;
+}
+
+function formatMessageTime(dateInput?: string | Date | null): string {
+  if (!dateInput) return "Now";
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return "Now";
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
+}
+
   const messagesByConversation = {
     [selectedConversationId || ""]: messages.map((msg) => ({
       id: msg.id,
@@ -138,10 +182,7 @@ export function MessagesHubContent({
       text: msg.text || "",
       messageType: msg.messageType || "text",
       offerData: msg.offerData || null,
-      timestamp: new Date(msg.createdAt).toLocaleTimeString([], {
-        hour: "numeric",
-        minute: "2-digit",
-      }),
+      timestamp: formatMessageTime(msg.createdAt),
       read: msg.read,
     })),
   };
@@ -160,7 +201,7 @@ export function MessagesHubContent({
     profileURL: conv.otherUser?.profilePicture || null,
     icon: conv.otherUser?.name?.trim()?.charAt(0)?.toUpperCase() || null,
     lastMessage: conv.lastMessage,
-    lastMessageAt: conv.lastMessageAt ? new Date(conv.lastMessageAt).toLocaleString() : "Now",
+    lastMessageAt: formatWhatsAppTime(conv.lastMessageAt),
     unreadCount: conv.unreadCount,
     status: conv.status as "active" | "pending" | "closed",
     online: false,

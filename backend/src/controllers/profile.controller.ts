@@ -175,6 +175,8 @@ export const updateInfluencerProfile = async (req: Request, res: Response) => {
     console.log("Incoming influencerProfile:", influencerProfile)
 
     const existingDetails = user.influencerProfile || {}
+
+    console.log("Existing influencerProfile:", existingDetails)
     const links = sanitizeSocialLinks(existingDetails.socialLinks)
     if (influencerProfile?.socialLinks) {
       const incoming = sanitizeSocialLinks(influencerProfile.socialLinks)
@@ -182,7 +184,7 @@ export const updateInfluencerProfile = async (req: Request, res: Response) => {
         links.set(key, value)
       }
     }
-
+    console.log(influencerProfile?.languages, "Langggggggg");
     const nextInfluencerProfile = {
       ...existingDetails,
       followers: influencerProfile?.followers ?? existingDetails.followers,
@@ -195,8 +197,26 @@ export const updateInfluencerProfile = async (req: Request, res: Response) => {
       statsConnection: existingDetails.statsConnection,
       languages: Array.isArray(influencerProfile?.languages) ? influencerProfile.languages : existingDetails.languages,
       location: applyLocaleSafeString(influencerProfile?.location) ?? existingDetails.location,
+      preferences: {
+        minimumRate: {
+          amount: Number(influencerDetails?.preferences?.minimumRate?.amount) || existingDetails.preferences?.minimumRate?.amount || 0,
+          currency: applyLocaleSafeString(influencerDetails?.preferences?.minimumRate?.currency) || existingDetails.preferences?.minimumRate?.currency || "INR",
+        },
+        contentBoundaries: applyLocaleSafeString(influencerDetails?.preferences?.contentBoundaries) ?? existingDetails.preferences?.contentBoundaries ?? "",
+      }
     }
 
+    if (notificationPreferences) {
+      user.notificationPreferences = {
+        newCollabInvites: notificationPreferences.newCollabInvites ?? user.notificationPreferences?.newCollabInvites ?? true,
+        messageNotifications: notificationPreferences.messageNotifications ?? user.notificationPreferences?.messageNotifications ?? true,
+        marketingUpdates: notificationPreferences.marketingUpdates ?? user.notificationPreferences?.marketingUpdates ?? false,
+      }
+    }
+
+    console.log("Updating influencerProfile to:", nextInfluencerProfile)
+
+    user.influencerProfile = nextInfluencerProfile
     user.influencerProfile = nextInfluencerProfile
 
     const photoUrl = await uploadNewProfilePhoto(req.body.photo)

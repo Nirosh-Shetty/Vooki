@@ -91,59 +91,76 @@ export function SearchPeopleDialog({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/80 backdrop-blur-sm p-3 sm:items-center sm:justify-center sm:p-4">
-      <Card className="w-full max-w-md overflow-hidden rounded-[28px] border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-card)] shadow-[0_24px_70px_rgba(0,0,0,0.5)]">
-        <div className="flex max-h-[85dvh] flex-col p-4">
-          <div className="relative mb-4 flex items-center justify-center">
-            <h2 className="text-lg font-semibold text-[color:var(--vooki-app-text-strong)]">
-              Find People
-            </h2>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 dark:bg-black/60 transition-opacity"
+      onClick={onClose}
+    >
+      <Card
+        className="w-full max-w-md overflow-hidden rounded-[28px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl transition-all"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex max-h-[85dvh] flex-col">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 px-6 py-4">
+            <div>
+              <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                New Conversation
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Search and connect with creators or brands
+              </p>
+            </div>
             <Button
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="absolute right-0 h-8 w-8 rounded-full text-[color:var(--vooki-app-text-soft)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)]"
+              className="h-8 w-8 rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
 
-          <div className="mb-3 flex justify-center">
-            <div className="relative w-full max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--vooki-app-text-muted)]" />
+          <div className="px-6 pt-4 pb-2">
+            <div className="relative w-full">
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
               <Input
                 placeholder="Search by name or username..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="h-11 rounded-full border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] pl-10 text-[color:var(--vooki-app-text-strong)] shadow-inner placeholder:text-[color:var(--vooki-app-text-muted)]"
+                className="h-11 w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 pl-10 pr-4 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-purple-500/20 focus-visible:border-purple-500 transition-all"
                 autoFocus
               />
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+          <div className="flex-1 min-h-[180px] max-h-[360px] overflow-y-auto px-6 py-3">
             <div className="space-y-2">
               {searching && (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-5 w-5 animate-spin text-[color:var(--vooki-app-text-muted)]" />
+                <div className="flex flex-col items-center justify-center py-10 gap-2">
+                  <Loader2 className="h-6 w-6 animate-spin text-purple-600 dark:text-purple-400" />
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Searching users...</p>
                 </div>
               )}
 
               {error && !searching && (
-                <div className="rounded-2xl border border-[color:var(--vooki-warm)]/25 bg-[color:var(--vooki-warm-soft)] p-3 text-sm text-[color:var(--vooki-warm)]">
+                <div className="rounded-2xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-950/20 p-3 text-xs text-red-600 dark:text-red-400 text-center">
                   {error}
                 </div>
               )}
 
               {!query.trim() && !searching && (
-                <div className="py-8 text-center text-sm text-[color:var(--vooki-app-text-muted)]">
-                  Start typing to find people...
+                <div className="py-10 text-center">
+                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 mb-2">
+                    <Search className="h-5 w-5" />
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Type a name or username to find people
+                  </p>
                 </div>
               )}
 
               {results.length === 0 && query.trim() && !searching && !error && (
-                <div className="py-8 text-center text-sm text-[color:var(--vooki-app-text-muted)]">
-                  No people found
+                <div className="py-10 text-center text-xs text-slate-500 dark:text-slate-400">
+                  No users found for &quot;<span className="font-medium text-slate-700 dark:text-slate-300">{query}</span>&quot;
                 </div>
               )}
 
@@ -157,11 +174,11 @@ export function SearchPeopleDialog({
                       setQuery("");
                     }}
                     disabled={isLoading}
-                    className="w-full rounded-2xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-3 text-left transition-colors hover:bg-[color:var(--vooki-app-surface-hover)] disabled:opacity-50"
+                    className="w-full group flex items-center justify-between gap-3 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/60 hover:bg-purple-50/60 dark:bg-slate-800/40 dark:hover:bg-slate-800 hover:border-purple-200 dark:hover:border-purple-900/40 transition-all text-left disabled:opacity-50"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div
-                        className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-sm font-semibold text-white"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-semibold text-white shadow-xs"
                         style={avatarStyle}
                       >
                         {user.profilePicture ? (
@@ -176,22 +193,24 @@ export function SearchPeopleDialog({
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-[color:var(--vooki-app-text-strong)]">
+                        <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
                           {user.name}
                         </p>
-                        <p className="truncate text-xs text-[color:var(--vooki-app-text-muted)]">
-                          @{user.username}
-                        </p>
-                        <p className="text-xs text-[color:var(--vooki-app-text-soft)]">
-                          {user.role}
-                        </p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                            @{user.username}
+                          </p>
+                          <span className="inline-block rounded-full bg-slate-200/70 dark:bg-slate-700/70 px-1.5 py-0.2 text-[10px] font-medium capitalize text-slate-600 dark:text-slate-300">
+                            {user.role}
+                          </span>
+                        </div>
                       </div>
+                    </div>
 
-                      <div className="flex shrink-0 items-center gap-2">
-                        <span className="inline-block rounded-full border border-[color:var(--vooki-accent-border)] bg-[color:var(--vooki-accent-strong)] px-2 py-1 text-xs font-medium text-white dark:bg-[color:var(--vooki-accent-soft)] dark:text-[color:var(--vooki-accent-strong)]">
-                          Start
-                        </span>
-                      </div>
+                    <div className="shrink-0">
+                      <span className="inline-flex items-center rounded-full bg-purple-600 group-hover:bg-purple-700 text-white text-xs font-medium px-3 py-1 shadow-xs transition-colors">
+                        Chat
+                      </span>
                     </div>
                   </button>
                 );

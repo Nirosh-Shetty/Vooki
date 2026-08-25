@@ -4,14 +4,11 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { CollaborationsCard } from "./collaboration/Collaboration";
-import { ReviewsCard } from "./review/Review";
 import {
   Award,
   CheckCircle2,
   Copy,
   ExternalLink,
-  Grid,
-  Info,
   LayoutDashboard,
   MapPin,
   Sparkles,
@@ -21,6 +18,10 @@ import {
   Youtube,
   Instagram,
   Facebook,
+  LayoutGrid,
+  BarChart3,
+  Layers,
+  Handshake,
 } from "lucide-react";
 
 import { Portfolio } from "./portfolio/Portfolio";
@@ -38,6 +39,7 @@ import {
   isYoutubeConnection,
   isInstagramConnection,
   isFacebookConnection,
+  isTwitterConnection,
   formatMetric,
 } from "./connectedAccounts/ConnectedAccounts";
 
@@ -53,6 +55,9 @@ type CollabHistory = {
   brand: string;
   campaign: string;
   date: string;
+  rating?: number;
+  reviewText?: string;
+  isVerified?: boolean;
 };
 
 type ReviewType = {
@@ -77,7 +82,7 @@ type InfluencerProfile = {
   profilePicture?: string;
   rating?: number;
   totalReviews?: number;
-  influencerDetails?: {
+  influencerProfile?: {
     niche?: string;
     location?: string;
     languages?: string[];
@@ -109,6 +114,8 @@ type PromotionSummary = {
   deliverySubmission?: { reviewedAt?: string };
 };
 
+type SectionTab = "overview" | "analytics" | "portfolio" | "partnerships";
+
 const formatHistoryDate = (value?: string) => {
   if (!value) return "Recently";
   const date = new Date(value);
@@ -123,15 +130,14 @@ const formatHistoryDate = (value?: string) => {
 export function ProfileContent() {
   const [disconnecting, setDisconnecting] = useState<PlatformKey | null>(null);
   const [profile, setProfile] = useState<InfluencerProfile | null>(null);
-  const [liveCollabs, setLiveCollabs] = useState<CollabHistory[]>([]);
-  const [liveReviews, setLiveReviews] = useState<ReviewType[]>([]);
+  const [publicData, setPublicData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [connectError, setConnectError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<PlatformKey | null>(null);
   const [isCopied, setIsCopied] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<"about" | "connections">("about");
+  const [activeSection, setActiveSection] = useState<SectionTab>("overview");
   const searchParams = useSearchParams();
   const connectedPlatform = searchParams?.get("connected");
 
@@ -158,8 +164,8 @@ export function ProfileContent() {
         return updated;
       });
 
-      if (profile?.influencerDetails?.socialConnection) {
-        delete profile.influencerDetails.socialConnection[platform];
+      if (profile?.influencerProfile?.socialConnection) {
+        delete profile.influencerProfile.socialConnection[platform];
       }
     } catch (err: unknown) {
       setConnectError(err instanceof Error ? err.message : "Failed to disconnect");
@@ -194,44 +200,6 @@ export function ProfileContent() {
     }
   }, []);
 
-  const loadPromotions = useCallback(async (signal?: AbortSignal) => {
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/promotions?status=all&limit=50`,
-        { credentials: "include", cache: "no-store", signal }
-      );
-      if (!response.ok) return;
-      const data = await response.json();
-      const items: PromotionSummary[] = Array.isArray(data?.items) ? data.items : [];
-
-      const collabs = items
-        .filter((promotion) => promotion.campaignTitle || promotion.product)
-        .map((promotion) => ({
-          id: promotion.id,
-          brand: promotion.brandName || "Brand",
-          campaign: promotion.campaignTitle || promotion.product || "Campaign",
-          date: formatHistoryDate(promotion.updatedAt || promotion.createdAt || promotion.postAt),
-        }));
-
-      const reviews = items
-        .filter((promotion) => typeof promotion.brandRating?.score === "number")
-        .map((promotion) => ({
-          id: promotion.id,
-          author: promotion.brandName || "Brand",
-          rating: Number(promotion.brandRating?.score || 0),
-          text: promotion.brandRating?.review || "Great collaboration and smooth communication.",
-          date: formatHistoryDate(
-            promotion.deliverySubmission?.reviewedAt || promotion.updatedAt || promotion.createdAt
-          ),
-        }));
-
-      setLiveCollabs(collabs);
-      setLiveReviews(reviews);
-    } catch (err: unknown) {
-      if (err instanceof DOMException && err.name === "AbortError") return;
-    }
-  }, []);
-
   useEffect(() => {
     const controller = new AbortController();
 
@@ -250,7 +218,24 @@ export function ProfileContent() {
         if (data.role !== "influencer") throw new Error("Expected an influencer account");
 
         setProfile(data);
-        await Promise.all([loadConnections(controller.signal), loadPromotions(controller.signal)]);
+
+        const tasks: Promise<any>[] = [loadConnections(controller.signal)];
+        if (data.username) {
+          tasks.push(
+            fetch(
+              `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/public/profile/${encodeURIComponent(data.username)}`,
+              { cache: "no-store", signal: controller.signal }
+            )
+              .then((res) => (res.ok ? res.json() : null))
+              .then((json) => {
+                if (json?.success && json?.data) {
+                  setPublicData(json.data);
+                }
+              })
+              .catch(() => {})
+          );
+        }
+        await Promise.all(tasks);
       } catch (err: unknown) {
         if (err instanceof DOMException && err.name === "AbortError") return;
         setError(err instanceof Error ? err.message : "Profile unavailable");
@@ -262,19 +247,19 @@ export function ProfileContent() {
     load();
 
     if (connectedPlatform) {
-      setActiveTab("connections");
+      setActiveSection("analytics");
       window.history.replaceState({}, "", window.location.pathname);
     }
 
     return () => controller.abort();
-  }, [connectedPlatform, loadConnections, loadPromotions]);
+  }, [connectedPlatform, loadConnections]);
 
   const connections: Record<string, SocialConnectionEntry> = useMemo(() => {
     return {
-      ...(profile?.influencerDetails?.socialConnection ?? {}),
+      ...(profile?.influencerProfile?.socialConnection ?? {}),
       ...socialConnection,
     };
-  }, [profile?.influencerDetails?.socialConnection, socialConnection]);
+  }, [profile?.influencerProfile?.socialConnection, socialConnection]);
 
   const connectedCount = SOCIAL_PLATFORMS.filter((platform) =>
     Boolean(connections[platform])
@@ -290,22 +275,97 @@ export function ProfileContent() {
     const facebook = isFacebookConnection(connections.facebook)
       ? (connections.facebook.metrics?.followers ?? 0)
       : null;
+    const twitter = isTwitterConnection(connections.twitter)
+      ? (connections.twitter.metrics?.followers ?? 0)
+      : null;
 
-    return { youtube, instagram, facebook };
+    return { youtube, instagram, facebook, twitter };
   }, [connections]);
 
   const totalFollowers = useMemo(() => {
-    const { youtube, instagram, facebook } = platformFollowers;
-    const total = (youtube ?? 0) + (instagram ?? 0) + (facebook ?? 0);
+    const { youtube, instagram, facebook, twitter } = platformFollowers;
+    const total = (youtube ?? 0) + (instagram ?? 0) + (facebook ?? 0) + (twitter ?? 0);
     if (total === 0 && connectedCount === 0) return undefined;
     return total;
   }, [platformFollowers, connectedCount]);
 
-  const derivedReviewCount = liveReviews.length || profile?.totalReviews || 0;
-  const derivedRating =
-    liveReviews.length > 0
-      ? liveReviews.reduce((sum, review) => sum + review.rating, 0) / liveReviews.length
-      : (profile?.rating ?? 0);
+  const previousCollaborations = useMemo(() => {
+    if (publicData?.profile?.collaborations && Array.isArray(publicData.profile.collaborations)) {
+      return publicData.profile.collaborations;
+    }
+    return (
+      profile?.influencerProfile?.pastCollaborations?.map((collab: any) => ({
+        brandName: collab.brand || collab.brandName,
+        campaignTitle: collab.campaign || collab.campaignTitle,
+        date: collab.date,
+        isVerified: collab.isVerified,
+      })) || []
+    );
+  }, [publicData, profile]);
+
+  const reviews = useMemo(() => {
+    if (publicData?.profile?.reviews && Array.isArray(publicData.profile.reviews)) {
+      return publicData.profile.reviews;
+    }
+    return (
+      profile?.influencerProfile?.reviews?.map((r: any) => ({
+        brandName: r.brandName || r.author,
+        rating: r.rating ?? r.score,
+        score: r.score ?? r.rating,
+        review: r.review || r.text,
+        text: r.text || r.review,
+        date: r.date,
+      })) || []
+    );
+  }, [publicData, profile]);
+
+  // Aggregate ratings exactly as in creator/[username]/page.tsx
+  const { averageRating, reviewCount } = useMemo(() => {
+    if (!reviews || reviews.length === 0) {
+      return { averageRating: null, reviewCount: 0 };
+    }
+
+    const validReviews = reviews.filter((r: any) => {
+      const val = r.score ?? r.rating;
+      return typeof val === "number" && !isNaN(val) && val > 0;
+    });
+
+    if (validReviews.length === 0) {
+      return { averageRating: null, reviewCount: reviews.length };
+    }
+
+    const sum = validReviews.reduce((acc: number, curr: any) => acc + (curr.score ?? curr.rating ?? 0), 0);
+    const avg = Number((sum / validReviews.length).toFixed(1));
+
+    return { averageRating: avg, reviewCount: validReviews.length };
+  }, [reviews]);
+
+  // Unified Brand Collabs & Testimonials exactly as in creator/[username]/page.tsx
+  const unifiedProof = useMemo(() => {
+    const collabs = previousCollaborations || [];
+    const revs = reviews || [];
+
+    return collabs.map((collab: any, index: number) => {
+      const matchedReview =
+        revs[index] ||
+        revs.find(
+          (r: any) =>
+            (r.brandName === collab.brandName || r.author === collab.brandName) &&
+            r.date === collab.date
+        );
+
+      const scoreValue = Number(matchedReview?.score ?? matchedReview?.rating ?? 0);
+
+      return {
+        brandName: collab.brandName,
+        isVerified: collab.isVerified,
+        campaignTitle: collab.campaignTitle,
+        date: collab.date,
+        rating: scoreValue > 0 ? Math.round(scoreValue) : undefined,
+        reviewText: (matchedReview?.review || matchedReview?.text || "").trim(),
+      };
+    });
+  }, [previousCollaborations, reviews]);
 
   const heroStats = [
     {
@@ -357,20 +417,41 @@ export function ProfileContent() {
               {platformFollowers.facebook !== null ? formatMetric(platformFollowers.facebook) : "-"}
             </span>
           </div>
+
+          <div
+            className={`flex items-center gap-1 text-xs font-semibold ${
+              platformFollowers.twitter !== null
+                ? "text-[color:var(--vooki-app-text-strong)]"
+                : "text-[color:var(--vooki-app-text-soft)]/50"
+            }`}
+            title="X (Twitter) Followers"
+          >
+            <svg className="h-3.5 w-3.5 fill-current shrink-0" viewBox="0 0 24 24">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+            </svg>
+            <span>
+              {platformFollowers.twitter !== null ? formatMetric(platformFollowers.twitter) : "-"}
+            </span>
+          </div>
         </div>
       ),
     },
     {
       icon: TrendingUp,
       label: "Engagement",
-      value: profile?.influencerDetails?.engagement
-        ? `${profile.influencerDetails.engagement.toFixed(1)}%`
+      value: profile?.influencerProfile?.engagement
+        ? `${profile.influencerProfile.engagement.toFixed(1)}%`
         : "-",
     },
     {
       icon: Star,
       label: "Rating",
-      value: derivedRating ? derivedRating.toFixed(1) : "-",
+      value:
+        averageRating !== null
+          ? averageRating.toFixed(1)
+          : profile?.rating
+          ? profile.rating.toFixed(1)
+          : "-",
     },
     {
       icon: LayoutDashboard,
@@ -379,16 +460,13 @@ export function ProfileContent() {
     },
   ];
 
-  const previousCollaborations =
-    liveCollabs.length > 0 ? liveCollabs : profile?.influencerDetails?.pastCollaborations || [];
-  const reviews = liveReviews.length > 0 ? liveReviews : profile?.influencerDetails?.reviews || [];
-
   const heroAvatar = profile?.avatar || "/images/defaults/creator.svg";
 
   const connectEndpoints: Record<PlatformKey, string> = {
     youtube: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/social/connect/youtube`,
     instagram: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/social/connect/instagram`,
     facebook: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/social/connect/facebook`,
+    twitter: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/social/connect/twitter`,
   };
 
   const handleConnect = async (platform: PlatformKey) => {
@@ -482,17 +560,17 @@ export function ProfileContent() {
                     @{profile.username || "creator"}
                   </span>
 
-                  {profile.influencerDetails?.location && (
+                  {profile.influencerProfile?.location && (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[color:var(--vooki-app-surface-strong)] border border-[color:var(--vooki-app-border-strong)] backdrop-blur-sm">
                       <MapPin className="h-3.5 w-3.5 text-[color:var(--vooki-app-active-icon)]" />
-                      {profile.influencerDetails.location}
+                      {profile.influencerProfile.location}
                     </span>
                   )}
 
-                  {profile.influencerDetails?.niche && (
+                  {profile.influencerProfile?.niche && (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[color:var(--vooki-app-active-bg)]/40 border border-[color:var(--vooki-app-active-border)] text-[color:var(--vooki-app-text-strong)] font-semibold backdrop-blur-sm">
                       <Award className="h-3.5 w-3.5 text-[color:var(--vooki-app-active-icon)]" />
-                      {profile.influencerDetails.niche}
+                      {profile.influencerProfile.niche}
                     </span>
                   )}
                 </div>
@@ -510,7 +588,7 @@ export function ProfileContent() {
               </Button>
               <Button
                 className="flex-1 sm:flex-none rounded-xl border border-[color:var(--vooki-app-active-border)] bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] hover:bg-[color:var(--vooki-app-active-border)] text-xs sm:text-sm font-semibold h-10 px-5 shadow-xs transition-all cursor-pointer"
-                onClick={() => window.open(`/creator/${profile._id}`)}
+                onClick={() => window.open(`/creator/${profile.username}`)}
               >
                 <ExternalLink className="mr-2 h-4 w-4" /> Preview
               </Button>
@@ -538,7 +616,7 @@ export function ProfileContent() {
               >
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-[color:var(--vooki-app-text-soft)]">
+                    <span className="text-xs font-bold">
                       {stat.label}
                     </span>
                     <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[color:var(--vooki-app-surface)] text-[color:var(--vooki-app-active-icon)] border border-[color:var(--vooki-app-border)]">
@@ -556,83 +634,137 @@ export function ProfileContent() {
         </div>
       </section>
 
-      {/* Navigation Tabs */}
-      <div className="mt-2">
-        <div className="flex items-center gap-4 sm:gap-6 border-b border-[color:var(--vooki-app-border-strong)] mb-6 overflow-x-auto no-scrollbar">
-          <button
-            onClick={() => setActiveTab("about")}
-            className={`pb-3 text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-              activeTab === "about"
-                ? "border-b-2 border-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-text-strong)]"
-                : "border-b-2 border-transparent text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)]"
-            }`}
-          >
-            <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            About & Collabs
-          </button>
-          <button
-            onClick={() => setActiveTab("connections")}
-            className={`pb-3 text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-              activeTab === "connections"
-                ? "border-b-2 border-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-text-strong)]"
-                : "border-b-2 border-transparent text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)]"
-            }`}
-          >
-            <Grid className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            Connections & Portfolio
-          </button>
+      {/* ================= SECTION TOGGLE CONTROLLER ================= */}
+      <nav
+        aria-label="Media Kit Sections"
+        className="flex items-center gap-1.5 p-1 rounded-2xl bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border-strong)] shadow-xs overflow-x-auto no-scrollbar mb-6"
+      >
+        <button
+          type="button"
+          onClick={() => setActiveSection("overview")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${
+            activeSection === "overview"
+              ? "bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] shadow-xs"
+              : "text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]"
+          }`}
+        >
+          <LayoutGrid className="w-4 h-4" />
+          <span>About</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSection("analytics")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${
+            activeSection === "analytics"
+              ? "bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] shadow-xs"
+              : "text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]"
+          }`}
+        >
+          <BarChart3 className="w-4 h-4" />
+          <span>Connected Social Media</span>
+          {connectedCount > 0 && (
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border-strong)]">
+              {connectedCount}
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSection("portfolio")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${
+            activeSection === "portfolio"
+              ? "bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] shadow-xs"
+              : "text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]"
+          }`}
+        >
+          <Layers className="w-4 h-4" />
+          <span>Featured Media</span>
+          {(profile.influencerProfile?.featuredContent?.length ?? 0) > 0 && (
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border-strong)]">
+              {profile.influencerProfile?.featuredContent?.length}
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSection("partnerships")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${
+            activeSection === "partnerships"
+              ? "bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] shadow-xs"
+              : "text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]"
+          }`}
+        >
+          <Handshake className="w-4 h-4" />
+          <span>Collabs & Reviews</span>
+          {unifiedProof.length > 0 && (
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border-strong)]">
+              {unifiedProof.length}
+            </span>
+          )}
+        </button>
+      </nav>
+
+      {/* Tab Content: About */}
+      {activeSection === "overview" && (
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
+          <AboutCard
+            summary={profile.influencerProfile?.summary}
+            highlight={profile.influencerProfile?.highlight}
+            audience={profile.influencerProfile?.audience}
+            languages={profile.influencerProfile?.languages}
+            location={profile.influencerProfile?.location}
+          />
         </div>
+      )}
 
-        {/* Tab Content: About & Collabs */}
-        {activeTab === "about" && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
-            <AboutCard
-              summary={profile.influencerDetails?.summary}
-              highlight={profile.influencerDetails?.highlight}
-              audience={profile.influencerDetails?.audience}
-              languages={profile.influencerDetails?.languages}
-            />
+      {/* Tab Content: Connected Social Media */}
+      {activeSection === "analytics" && (
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
+          <ConnectedAccounts
+            connections={connections}
+            connecting={connecting}
+            disconnecting={disconnecting}
+            connectError={connectError}
+            onConnect={handleConnect}
+            onDisconnect={handleDisconnect}
+          />
+        </div>
+      )}
 
-            <CollaborationsCard collaborations={previousCollaborations} />
+      {/* Tab Content: Featured Media */}
+      {activeSection === "portfolio" && (
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
+          <Portfolio
+            initialItems={profile.influencerProfile?.featuredContent || []}
+            onUpdate={(items) => {
+              setProfile((prev) => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  influencerProfile: {
+                    ...prev.influencerProfile,
+                    featuredContent: items,
+                  },
+                };
+              });
+            }}
+          />
+        </div>
+      )}
 
-            <ReviewsCard
-              reviews={reviews}
-              rating={derivedRating}
-              totalReviews={derivedReviewCount}
-            />
-          </div>
-        )}
-
-        {/* Tab Content: Connections & Work */}
-        {activeTab === "connections" && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
-            <ConnectedAccounts
-              connections={connections}
-              connecting={connecting}
-              disconnecting={disconnecting}
-              connectError={connectError}
-              onConnect={handleConnect}
-              onDisconnect={handleDisconnect}
-            />
-
-            <Portfolio
-              initialItems={profile.influencerDetails?.featuredContent || []}
-              onUpdate={(items) => {
-                setProfile((prev) => {
-                  if (!prev) return prev;
-                  return {
-                    ...prev,
-                    influencerDetails: {
-                      ...prev.influencerDetails,
-                      featuredContent: items,
-                    },
-                  };
-                });
-              }}
-            />
-          </div>
-        )}
-      </div>
+      {/* Tab Content: Collabs & Reviews */}
+      {activeSection === "partnerships" && (
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
+          <CollaborationsCard
+            collaborations={previousCollaborations}
+            reviews={reviews}
+            creatorName={profile?.name || "You"}
+          />
+        </div>
+      )}
     </div>
   );
 }
