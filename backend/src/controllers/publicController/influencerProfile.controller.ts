@@ -28,7 +28,7 @@ export const getPublicProfileByUsername = async (
         isVerified: 1,
         rating: 1,
         totalReviews: 1,
-        influencerProfile: 1,
+        influencerDetails: 1,
       })
       .lean();
 
@@ -62,7 +62,7 @@ export const getPublicProfileByUsername = async (
         _id: 1,
         username: 1,
         isVerified: 1,
-        "brandProfile.companyName": 1,
+        "brandDetails.companyName": 1,
       })
       .lean();
 
@@ -72,7 +72,7 @@ export const getPublicProfileByUsername = async (
     const collaborations = promotions.map((promo) => {
       const brand = brandMap.get(String(promo.brandId));
       return {
-        brandName: brand?.brandProfile?.companyName || brand?.username || "brand",
+        brandName: brand?.brandDetails?.companyName || brand?.username || "brand",
         isVerified: Boolean(brand?.isVerified),
         campaignTitle: promo.campaignTitle,
         date: promo.postAt || promo.createdAt,
@@ -88,7 +88,7 @@ export const getPublicProfileByUsername = async (
       .map((promo) => {
         const brand = brandMap.get(String(promo.brandId));
         return {
-          brandName: brand?.brandProfile?.companyName || brand?.username || "brand",
+          brandName: brand?.brandDetails?.companyName || brand?.username || "brand",
           rating: promo.brandRating?.score ?? 0, // renamed to rating if your frontend expects it
           score: promo.brandRating?.score ?? 0,
           review: promo.brandRating?.review?.trim() || "",
@@ -98,7 +98,7 @@ export const getPublicProfileByUsername = async (
 
 
     // 7. Strip OAuth tokens from statsConnection
-    const rawStats = user.influencerProfile?.statsConnection || {};
+    const rawStats = user.influencerDetails?.statsConnection || {};
     const sanitizedStats: Record<string, any> = {};
 
     Object.entries(rawStats).forEach(([platform, data]: [string, any]) => {
@@ -121,16 +121,16 @@ export const getPublicProfileByUsername = async (
       rating: user.rating,
       totalReviews: user.totalReviews,
       profile: {
-        followers: user.influencerProfile?.followers || 0,
-        niche: user.influencerProfile?.niche || "General",
-        location: user.influencerProfile?.location || "",
-        summary: user.influencerProfile?.summary || "",
-        highlight: user.influencerProfile?.highlight || "",
-        audience: user.influencerProfile?.audience || "",
-        engagement: user.influencerProfile?.engagement || 0,
-        languages: user.influencerProfile?.languages || [],
-        socialLinks: user.influencerProfile?.socialLinks || {},
-        featuredContent: user.influencerProfile?.featuredContent || [],
+        followers: user.influencerDetails?.followers || 0,
+        niche: user.influencerDetails?.niche || "General",
+        location: user.influencerDetails?.location || "",
+        summary: user.influencerDetails?.summary || "",
+        highlight: user.influencerDetails?.highlight || "",
+        audience: user.influencerDetails?.audience || "",
+        engagement: user.influencerDetails?.engagement || 0,
+        languages: user.influencerDetails?.languages || [],
+        socialLinks: user.influencerDetails?.socialLinks || {},
+        featuredContent: user.influencerDetails?.featuredContent || [],
         stats: sanitizedStats,
         collaborations,
         reviews,

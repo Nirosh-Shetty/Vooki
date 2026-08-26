@@ -73,7 +73,7 @@ type ShowcaseItem = {
   url: string;
 };
 
-type InfluencerProfile = {
+type influencerDetails = {
   _id: string;
   role: "influencer";
   name: string;
@@ -82,7 +82,7 @@ type InfluencerProfile = {
   profilePicture?: string;
   rating?: number;
   totalReviews?: number;
-  influencerProfile?: {
+  influencerDetails?: {
     niche?: string;
     location?: string;
     languages?: string[];
@@ -129,7 +129,7 @@ const formatHistoryDate = (value?: string) => {
 
 export function ProfileContent() {
   const [disconnecting, setDisconnecting] = useState<PlatformKey | null>(null);
-  const [profile, setProfile] = useState<InfluencerProfile | null>(null);
+  const [profile, setProfile] = useState<influencerDetails | null>(null);
   const [publicData, setPublicData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -164,8 +164,8 @@ export function ProfileContent() {
         return updated;
       });
 
-      if (profile?.influencerProfile?.socialConnection) {
-        delete profile.influencerProfile.socialConnection[platform];
+      if (profile?.influencerDetails?.socialConnection) {
+        delete profile.influencerDetails.socialConnection[platform];
       }
     } catch (err: unknown) {
       setConnectError(err instanceof Error ? err.message : "Failed to disconnect");
@@ -214,7 +214,7 @@ export function ProfileContent() {
         });
 
         if (!response.ok) throw new Error("Unable to load profile");
-        const data: InfluencerProfile = await response.json();
+        const data: influencerDetails = await response.json();
         if (data.role !== "influencer") throw new Error("Expected an influencer account");
 
         setProfile(data);
@@ -256,10 +256,10 @@ export function ProfileContent() {
 
   const connections: Record<string, SocialConnectionEntry> = useMemo(() => {
     return {
-      ...(profile?.influencerProfile?.socialConnection ?? {}),
+      ...(profile?.influencerDetails?.socialConnection ?? {}),
       ...socialConnection,
     };
-  }, [profile?.influencerProfile?.socialConnection, socialConnection]);
+  }, [profile?.influencerDetails?.socialConnection, socialConnection]);
 
   const connectedCount = SOCIAL_PLATFORMS.filter((platform) =>
     Boolean(connections[platform])
@@ -294,7 +294,7 @@ export function ProfileContent() {
       return publicData.profile.collaborations;
     }
     return (
-      profile?.influencerProfile?.pastCollaborations?.map((collab: any) => ({
+      profile?.influencerDetails?.pastCollaborations?.map((collab: any) => ({
         brandName: collab.brand || collab.brandName,
         campaignTitle: collab.campaign || collab.campaignTitle,
         date: collab.date,
@@ -308,7 +308,7 @@ export function ProfileContent() {
       return publicData.profile.reviews;
     }
     return (
-      profile?.influencerProfile?.reviews?.map((r: any) => ({
+      profile?.influencerDetails?.reviews?.map((r: any) => ({
         brandName: r.brandName || r.author,
         rating: r.rating ?? r.score,
         score: r.score ?? r.rating,
@@ -439,8 +439,8 @@ export function ProfileContent() {
     {
       icon: TrendingUp,
       label: "Engagement",
-      value: profile?.influencerProfile?.engagement
-        ? `${profile.influencerProfile.engagement.toFixed(1)}%`
+      value: profile?.influencerDetails?.engagement
+        ? `${profile.influencerDetails.engagement.toFixed(1)}%`
         : "-",
     },
     {
@@ -560,17 +560,17 @@ export function ProfileContent() {
                     @{profile.username || "creator"}
                   </span>
 
-                  {profile.influencerProfile?.location && (
+                  {profile.influencerDetails?.location && (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[color:var(--vooki-app-surface-strong)] border border-[color:var(--vooki-app-border-strong)] backdrop-blur-sm">
                       <MapPin className="h-3.5 w-3.5 text-[color:var(--vooki-app-active-icon)]" />
-                      {profile.influencerProfile.location}
+                      {profile.influencerDetails.location}
                     </span>
                   )}
 
-                  {profile.influencerProfile?.niche && (
+                  {profile.influencerDetails?.niche && (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[color:var(--vooki-app-active-bg)]/40 border border-[color:var(--vooki-app-active-border)] text-[color:var(--vooki-app-text-strong)] font-semibold backdrop-blur-sm">
                       <Award className="h-3.5 w-3.5 text-[color:var(--vooki-app-active-icon)]" />
-                      {profile.influencerProfile.niche}
+                      {profile.influencerDetails.niche}
                     </span>
                   )}
                 </div>
@@ -681,9 +681,9 @@ export function ProfileContent() {
         >
           <Layers className="w-4 h-4" />
           <span>Featured Media</span>
-          {(profile.influencerProfile?.featuredContent?.length ?? 0) > 0 && (
+          {(profile.influencerDetails?.featuredContent?.length ?? 0) > 0 && (
             <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border-strong)]">
-              {profile.influencerProfile?.featuredContent?.length}
+              {profile.influencerDetails?.featuredContent?.length}
             </span>
           )}
         </button>
@@ -711,11 +711,11 @@ export function ProfileContent() {
       {activeSection === "overview" && (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
           <AboutCard
-            summary={profile.influencerProfile?.summary}
-            highlight={profile.influencerProfile?.highlight}
-            audience={profile.influencerProfile?.audience}
-            languages={profile.influencerProfile?.languages}
-            location={profile.influencerProfile?.location}
+            summary={profile.influencerDetails?.summary}
+            highlight={profile.influencerDetails?.highlight}
+            audience={profile.influencerDetails?.audience}
+            languages={profile.influencerDetails?.languages}
+            location={profile.influencerDetails?.location}
           />
         </div>
       )}
@@ -738,14 +738,14 @@ export function ProfileContent() {
       {activeSection === "portfolio" && (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
           <Portfolio
-            initialItems={profile.influencerProfile?.featuredContent || []}
+            initialItems={profile.influencerDetails?.featuredContent || []}
             onUpdate={(items) => {
               setProfile((prev) => {
                 if (!prev) return prev;
                 return {
                   ...prev,
-                  influencerProfile: {
-                    ...prev.influencerProfile,
+                  influencerDetails: {
+                    ...prev.influencerDetails,
                     featuredContent: items,
                   },
                 };
@@ -768,3 +768,4 @@ export function ProfileContent() {
     </div>
   );
 }
+

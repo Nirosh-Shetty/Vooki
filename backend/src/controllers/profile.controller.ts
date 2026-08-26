@@ -21,14 +21,14 @@ export const profile = async (req: Request, res: Response) => {
     }
 
     const socialConnections = normalizeSocialConnectionsRecord(
-      user?.statsConnection || user?.influencerProfile?.statsConnection || user?.influencerProfile?.statsConnection
+      user?.statsConnection || user?.influencerDetails?.statsConnection
     );
 
     return res.status(200).json({
       ...user,
       avatar: user.avatar,
-      influencerProfile: {
-        ...(user.influencerProfile || user.influencerProfile || {}),
+      influencerDetails: {
+        ...(user.influencerDetails || {}),
         statsConnection: socialConnections,
       },
     });
@@ -92,7 +92,7 @@ export const getPublicInfluencerProfile = async (req: Request, res: Response) =>
       role: "influencer",
     })
       .select(
-        "name username role avatar isVerified rating totalReviews influencerProfile.niche influencerProfile.followers influencerProfile.socialLinks influencerProfile.statsConnection"
+        "name username role avatar isVerified rating totalReviews influencerDetails.niche influencerDetails.followers influencerDetails.socialLinks influencerDetails.statsConnection"
       )
       .lean();
 
@@ -100,7 +100,7 @@ export const getPublicInfluencerProfile = async (req: Request, res: Response) =>
       return res.status(404).json({ message: "Influencer profile not found" });
     }
 
-    const followers = Number(user?.influencerProfile?.followers || 0);
+    const followers = Number(user?.influencerDetails?.followers || 0);
     const engagementRate = clamp(
       Number((3 + Math.log10(Math.max(followers, 10)) * 1.35).toFixed(1)),
       1.8,
@@ -118,8 +118,8 @@ export const getPublicInfluencerProfile = async (req: Request, res: Response) =>
       98
     );
 
-    const socialLinks = user?.influencerProfile?.socialLinks
-      ? Object.fromEntries(Object.entries(user.influencerProfile.socialLinks))
+    const socialLinks = user?.influencerDetails?.socialLinks
+      ? Object.fromEntries(Object.entries(user.influencerDetails.socialLinks))
       : {};
 
     return res.status(200).json({
@@ -129,7 +129,7 @@ export const getPublicInfluencerProfile = async (req: Request, res: Response) =>
       role: user.role,
       avatar: user.avatar || "",
       verified: Boolean(user.isVerified),
-      niche: user?.influencerProfile?.niche || "General",
+      niche: user?.influencerDetails?.niche || "General",
       followers,
       rating: Number(user.rating || 0),
       totalReviews: Number(user.totalReviews || 0),
@@ -152,6 +152,10 @@ export const getPublicInfluencerProfile = async (req: Request, res: Response) =>
   }
 };
 
+/**
+ * Updates the influencer's public-facing profile fields (bio, niche, social links, etc.).
+ * Settings-related fields (preferences, notifications) are handled by settings.controller.ts.
+ */
 export const updateInfluencerProfile = async (req: Request, res: Response) => {
   try {
     const userId = getRequestUserId(req)
@@ -166,58 +170,36 @@ export const updateInfluencerProfile = async (req: Request, res: Response) => {
       return res.status(403).json({ message: "Only influencers can update this profile" })
     }
 
-    const { name, username, email, phone, influencerProfile } = req.body
+    const { name, username, email, phone, influencerDetails } = req.body
     if (typeof name === "string") user.name = name.trim()
     if (typeof username === "string") user.username = username.trim()
     if (typeof email === "string") user.email = email.trim().toLowerCase()
     if (phone) user.phone = Number(phone)
 
-    console.log("Incoming influencerProfile:", influencerProfile)
+    const existingDetails = user.influencerDetails || {}
 
-    const existingDetails = user.influencerProfile || {}
-
-    console.log("Existing influencerProfile:", existingDetails)
     const links = sanitizeSocialLinks(existingDetails.socialLinks)
-    if (influencerProfile?.socialLinks) {
-      const incoming = sanitizeSocialLinks(influencerProfile.socialLinks)
+    if (influencerDetails?.socialLinks) {
+      const incoming = sanitizeSocialLinks(influencerDetails.socialLinks)
       for (const [key, value] of incoming.entries()) {
         links.set(key, value)
       }
     }
-    console.log(influencerProfile?.languages, "Langggggggg");
-    const nextInfluencerProfile = {
+
+    user.influencerDetails = {
       ...existingDetails,
-      followers: influencerProfile?.followers ?? existingDetails.followers,
-      niche: applyLocaleSafeString(influencerProfile?.niche) ?? existingDetails.niche,
-      summary: applyLocaleSafeString(influencerProfile?.summary) ?? existingDetails.summary,
-      highlight: applyLocaleSafeString(influencerProfile?.highlight) ?? existingDetails.highlight,
-      audience: applyLocaleSafeString(influencerProfile?.audience) ?? existingDetails.audience,
-      engagement: Number(influencerProfile?.engagement) || existingDetails.engagement,
+      followers: influencerDetails?.followers ?? existingDetails.followers,
+      niche: applyLocaleSafeString(influencerDetails?.niche) ?? existingDetails.niche,
+      summary: applyLocaleSafeString(influencerDetails?.summary) ?? existingDetails.summary,
+      highlight: applyLocaleSafeString(influencerDetails?.highlight) ?? existingDetails.highlight,
+      audience: applyLocaleSafeString(influencerDetails?.audience) ?? existingDetails.audience,
+      engagement: Number(influencerDetails?.engagement) || existingDetails.engagement,
       socialLinks: links,
       statsConnection: existingDetails.statsConnection,
-      languages: Array.isArray(influencerProfile?.languages) ? influencerProfile.languages : existingDetails.languages,
-      location: applyLocaleSafeString(influencerProfile?.location) ?? existingDetails.location,
-      preferences: {
-        minimumRate: {
-          amount: Number(influencerDetails?.preferences?.minimumRate?.amount) || existingDetails.preferences?.minimumRate?.amount || 0,
-          currency: applyLocaleSafeString(influencerDetails?.preferences?.minimumRate?.currency) || existingDetails.preferences?.minimumRate?.currency || "INR",
-        },
-        contentBoundaries: applyLocaleSafeString(influencerDetails?.preferences?.contentBoundaries) ?? existingDetails.preferences?.contentBoundaries ?? "",
-      }
+      languages: Array.isArray(influencerDetails?.languages) ? influencerDetails.languages : existingDetails.languages,
+      location: applyLocaleSafeString(influencerDetails?.location) ?? existingDetails.location,
+      preferences: existingDetails.preferences,
     }
-
-    if (notificationPreferences) {
-      user.notificationPreferences = {
-        newCollabInvites: notificationPreferences.newCollabInvites ?? user.notificationPreferences?.newCollabInvites ?? true,
-        messageNotifications: notificationPreferences.messageNotifications ?? user.notificationPreferences?.messageNotifications ?? true,
-        marketingUpdates: notificationPreferences.marketingUpdates ?? user.notificationPreferences?.marketingUpdates ?? false,
-      }
-    }
-
-    console.log("Updating influencerProfile to:", nextInfluencerProfile)
-
-    user.influencerProfile = nextInfluencerProfile
-    user.influencerProfile = nextInfluencerProfile
 
     const photoUrl = await uploadNewProfilePhoto(req.body.photo)
     if (photoUrl) {
@@ -253,7 +235,7 @@ export const updateBrandProfile = async (req: Request, res: Response) => {
     if (phone) user.phone = Number(phone)
 
     const existingDetails = user.brandDetails || {}
-    const nextBrandProfile = {
+    user.brandDetails = {
       ...existingDetails,
       companyName: applyLocaleSafeString(brandDetails?.companyName) ?? existingDetails.companyName,
       website: brandDetails?.website ?? existingDetails.website,
@@ -269,9 +251,6 @@ export const updateBrandProfile = async (req: Request, res: Response) => {
         exclusivityPeriod: Number(brandDetails?.collaborationDefaults?.exclusivityPeriod) || existingDetails.collaborationDefaults?.exclusivityPeriod,
       }
     }
-
-    user.brandProfile = nextBrandProfile
-    user.brandDetails = nextBrandProfile
 
     const photoUrl = await uploadNewProfilePhoto(req.body.photo)
     if (photoUrl) {

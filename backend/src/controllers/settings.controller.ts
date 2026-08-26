@@ -18,22 +18,22 @@ export const updateInfluencerSettings = async (req: Request, res: Response): Pro
       return res.status(403).json({ message: "Only influencers can update settings" });
     }
 
-    const { influencerProfile, notificationPreferences } = req.body;
+    const { influencerDetails: incomingDetails, notificationPreferences } = req.body;
 
     let isModified = false;
 
     // Handle Preferences (Minimum Rate & Content Boundaries)
-    if (influencerProfile?.preferences) {
-      const existingDetails = user.influencerProfile || {};
+    if (incomingDetails?.preferences) {
+      const existingDetails = user.influencerDetails || {};
       const newPreferences = {
         minimumRate: {
-          amount: Number(influencerProfile.preferences.minimumRate?.amount) || existingDetails.preferences?.minimumRate?.amount || 0,
-          currency: influencerProfile.preferences.minimumRate?.currency || existingDetails.preferences?.minimumRate?.currency || "INR",
+          amount: Number(incomingDetails.preferences.minimumRate?.amount) || existingDetails.preferences?.minimumRate?.amount || 0,
+          currency: incomingDetails.preferences.minimumRate?.currency || existingDetails.preferences?.minimumRate?.currency || "INR",
         },
-        contentBoundaries: influencerProfile.preferences.contentBoundaries ?? existingDetails.preferences?.contentBoundaries ?? "",
+        contentBoundaries: incomingDetails.preferences.contentBoundaries ?? existingDetails.preferences?.contentBoundaries ?? "",
       };
 
-      user.influencerProfile = {
+      user.influencerDetails = {
         ...existingDetails,
         preferences: newPreferences,
       };

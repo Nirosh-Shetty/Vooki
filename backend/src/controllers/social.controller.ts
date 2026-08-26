@@ -63,11 +63,11 @@ const saveSocialConnection = async (
   platform: string,
   payload: SocialConnection
 ) => {
-  if (!user.influencerProfile) {
-    user.influencerProfile = {} as any;
+  if (!user.influencerDetails) {
+    user.influencerDetails = {} as any;
   }
 
-  const connections = toSocialConnectionsMap(user.influencerProfile!.statsConnection);
+  const connections = toSocialConnectionsMap(user.influencerDetails!.statsConnection);
   
   const nextConnection = mergeSocialConnection(
     platform,
@@ -76,9 +76,9 @@ const saveSocialConnection = async (
   );
   connections.set(platform, nextConnection);
 
-  user.influencerProfile!.statsConnection = connections;
+  user.influencerDetails!.statsConnection = connections;
 
-  user.markModified("influencerProfile.statsConnection");
+  user.markModified("influencerDetails.statsConnection");
   await user.save();
   return nextConnection;
 };
@@ -347,14 +347,14 @@ export const getSocialConnections = async (req: Request, res: Response) => {
 
     // Use .lean() for fast read-only queries and plain JS objects
     const user = await UserModel.findById(userId)
-      .select("statsConnection influencerProfile.statsConnection")
+      .select("statsConnection influencerDetails.statsConnection")
       .lean();
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const source = user.influencerProfile?.statsConnection || (user as any).statsConnection;
+    const source = user.influencerDetails?.statsConnection || (user as any).statsConnection;
     const rawConnections = normalizeSocialConnectionsRecord(source);
 
     // Sanitize to prevent leaking sensitive OAuth access/refresh tokens to the client
@@ -388,7 +388,7 @@ export const updateSocialMetrics = async (req: Request, res: Response) => {
   }
   const user = await UserModel.findById(userId);
   if (!user) return res.status(404).json({ message: "User not found" });
-  const connections = toSocialConnectionsMap(user.statsConnection || user.influencerProfile?.statsConnection);
+  const connections = toSocialConnectionsMap(user.statsConnection || user.influencerDetails?.statsConnection);
   if (!connections.get(platform)) {
     return res.status(404).json({ message: "Connection not found" });
   }
@@ -409,7 +409,7 @@ export const getConnectedAccounts = async (req: Request, res: Response) => {
   if (!user) return res.status(404).json({ message: "User not found" });
 
   const connections: Record<string, SocialConnection> = {};
-  const statsMap = user.influencerProfile?.statsConnection;
+  const statsMap = user.influencerDetails?.statsConnection;
 
   if (statsMap) {
     // If statsMap is a Map or a plain Object from lean()
@@ -450,7 +450,7 @@ export const handleYoutubeDisconnect = async (req: Request, res: Response) => {
     }
 
     const connections = toSocialConnectionsMap(
-      user.influencerProfile?.statsConnection || (user as any).statsConnection
+      user.influencerDetails?.statsConnection || (user as any).statsConnection
     );
 
     const ytConnection = connections.get("youtube");
@@ -472,9 +472,9 @@ export const handleYoutubeDisconnect = async (req: Request, res: Response) => {
     // Remove YouTube from the connection map
     connections.delete("youtube");
 
-    if (user.influencerProfile) {
-      user.influencerProfile.statsConnection = connections;
-      user.markModified("influencerProfile.statsConnection");
+    if (user.influencerDetails) {
+      user.influencerDetails.statsConnection = connections;
+      user.markModified("influencerDetails.statsConnection");
     }
 
     if ((user as any).statsConnection) {

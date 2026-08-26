@@ -7,17 +7,14 @@ export const getFeaturedContent = async (req: Request, res: Response) => {
     const userId = req.user?.id || req.user?._id;
 
     const user = await UserModel.findById(userId).select(
-      "influencerProfile.featuredContent influencerDetails.featuredContent"
+      "influencerDetails.featuredContent"
     );
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const featured =
-      user.influencerProfile?.featuredContent ||
-      user.influencerDetails?.featuredContent ||
-      [];
+    const featured = user.influencerDetails?.featuredContent || [];
 
     return res.status(200).json({
       featuredContent: featured,
@@ -41,10 +38,7 @@ export const addFeaturedContent = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const currentFeatured =
-      user.influencerProfile?.featuredContent ||
-      user.influencerDetails?.featuredContent ||
-      [];
+    const currentFeatured = user.influencerDetails?.featuredContent || [];
 
     if (currentFeatured.length >= 5) {
       return res.status(400).json({ message: "You can feature a maximum of 5 content items." });
@@ -60,7 +54,6 @@ export const addFeaturedContent = async (req: Request, res: Response) => {
       userId,
       {
         $push: {
-          "influencerProfile.featuredContent": newItem,
           "influencerDetails.featuredContent": newItem,
         },
       },
@@ -69,17 +62,13 @@ export const addFeaturedContent = async (req: Request, res: Response) => {
 
     return res.status(201).json({
       message: "Content added to portfolio",
-      featuredContent:
-        updatedUser?.influencerProfile?.featuredContent ||
-        updatedUser?.influencerDetails?.featuredContent ||
-        [],
+      featuredContent: updatedUser?.influencerDetails?.featuredContent || [],
     });
   } catch (error: any) {
     return res.status(500).json({ message: error.message });
   }
 };
 
-// src/controllers/influencer/feature.controller.ts
 export const updateFeaturedContent = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id || req.user?._id;
@@ -92,14 +81,10 @@ export const updateFeaturedContent = async (req: Request, res: Response) => {
       const updatedUser = await UserModel.findOneAndUpdate(
         {
           _id: userId,
-          $or: [
-            { "influencerProfile.featuredContent._id": targetId },
-            { "influencerDetails.featuredContent._id": targetId },
-          ],
+          "influencerDetails.featuredContent._id": targetId,
         },
         {
           $set: {
-            "influencerProfile.featuredContent.$[elem].url": updatedItem.url.trim(),
             "influencerDetails.featuredContent.$[elem].url": updatedItem.url.trim(),
           },
         },
@@ -110,10 +95,7 @@ export const updateFeaturedContent = async (req: Request, res: Response) => {
         }
       );
 
-      const featured =
-        updatedUser?.influencerProfile?.featuredContent ||
-        updatedUser?.influencerDetails?.featuredContent ||
-        [];
+      const featured = updatedUser?.influencerDetails?.featuredContent || [];
 
       return res.status(200).json({
         message: "Portfolio item updated",
@@ -130,10 +112,7 @@ export const updateFeaturedContent = async (req: Request, res: Response) => {
       const user = await UserModel.findById(userId);
       if (!user) return res.status(404).json({ message: "User not found" });
 
-      const currentItems =
-        user.influencerProfile?.featuredContent ||
-        user.influencerDetails?.featuredContent ||
-        [];
+      const currentItems = user.influencerDetails?.featuredContent || [];
 
       const itemMap = new Map(currentItems.map((item) => [item._id.toString(), item]));
 
@@ -145,7 +124,6 @@ export const updateFeaturedContent = async (req: Request, res: Response) => {
         userId,
         {
           $set: {
-            "influencerProfile.featuredContent": reorderedItems,
             "influencerDetails.featuredContent": reorderedItems,
           },
         },
@@ -154,10 +132,7 @@ export const updateFeaturedContent = async (req: Request, res: Response) => {
 
       return res.status(200).json({
         message: "Featured content list updated",
-        featuredContent:
-          updatedUser?.influencerProfile?.featuredContent ||
-          updatedUser?.influencerDetails?.featuredContent ||
-          [],
+        featuredContent: updatedUser?.influencerDetails?.featuredContent || [],
       });
     }
 
@@ -180,7 +155,6 @@ export const deleteFeaturedContent = async (req: Request, res: Response) => {
       userId,
       {
         $pull: {
-          "influencerProfile.featuredContent": { _id: contentId },
           "influencerDetails.featuredContent": { _id: contentId },
         },
       },
@@ -189,10 +163,7 @@ export const deleteFeaturedContent = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       message: "Content removed from featured",
-      featuredContent:
-        updatedUser?.influencerProfile?.featuredContent ||
-        updatedUser?.influencerDetails?.featuredContent ||
-        [],
+      featuredContent: updatedUser?.influencerDetails?.featuredContent || [],
     });
   } catch (error: any) {
     return res.status(500).json({ message: error.message });

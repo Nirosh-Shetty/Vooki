@@ -89,7 +89,7 @@ const parseOptionalNumber = (value: string | undefined | null): number | undefin
   return Number.isNaN(number) ? undefined : number;
 };
 
-export default function InfluencerProfileEditPage() {
+export default function influencerDetailsEditPage() {
   const [form, setForm] = useState<InfluencerFormState>(emptyForm);
   const [initialUsername, setInitialUsername] = useState("");
   const [loading, setLoading] = useState(true);
@@ -121,7 +121,7 @@ export default function InfluencerProfileEditPage() {
         const data = await response.json();
         if (data.role !== "influencer") throw new Error("Expected influencer account");
 
-        const details = data.influencerProfile ?? {};
+        const details = data.influencerDetails ?? {};
         const fetchedUsername = String(data.username ?? "");
 
         setInitialUsername(fetchedUsername);
@@ -253,7 +253,7 @@ export default function InfluencerProfileEditPage() {
           .trim()
           .toLowerCase(),
         phone: String(form.phone ?? "").trim(),
-        influencerProfile: {
+        influencerDetails: {
           location: String(form.location ?? "").trim(),
           languages: String(form.languages ?? "")
             .split(",")
@@ -270,7 +270,7 @@ export default function InfluencerProfileEditPage() {
         photo: photoData || undefined,
       };
 
-      const payload = {name : data.name, username: data.username, email: data.email, phone: data.phone, influencerProfile: data.influencerProfile, photo: data.photo}
+      const payload = {name : data.name, username: data.username, email: data.email, phone: data.phone, influencerDetails: data.influencerDetails, photo: data.photo}
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/profile/influencer`,
@@ -605,3 +605,4 @@ export default function InfluencerProfileEditPage() {
     </div>
   );
 }
+
