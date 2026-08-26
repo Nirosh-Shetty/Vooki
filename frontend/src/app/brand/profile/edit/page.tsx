@@ -1,267 +1,258 @@
 "use client"
 
-import Link from "next/link"
-import { ChangeEvent, useEffect, useState } from "react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useState, useEffect, useRef } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-
-type BrandFormState = {
-  name: string
-  username: string
-  email: string
-  phone: string
-  companyName: string
-  website: string
-  brandCategory: string
-  collaborations: string
-  activeCampaigns: string
-  pointsOfContact: string
-  summary: string
-}
-
-const emptyForm: BrandFormState = {
-  name: "",
-  username: "",
-  email: "",
-  phone: "",
-  companyName: "",
-  website: "",
-  brandCategory: "",
-  collaborations: "",
-  activeCampaigns: "",
-  pointsOfContact: "",
-  summary: "",
-}
-
-const fileToDataUrl = (file: File) =>
-  new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result?.toString() || "")
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
+import { ProfilePreviewCard } from "@/components/settings/ProfilePreviewCard"
+import { useAuth } from "@/context/auth-context"
+import imageCompression from "browser-image-compression"
+import {
+  Building2,
+  Save,
+  Globe,
+  Camera,
+  Loader2
+} from "lucide-react"
 
 export default function BrandProfileEditPage() {
-  const [form, setForm] = useState<BrandFormState>(emptyForm)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [status, setStatus] = useState<string | null>(null)
-  const [photoPreview, setPhotoPreview] = useState<string>("")
-  const [photoData, setPhotoData] = useState<string | null>(null)
+  const { user, refreshUser } = useAuth()
 
+  const [profileData, setProfileData] = useState({
+    brandName: "",
+    industry: "",
+    website: "",
+    summary: "",
+    logoUrl: ""
+  })
+
+  const [isSaving, setIsSaving] = useState(false)
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+
+  // Initialize form with user data
   useEffect(() => {
-    const controller = new AbortController()
-    const load = async () => {
-      setLoading(true)
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/profile/me`, {
-          credentials: "include",
-          signal: controller.signal,
-        })
-        if (!response.ok) throw new Error("Unable to load profile")
-        const data = await response.json()
-        if (data.role !== "brand") throw new Error("Expected brand account")
-        setForm({
-          name: data.name || "",
-          username: data.username || "",
-          email: data.email || "",
-          phone: data.phone || "",
-          companyName: data.brandDetails?.companyName || "",
-          website: data.brandDetails?.website || "",
-          brandCategory: data.brandDetails?.brandCategory || "",
-          collaborations: data.brandDetails?.collaborations?.toString() || "",
-          activeCampaigns: data.brandDetails?.activeCampaigns?.toString() || "",
-          pointsOfContact: data.brandDetails?.pointsOfContact?.toString() || "",
-          summary: data.brandDetails?.summary || "",
-        })
-        if (data.profilePicture) {
-          setPhotoPreview(data.profilePicture)
-        }
-      } catch (err) {
-        console.error(err)
-        setStatus("Unable to load your profile. Try refreshing.")
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-    return () => controller.abort()
-  }, [])
-
-  const readyToSave = Boolean(form.name && form.companyName && form.website)
-
-  const handleFieldChange = (field: keyof BrandFormState, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }))
-  }
-
-  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-    const dataUrl = await fileToDataUrl(file)
-    setPhotoPreview(dataUrl)
-    setPhotoData(dataUrl)
-  }
-
-  const handleSubmit = async () => {
-    if (!readyToSave) return
-    setSaving(true)
-    setStatus(null)
-    try {
-      const payload = {
-        name: form.name,
-        username: form.username,
-        email: form.email,
-        phone: form.phone,
-        brandDetails: {
-          companyName: form.companyName,
-          website: form.website,
-          brandCategory: form.brandCategory,
-          collaborations: Number(form.collaborations) || undefined,
-          activeCampaigns: Number(form.activeCampaigns) || undefined,
-          pointsOfContact: Number(form.pointsOfContact) || undefined,
-          summary: form.summary,
-        },
-        photo: photoData || undefined,
-      }
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/profile/brand`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+    if (user) {
+      setProfileData({
+        brandName: user.name || "",
+        industry: (user as any).brandDetails?.brandCategory || "",
+        website: (user as any).brandDetails?.website || "",
+        summary: (user as any).brandDetails?.summary || "",
+        logoUrl: user.profilePicture || "/images/defaults/brand.svg"
       })
-      if (!response.ok) throw new Error("Unable to save profile")
-      setStatus("Profile saved successfully.")
-    } catch (err) {
-      console.error(err)
-      setStatus("We couldn't save your brand profile. Try again in a moment.")
+    }
+  }, [user])
+
+  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setProfileData(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleSave = async () => {
+    setIsSaving(true)
+    setMessage(null)
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/profile/brand`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          name: profileData.brandName,
+          brandDetails: {
+            companyName: profileData.brandName,
+            brandCategory: profileData.industry,
+            website: profileData.website,
+            summary: profileData.summary
+          },
+          photo: profileData.logoUrl && profileData.logoUrl.startsWith('data:') ? profileData.logoUrl : undefined
+        })
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.message || "Failed to update profile")
+      }
+
+      await refreshUser()
+      setMessage({ type: 'success', text: "Profile updated successfully!" })
+      setTimeout(() => setMessage(null), 3000)
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message })
     } finally {
-      setSaving(false)
+      setIsSaving(false)
+    }
+  }
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      try {
+        const options = {
+          maxSizeMB: 0.2,
+          maxWidthOrHeight: 800,
+          useWebWorker: true,
+        }
+        const compressedFile = await imageCompression(file, options)
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setProfileData(prev => ({ ...prev, logoUrl: reader.result as string }))
+        }
+        reader.readAsDataURL(compressedFile)
+      } catch (error) {
+        console.error("Error compressing image:", error)
+        // Fallback to uncompressed if compression fails
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setProfileData(prev => ({ ...prev, logoUrl: reader.result as string }))
+        }
+        reader.readAsDataURL(file)
+      }
     }
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
-      <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <div className="space-y-3">
-            <Badge className="border-0 bg-cyan-100 text-cyan-900">Brand profile</Badge>
-            <h1 className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">Fine-tune how creators discover you</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Define your story, contact data, and operational KPIs in a single, professional form.
-            </p>
-          </div>
-      </section>
-
-      <div className="space-y-6">
-        <Card className="border-slate-200 bg-white/90 shadow-sm">
-          <CardHeader>
-            <CardTitle>Brand essentials</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Primary contact</p>
-                <Input value={form.name} onChange={(event) => handleFieldChange("name", event.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Handle/username</p>
-                <Input value={form.username} onChange={(event) => handleFieldChange("username", event.target.value)} />
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Email</p>
-                <Input type="email" value={form.email} onChange={(event) => handleFieldChange("email", event.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Phone</p>
-                <Input value={form.phone} onChange={(event) => handleFieldChange("phone", event.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Company</p>
-                <Input value={form.companyName} onChange={(event) => handleFieldChange("companyName", event.target.value)} />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Profile photo</p>
-              <div className="flex flex-wrap items-center gap-4">
-                <Avatar className="h-12 w-12">
-                  {photoPreview ? (
-                    <AvatarImage src={photoPreview} alt="Profile preview" />
-                  ) : (
-                    <AvatarFallback className="bg-slate-200 text-slate-900">
-                      {form.name
-                        .split(" ")
-                        .map((part) => part[0])
-                        .join("")
-                        .slice(0, 2)}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-                <label className="flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500 hover:text-slate-900">
-                  Upload a photo
-                  <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-                </label>
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Website</p>
-                <Input value={form.website} onChange={(event) => handleFieldChange("website", event.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Category</p>
-                <Input value={form.brandCategory} onChange={(event) => handleFieldChange("brandCategory", event.target.value)} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200 bg-white/90 shadow-sm">
-          <CardHeader>
-            <CardTitle>Operational snapshot</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Collaborations</p>
-                <Input value={form.collaborations} onChange={(event) => handleFieldChange("collaborations", event.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Active campaigns</p>
-                <Input value={form.activeCampaigns} onChange={(event) => handleFieldChange("activeCampaigns", event.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Points of contact</p>
-                <Input value={form.pointsOfContact} onChange={(event) => handleFieldChange("pointsOfContact", event.target.value)} />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Brand story</p>
-              <Textarea
-                value={form.summary}
-                onChange={(event) => handleFieldChange("summary", event.target.value)}
-                placeholder="Share the tone, mission, or goals you want creators to know."
-              />
-            </div>
-          </CardContent>
-        </Card>
+    <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
+      {/* Header Section */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <Badge className="mb-2 border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface)] text-[color:var(--vooki-app-text-muted)] hover:bg-[color:var(--vooki-app-surface-hover)]">
+            <Building2 className="mr-1.5 h-3 w-3 inline-block" />
+            Public Profile
+          </Badge>
+          <h1 className="text-3xl font-black tracking-tight text-[color:var(--vooki-app-text-strong)]">
+            Edit Profile
+          </h1>
+          <p className="mt-1 text-sm font-medium text-[color:var(--vooki-app-text-soft)]">
+            Manage how creators see your brand across Vooki.
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          {message && (
+            <span className={`text-sm font-medium ${message.type === 'success' ? 'text-green-500' : 'text-red-500'}`}>
+              {message.text}
+            </span>
+          )}
+          <Button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="h-11 rounded-xl bg-[color:var(--vooki-app-brand)] px-6 font-semibold text-white shadow-lg shadow-cyan-500/20 hover:bg-[color:var(--vooki-app-brand-hover)] transition-all"
+          >
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            Save Changes
+          </Button>
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Button className="bg-slate-900 text-white hover:bg-slate-800" disabled={!readyToSave || saving} onClick={handleSubmit}>
-          {saving ? "Saving..." : "Save brand profile"}
-        </Button>
-        <Button variant="outline" asChild>
-          <Link href="/brand/profile">Cancel</Link>
-        </Button>
-        <p className="text-sm text-slate-500 dark:text-slate-400">{status}</p>
+      <div className="grid gap-8 lg:grid-cols-5">
+        <div className="lg:col-span-3 space-y-6">
+          <div className="rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface)] p-6 shadow-sm backdrop-blur-md">
+            <h2 className="mb-4 text-lg font-bold text-[color:var(--vooki-app-text-strong)]">Brand Identity</h2>
+            <div className="space-y-5">
+              <div className="flex items-center gap-6">
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="relative flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] transition-colors hover:bg-[color:var(--vooki-app-border)]"
+                >
+                  {profileData.logoUrl ? (
+                    <img src={profileData.logoUrl} alt="Logo" className="h-full w-full rounded-2xl object-cover" />
+                  ) : (
+                    <Camera className="h-8 w-8 text-[color:var(--vooki-app-text-muted)]" />
+                  )}
+                  <div className="absolute -bottom-2 -right-2 rounded-lg bg-[color:var(--vooki-app-brand)] p-1.5 text-white shadow-sm">
+                    <Camera className="h-3.5 w-3.5" />
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-[color:var(--vooki-app-text-strong)]">Brand Logo</h4>
+                  <p className="text-xs text-[color:var(--vooki-app-text-soft)] mt-1">Recommended: 400x400px. JPG, PNG, or GIF.</p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleImageChange}
+                  />
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 h-8 rounded-lg border-[color:var(--vooki-app-border)] bg-transparent text-xs font-semibold text-[color:var(--vooki-app-text-strong)]"
+                  >
+                    Upload Image
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="brandName" className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">Brand Name</Label>
+                  <Input
+                    id="brandName"
+                    name="brandName"
+                    value={profileData.brandName}
+                    onChange={handleProfileChange}
+                    className="h-11 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] focus-visible:ring-[color:var(--vooki-app-brand)]"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="industry" className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">Industry / Niche</Label>
+                  <Input
+                    id="industry"
+                    name="industry"
+                    value={profileData.industry}
+                    onChange={handleProfileChange}
+                    className="h-11 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] focus-visible:ring-[color:var(--vooki-app-brand)]"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="website" className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">Website URL</Label>
+                <div className="relative">
+                  <Globe className="absolute left-3.5 top-3 h-5 w-5 text-[color:var(--vooki-app-text-muted)]" />
+                  <Input
+                    id="website"
+                    name="website"
+                    value={profileData.website}
+                    onChange={handleProfileChange}
+                    className="h-11 rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] pl-11 focus-visible:ring-[color:var(--vooki-app-brand)]"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="summary" className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">Brand Summary</Label>
+                <Textarea
+                  id="summary"
+                  name="summary"
+                  value={profileData.summary}
+                  onChange={handleProfileChange}
+                  rows={4}
+                  className="rounded-xl border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-hover)] focus-visible:ring-[color:var(--vooki-app-brand)]"
+                  placeholder="Tell creators about your brand..."
+                />
+                <p className="text-[10px] text-right text-[color:var(--vooki-app-text-muted)]">
+                  {profileData.summary.length}/300 characters
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-2 space-y-6">
+          <div className="sticky top-24">
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">
+              Live Preview
+            </h3>
+            <ProfilePreviewCard {...profileData} />
+            <p className="mt-4 text-center text-xs text-[color:var(--vooki-app-text-soft)]">
+              This is how creators see your brand on Vooki.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )

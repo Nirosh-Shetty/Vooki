@@ -30,10 +30,13 @@ export function MessagesHubProvider({
 
   const { conversations, isLoading: conversationsLoading, fetchConversations, setConversations } = useConversations();
   const { isConnected, userId, socket } = useSocket();
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(
-    conversations[0]?.id || null
-  );
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const selectedConversationIdRef = useRef<string | null>(selectedConversationId);
   const hasHandledQueryRef = useRef(false);
+
+  useEffect(() => {
+    selectedConversationIdRef.current = selectedConversationId;
+  }, [selectedConversationId]);
 
   const {
     messages,
@@ -57,13 +60,44 @@ export function MessagesHubProvider({
     );
   }, [setConversations]);
 
+  const handleSelectConversation = useCallback(
+    (id: string) => {
+      const prevId = selectedConversationIdRef.current;
+      if (prevId && prevId !== id) {
+        const prevConv = conversations.find((c) => c.id === prevId);
+        // If previous conversation was a direct thread with no messages, clean it up!
+        if (
+          prevConv &&
+          prevConv.threadType === "direct" &&
+          !prevConv.lastMessage &&
+          !prevConv.campaignId &&
+          !prevConv.promotionId
+        ) {
+          setConversations((prev) => prev.filter((c) => c.id !== prevId));
+          messagingAPI.deleteEmptyConversation(prevId).catch(() => {});
+        }
+      }
+
+      setSelectedConversationId(id || null);
+      if (id) {
+        clearConversationUnread(id);
+        markAsRead(id);
+      }
+    },
+    [clearConversationUnread, markAsRead, conversations, setConversations]
+  );
+
   useEffect(() => {
-    if (selectedConversationId && isConnected) {
-      joinConversation(selectedConversationId);
+    if (selectedConversationId) {
+      if (isConnected) {
+        joinConversation(selectedConversationId);
+      }
       markAsRead(selectedConversationId);
       clearConversationUnread(selectedConversationId);
       return () => {
-        leaveConversation(selectedConversationId);
+        if (isConnected) {
+          leaveConversation(selectedConversationId);
+        }
       };
     }
   }, [selectedConversationId, isConnected, joinConversation, leaveConversation, markAsRead, clearConversationUnread]);
@@ -73,11 +107,19 @@ export function MessagesHubProvider({
 
     const handleConversationUpdated = (update: {
       conversationId: string;
-      lastMessage: string;
-      lastMessageAt: string | Date;
-      senderId: string;
-      unreadCount: number;
+      lastMessage?: string;
+      lastMessageAt?: string | Date;
+      senderId?: string;
+      unreadCount?: number;
+      isStoppedByBrand?: boolean;
+      stoppedBy?: string | null;
+      stoppedAt?: string | Date | null;
     }) => {
+      const isCurrentOpen = selectedConversationIdRef.current === update.conversationId;
+      if (isCurrentOpen && update.senderId !== userId) {
+        markAsRead(update.conversationId);
+      }
+
       setConversations((prevConversations) => {
         const targetConversation = prevConversations.find((conv) => conv.id === update.conversationId);
 
@@ -86,27 +128,52 @@ export function MessagesHubProvider({
           return prevConversations;
         }
 
-        const nextUnreadCount = update.senderId === userId
-          ? Math.max(0, targetConversation.unreadCount)
-          : targetConversation.unreadCount + 1;
+        const nextUnreadCount = isCurrentOpen || update.senderId === userId
+          ? 0
+          : targetConversation.unreadCount + (update.lastMessage ? 1 : 0);
 
         const updatedConversation = {
           ...targetConversation,
-          lastMessage: update.lastMessage,
-          lastMessageAt: new Date(update.lastMessageAt),
-          unreadCount: update.unreadCount > 0 ? update.unreadCount : nextUnreadCount,
+          lastMessage: update.lastMessage !== undefined ? update.lastMessage : targetConversation.lastMessage,
+          lastMessageAt: update.lastMessageAt ? new Date(update.lastMessageAt) : targetConversation.lastMessageAt,
+          unreadCount: isCurrentOpen ? 0 : (update.unreadCount !== undefined && update.unreadCount > 0 ? update.unreadCount : nextUnreadCount),
+          isStoppedByBrand: update.isStoppedByBrand !== undefined ? update.isStoppedByBrand : targetConversation.isStoppedByBrand,
+          stoppedBy: update.stoppedBy !== undefined ? update.stoppedBy : targetConversation.stoppedBy,
+          stoppedAt: update.stoppedAt !== undefined ? (update.stoppedAt ? new Date(update.stoppedAt) : null) : targetConversation.stoppedAt,
         };
 
         return [updatedConversation, ...prevConversations.filter((conv) => conv.id !== update.conversationId)];
       });
     };
 
+    const handleStatusUpdated = (update: {
+      conversationId: string;
+      isStoppedByBrand: boolean;
+      stoppedBy?: string | null;
+      stoppedAt?: string | Date | null;
+    }) => {
+      setConversations((prevConversations) =>
+        prevConversations.map((conv) =>
+          conv.id === update.conversationId
+            ? {
+                ...conv,
+                isStoppedByBrand: update.isStoppedByBrand,
+                stoppedBy: update.stoppedBy || null,
+                stoppedAt: update.stoppedAt ? new Date(update.stoppedAt) : null,
+              }
+            : conv
+        )
+      );
+    };
+
     socket.on("conversation-updated", handleConversationUpdated);
+    socket.on("conversation-status-updated", handleStatusUpdated);
 
     return () => {
       socket.off("conversation-updated", handleConversationUpdated);
+      socket.off("conversation-status-updated", handleStatusUpdated);
     };
-  }, [socket, setConversations, fetchConversations, userId]);
+  }, [socket, setConversations, fetchConversations, userId, markAsRead]);
 
   const handleCreateConversation = useCallback(
     async (
@@ -114,16 +181,50 @@ export function MessagesHubProvider({
       options?: { campaignId?: string; promotionId?: string; campaignTitle?: string }
     ) => {
       try {
+        const prevId = selectedConversationIdRef.current;
+        if (prevId) {
+          const prevConv = conversations.find((c) => c.id === prevId);
+          if (
+            prevConv &&
+            prevConv.threadType === "direct" &&
+            !prevConv.lastMessage &&
+            !prevConv.campaignId &&
+            !prevConv.promotionId
+          ) {
+            messagingAPI.deleteEmptyConversation(prevId).catch(() => {});
+          }
+        }
+
         const response = await messagingAPI.getOrCreateConversation(otherUserId, options);
         const newConversation = response.conversation;
-        await fetchConversations();
+        const formattedNewConv: any = {
+          ...newConversation,
+          lastMessageAt: newConversation.lastMessageAt ? new Date(newConversation.lastMessageAt) : new Date(),
+        };
+
+        setConversations((prev) => {
+          const filtered = prev.filter(
+            (c) =>
+              c.id !== newConversation.id &&
+              !(
+                c.threadType === "direct" &&
+                !c.lastMessage &&
+                !c.campaignId &&
+                !c.promotionId &&
+                c.id === prevId
+              )
+          );
+          return [formattedNewConv, ...filtered];
+        });
+
         setSelectedConversationId(newConversation.id);
+        clearConversationUnread(newConversation.id);
       } catch (error) {
         console.error("Failed to create conversation:", error);
         throw error;
       }
     },
-    [fetchConversations]
+    [setConversations, conversations, clearConversationUnread]
   );
 
   const handleStructuredMessageAction = useCallback(
@@ -180,6 +281,50 @@ export function MessagesHubProvider({
     [fetchConversations, sendMessage]
   );
 
+function formatWhatsAppTime(dateInput?: string | Date | null): string {
+  if (!dateInput) return "";
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return "";
+
+  const now = new Date();
+
+  const isToday =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday =
+    date.getDate() === yesterday.getDate() &&
+    date.getMonth() === yesterday.getMonth() &&
+    date.getFullYear() === yesterday.getFullYear();
+
+  if (isToday) {
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${hours}:${minutes}`;
+  }
+
+  if (isYesterday) {
+    return "Yesterday";
+  }
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = String(date.getFullYear()).slice(-2);
+  return `${day}/${month}/${year}`;
+}
+
+function formatMessageTime(dateInput?: string | Date | null): string {
+  if (!dateInput) return "Now";
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return "Now";
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
+}
+
   const messagesByConversation = {
     [selectedConversationId || ""]: messages.map((msg: any) => {
       const msgSenderId = String(msg.senderId || (typeof msg.sender === "object" ? (msg.sender?._id || msg.sender?.id) : msg.sender) || "");
@@ -192,51 +337,75 @@ export function MessagesHubProvider({
         text: msg.text || "",
         messageType: msg.messageType || "text",
         offerData: msg.offerData || null,
-        timestamp: msg.createdAt
-          ? new Date(msg.createdAt).toLocaleTimeString([], {
-              hour: "numeric",
-              minute: "2-digit",
-            })
-          : "Now",
+        timestamp: formatMessageTime(msg.createdAt),
         read: Boolean(msg.read),
       };
     }),
   };
 
-  const transformedConversations: HubConversation[] = conversations.map((conv) => ({
-    id: conv.id,
-    name: conv.otherUser?.name || "Unknown",
-    context: conv.campaignTitle
-      ? `${conv.campaignTitle} - ${conv.threadType === "collaboration" ? "collaboration" : "campaign"}`
-      : conv.otherUser?.role || "",
-    threadType: conv.threadType,
-    campaignId: conv.campaignId,
-    promotionId: conv.promotionId,
-    inviteId: conv.inviteId,
-    invites: conv.invites,
-    campaignTitle: conv.campaignTitle,
-    avatar: conv.otherUser?.name?.trim()?.charAt(0)?.toUpperCase() || "?",
-    profileURL: conv.otherUser?.profilePicture || null,
-    icon: conv.otherUser?.name?.trim()?.charAt(0)?.toUpperCase() || null,
-    lastMessage: conv.lastMessage,
-    lastMessageAt: conv.lastMessageAt ? new Date(conv.lastMessageAt).toLocaleString() : "Now",
-    unreadCount: conv.unreadCount,
-    status: conv.status as "active" | "pending" | "closed",
-    online: false,
-  }));
+  const handleToggleStopCreatorMessages = useCallback(
+    async (conversationId: string, stopped?: boolean) => {
+      try {
+        const data = await messagingAPI.toggleStopCreatorMessages(conversationId, stopped);
+        setConversations((prev) =>
+          prev.map((conv) =>
+            conv.id === conversationId
+              ? {
+                  ...conv,
+                  isStoppedByBrand: data.isStoppedByBrand,
+                  stoppedBy: data.stoppedBy,
+                  stoppedAt: data.stoppedAt,
+                }
+              : conv
+          )
+        );
+      } catch (error) {
+        console.error("Failed to toggle creator messages:", error);
+        throw error;
+      }
+    },
+    [setConversations]
+  );
 
-  useEffect(() => {
-    if (!selectedConversationId && conversations.length > 0) {
-      setSelectedConversationId(conversations[0].id);
-    }
-  }, [conversations, selectedConversationId]);
+  const transformedConversations: HubConversation[] = conversations.map((conv) => {
+    const isSelected = conv.id === selectedConversationId;
+    const profilePic =
+      conv.otherUser?.profilePicture ||
+      (conv.otherUser as any)?.avatar ||
+      null;
+
+    return {
+      id: conv.id,
+      name: conv.otherUser?.name || "Unknown",
+      context: conv.campaignTitle
+        ? `${conv.campaignTitle} - ${conv.threadType === "collaboration" ? "collaboration" : "campaign"}`
+        : conv.otherUser?.role || "",
+      threadType: conv.threadType,
+      campaignId: conv.campaignId,
+      promotionId: conv.promotionId,
+      inviteId: conv.inviteId,
+      invites: conv.invites,
+      campaignTitle: conv.campaignTitle,
+      avatar: conv.otherUser?.name?.trim()?.charAt(0)?.toUpperCase() || "?",
+      profileURL: profilePic,
+      icon: conv.otherUser?.name?.trim()?.charAt(0)?.toUpperCase() || null,
+      lastMessage: conv.lastMessage,
+      lastMessageAt: formatWhatsAppTime(conv.lastMessageAt),
+      unreadCount: isSelected ? 0 : conv.unreadCount,
+      status: conv.status as "active" | "pending" | "closed",
+      isStoppedByBrand: Boolean(conv.isStoppedByBrand),
+      stoppedBy: conv.stoppedBy || null,
+      stoppedAt: conv.stoppedAt ? formatWhatsAppTime(conv.stoppedAt) : null,
+      online: false,
+    };
+  });
 
   useEffect(() => {
     const requestedConversationId = searchParams?.get("conversationId");
     const otherUserId = searchParams?.get("otherUserId");
 
     if (requestedConversationId) {
-      setSelectedConversationId(requestedConversationId);
+      handleSelectConversation(requestedConversationId);
       hasHandledQueryRef.current = true;
       return;
     }
@@ -257,6 +426,7 @@ export function MessagesHubProvider({
     searchParams,
     conversationsLoading,
     handleCreateConversation,
+    handleSelectConversation,
     requestedCampaignId,
     requestedPromotionId,
     requestedCampaignTitle,
@@ -277,7 +447,7 @@ export function MessagesHubProvider({
       conversations={transformedConversations}
       messagesByConversation={messagesByConversation}
       selectedConversationId={selectedConversationId}
-      onSelectConversation={setSelectedConversationId}
+      onSelectConversation={handleSelectConversation}
       onSendMessage={(text) => {
         if (!selectedConversationId) return;
         clearConversationUnread(selectedConversationId);
@@ -287,6 +457,7 @@ export function MessagesHubProvider({
       }}
       onStructuredMessageAction={handleStructuredMessageAction}
       onCreateConversation={handleCreateConversation}
+      onToggleStopCreatorMessages={handleToggleStopCreatorMessages}
       isLoading={messagesLoading}
       initialDraft={initialDraft}
     />

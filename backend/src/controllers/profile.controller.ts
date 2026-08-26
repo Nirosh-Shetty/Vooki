@@ -21,14 +21,14 @@ export const profile = async (req: Request, res: Response) => {
     }
 
     const socialConnections = normalizeSocialConnectionsRecord(
-      user?.statsConnection || user?.influencerProfile?.statsConnection || user?.influencerDetails?.statsConnection
+      user?.statsConnection || user?.InfluencerProfile?.statsConnection
     );
 
     return res.status(200).json({
       ...user,
       avatar: user.avatar,
-      influencerProfile: {
-        ...(user.influencerProfile || user.influencerDetails || {}),
+      InfluencerProfile: {
+        ...(user.InfluencerProfile || {}),
         statsConnection: socialConnections,
       },
     });
@@ -92,7 +92,7 @@ export const getPublicInfluencerProfile = async (req: Request, res: Response) =>
       role: "influencer",
     })
       .select(
-        "name username role avatar isVerified rating totalReviews influencerProfile.niche influencerProfile.followers influencerProfile.socialLinks influencerProfile.statsConnection"
+        "name username role avatar isVerified rating totalReviews InfluencerProfile.niche InfluencerProfile.followers InfluencerProfile.socialLinks InfluencerProfile.statsConnection"
       )
       .lean();
 
@@ -100,7 +100,7 @@ export const getPublicInfluencerProfile = async (req: Request, res: Response) =>
       return res.status(404).json({ message: "Influencer profile not found" });
     }
 
-    const followers = Number(user?.influencerDetails?.followers || 0);
+    const followers = Number(user?.InfluencerProfile?.followers || 0);
     const engagementRate = clamp(
       Number((3 + Math.log10(Math.max(followers, 10)) * 1.35).toFixed(1)),
       1.8,
@@ -118,8 +118,8 @@ export const getPublicInfluencerProfile = async (req: Request, res: Response) =>
       98
     );
 
-    const socialLinks = user?.influencerDetails?.socialLinks
-      ? Object.fromEntries(Object.entries(user.influencerDetails.socialLinks))
+    const socialLinks = user?.InfluencerProfile?.socialLinks
+      ? Object.fromEntries(Object.entries(user.InfluencerProfile.socialLinks))
       : {};
 
     return res.status(200).json({
@@ -129,7 +129,7 @@ export const getPublicInfluencerProfile = async (req: Request, res: Response) =>
       role: user.role,
       avatar: user.avatar || "",
       verified: Boolean(user.isVerified),
-      niche: user?.influencerDetails?.niche || "General",
+      niche: user?.InfluencerProfile?.niche || "General",
       followers,
       rating: Number(user.rating || 0),
       totalReviews: Number(user.totalReviews || 0),
@@ -152,6 +152,10 @@ export const getPublicInfluencerProfile = async (req: Request, res: Response) =>
   }
 };
 
+/**
+ * Updates the influencer's public-facing profile fields (bio, niche, social links, etc.).
+ * Settings-related fields (preferences, notifications) are handled by settings.controller.ts.
+ */
 export const updateInfluencerProfile = async (req: Request, res: Response) => {
   try {
     const userId = getRequestUserId(req)
@@ -166,35 +170,36 @@ export const updateInfluencerProfile = async (req: Request, res: Response) => {
       return res.status(403).json({ message: "Only influencers can update this profile" })
     }
 
-    const { name, username, email, phone, influencerDetails } = req.body
+    const { name, username, email, phone, InfluencerProfile } = req.body
     if (typeof name === "string") user.name = name.trim()
     if (typeof username === "string") user.username = username.trim()
     if (typeof email === "string") user.email = email.trim().toLowerCase()
     if (phone) user.phone = Number(phone)
 
-    const existingDetails = user.influencerDetails || {}
+    const existingDetails = user.InfluencerProfile || {}
+
     const links = sanitizeSocialLinks(existingDetails.socialLinks)
-    if (influencerDetails?.socialLinks) {
-      const incoming = sanitizeSocialLinks(influencerDetails.socialLinks)
+    if (InfluencerProfile?.socialLinks) {
+      const incoming = sanitizeSocialLinks(InfluencerProfile.socialLinks)
       for (const [key, value] of incoming.entries()) {
         links.set(key, value)
       }
     }
 
-    const nextInfluencerProfile = {
+    user.InfluencerProfile = {
       ...existingDetails,
-      followers: influencerDetails?.followers ?? existingDetails.followers,
-      niche: applyLocaleSafeString(influencerDetails?.niche) ?? existingDetails.niche,
-      summary: applyLocaleSafeString(influencerDetails?.summary) ?? existingDetails.summary,
-      highlight: applyLocaleSafeString(influencerDetails?.highlight) ?? existingDetails.highlight,
-      audience: applyLocaleSafeString(influencerDetails?.audience) ?? existingDetails.audience,
-      engagement: Number(influencerDetails?.engagement) || existingDetails.engagement,
+      followers: InfluencerProfile?.followers ?? existingDetails.followers,
+      niche: applyLocaleSafeString(InfluencerProfile?.niche) ?? existingDetails.niche,
+      summary: applyLocaleSafeString(InfluencerProfile?.summary) ?? existingDetails.summary,
+      highlight: applyLocaleSafeString(InfluencerProfile?.highlight) ?? existingDetails.highlight,
+      audience: applyLocaleSafeString(InfluencerProfile?.audience) ?? existingDetails.audience,
+      engagement: Number(InfluencerProfile?.engagement) || existingDetails.engagement,
       socialLinks: links,
       statsConnection: existingDetails.statsConnection,
+      languages: Array.isArray(InfluencerProfile?.languages) ? InfluencerProfile.languages : existingDetails.languages,
+      location: applyLocaleSafeString(InfluencerProfile?.location) ?? existingDetails.location,
+      preferences: existingDetails.preferences,
     }
-
-    user.influencerProfile = nextInfluencerProfile
-    user.influencerDetails = nextInfluencerProfile
 
     const photoUrl = await uploadNewProfilePhoto(req.body.photo)
     if (photoUrl) {
@@ -230,7 +235,7 @@ export const updateBrandProfile = async (req: Request, res: Response) => {
     if (phone) user.phone = Number(phone)
 
     const existingDetails = user.brandDetails || {}
-    const nextBrandProfile = {
+    user.brandDetails = {
       ...existingDetails,
       companyName: applyLocaleSafeString(brandDetails?.companyName) ?? existingDetails.companyName,
       website: brandDetails?.website ?? existingDetails.website,
@@ -239,10 +244,13 @@ export const updateBrandProfile = async (req: Request, res: Response) => {
       collaborations: existingDetails.collaborations,
       activeCampaigns: Number(brandDetails?.activeCampaigns) || existingDetails.activeCampaigns,
       pointsOfContact: Number(brandDetails?.pointsOfContact) || existingDetails.pointsOfContact,
+      contactRole: applyLocaleSafeString(brandDetails?.contactRole) ?? existingDetails.contactRole,
+      collaborationDefaults: {
+        usageRights: applyLocaleSafeString(brandDetails?.collaborationDefaults?.usageRights) ?? existingDetails.collaborationDefaults?.usageRights,
+        revisions: Number(brandDetails?.collaborationDefaults?.revisions) || existingDetails.collaborationDefaults?.revisions,
+        exclusivityPeriod: Number(brandDetails?.collaborationDefaults?.exclusivityPeriod) || existingDetails.collaborationDefaults?.exclusivityPeriod,
+      }
     }
-
-    user.brandProfile = nextBrandProfile
-    user.brandDetails = nextBrandProfile
 
     const photoUrl = await uploadNewProfilePhoto(req.body.photo)
     if (photoUrl) {

@@ -39,9 +39,12 @@ export const useConversationMessages = (conversationId?: string) => {
   // Fetch initial messages when conversation changes
   useEffect(() => {
     if (conversationId) {
+      setIsLoading(true);
+      setAllMessages([]);
       fetchMessages(1);
     } else {
       setAllMessages([]);
+      setIsLoading(false);
     }
   }, [conversationId, fetchMessages]);
 
@@ -52,17 +55,25 @@ export const useConversationMessages = (conversationId?: string) => {
     // Listen for new messages in this conversation
     const handleMessageReceived = (message: Message) => {
       console.log("📨 Message received:", message);
-      setAllMessages((prev) => [...prev, message]);
+      setAllMessages((prev) => {
+        // Prevent duplicate messages
+        if (prev.some((m) => m.id === message.id)) return prev;
+        return [...prev, message];
+      });
     };
 
     // Listen for read status updates
-    const handleMessagesRead = (data: any) => {
+    const handleMessagesRead = (data: { conversationId: string; readBy?: string; readAt?: Date | string }) => {
       console.log("✓ Messages marked as read:", data);
-      setAllMessages((prev) =>
-        prev.map((msg) =>
-          data.readBy.includes(msg.id) ? { ...msg, read: true } : msg
-        )
-      );
+      if (data.conversationId === conversationId) {
+        setAllMessages((prev) =>
+          prev.map((msg) => ({
+            ...msg,
+            read: true,
+            readAt: data.readAt ? new Date(data.readAt) : new Date(),
+          }))
+        );
+      }
     };
 
     socket.on("message-received", handleMessageReceived);
@@ -77,17 +88,23 @@ export const useConversationMessages = (conversationId?: string) => {
   // Mark messages as read
   const markAsRead = useCallback(
     (convId: string) => {
-      if (!socket || !isConnected) return;
+      if (!convId) return;
 
-      socket.emit(
-        "mark-as-read",
-        { conversationId: convId },
-        (response: any) => {
-          if (!response.success) {
-            console.error("Mark as read failed:", response.message);
+      if (socket && isConnected) {
+        socket.emit(
+          "mark-as-read",
+          { conversationId: convId },
+          (response: any) => {
+            if (response && !response.success) {
+              console.warn("Mark as read socket warning:", response.message);
+            }
           }
-        }
-      );
+        );
+      } else {
+        messagingAPI.markAsRead(convId).catch((err) => {
+          console.warn("Mark as read REST notice:", err?.message || err);
+        });
+      }
     },
     [socket, isConnected]
   );

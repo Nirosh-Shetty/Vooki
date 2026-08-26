@@ -43,6 +43,7 @@ type WorkspaceShellProps = {
   accountName: string;
   accountMeta: string;
   accountInitials: string;
+  accountAvatar?: string;
   sidebarItems: WorkspaceNavItem[];
   mobilePrimary: WorkspaceNavItem[];
   settingsHref: string;
@@ -110,6 +111,7 @@ export function WorkspaceShell({
   accountName,
   accountMeta,
   accountInitials,
+  accountAvatar,
   sidebarItems,
   mobilePrimary,
   settingsHref,
@@ -159,8 +161,8 @@ export function WorkspaceShell({
             )}
           >
             <div className="flex items-center gap-3 border-b border-[color:var(--vooki-app-border)] px-5 py-5">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-inverse-surface)] text-[color:var(--vooki-app-inverse-text)] shadow-[var(--vooki-shadow-app-soft)]">
-                <BrandIcon className="h-5 w-5" style={{ color: brandIconAccent }} />
+              <div className="flex h-11 w-11 overflow-hidden items-center justify-center rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-inverse-surface)] shadow-[var(--vooki-shadow-app-soft)] p-2">
+                <img src="/images/company_logo/Vooki_logo_bgRemovedSvg.svg" alt="Vooki" className="h-full w-full object-contain" />
               </div>
               {!collapsed && (
                 <div className="min-w-0">
@@ -221,8 +223,8 @@ export function WorkspaceShell({
                   </Button>
 
                   <div className="flex items-center gap-3 lg:hidden">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-inverse-surface)] text-[color:var(--vooki-app-inverse-text)] shadow-[var(--vooki-shadow-app-soft)]">
-                      <BrandIcon className="h-4 w-4" style={{ color: brandIconAccent }} />
+                    <div className="flex h-10 w-10 overflow-hidden items-center justify-center rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-inverse-surface)] shadow-[var(--vooki-shadow-app-soft)] p-2">
+                      <img src="/images/company_logo/Vooki_logo_bgRemovedSvg.svg" alt="Vooki" className="h-full w-full object-contain" />
                     </div>
                     <div>
                       <p className="text-sm font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)]">
@@ -252,15 +254,20 @@ export function WorkspaceShell({
                     <Bell className="h-5 w-5" />
                   </Button>
 
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                  <DropdownMenu modal={false}>
+                    <DropdownMenuTrigger asChild id="workspace-account-menu-trigger">
                       <Button
+                        id="workspace-account-menu-button"
                         variant="ghost"
                         className="h-auto rounded-full border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-card)] px-2 py-1.5 text-[color:var(--vooki-app-text-strong)] shadow-[var(--vooki-shadow-app-soft)] hover:bg-[color:var(--vooki-app-surface-strong)]"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--vooki-app-active-bg)] text-sm font-semibold text-[color:var(--vooki-app-active-text)]">
-                            {accountInitials}
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--vooki-app-active-bg)] text-sm font-semibold text-[color:var(--vooki-app-active-text)] overflow-hidden shrink-0">
+                            {accountAvatar ? (
+                              <img src={accountAvatar} alt={accountName} className="h-full w-full object-cover" />
+                            ) : (
+                              accountInitials
+                            )}
                           </div>
                           <div className="hidden text-left md:block">
                             <p className="text-sm font-medium">{accountName}</p>
@@ -273,6 +280,7 @@ export function WorkspaceShell({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                       align="end"
+                      id="workspace-account-menu-content"
                       className="w-60 rounded-2xl border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)]"
                     >
                       <DropdownMenuLabel className="px-3 py-2 text-[color:var(--vooki-app-text-subtle)]">

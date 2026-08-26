@@ -571,7 +571,7 @@ export const getCurrentUser = async (
     }
 
     const user = await UserModel.findById(userId).select(
-      "id name email username role avatar"
+      "-password -oauthProviders.accessToken -oauthProviders.refreshToken -loginHistory -otp"
     );
 
     if (!user) {
@@ -583,9 +583,15 @@ export const getCurrentUser = async (
         id: user._id.toString(),
         name: user.name,
         email: user.email,
+        phone: user.phone,
         username: user.username,
         role: user.role,
         avatar: user.avatar,
+        brandDetails: user.brandDetails,
+        InfluencerProfile: user.InfluencerProfile,
+        rating: user.rating,
+        totalReviews: user.totalReviews,
+        notificationPreferences: user.notificationPreferences,
       },
     });
   } catch (error) {

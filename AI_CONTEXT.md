@@ -84,20 +84,21 @@
 
 ## 10. Current Task / Work In Progress
 
-* **current objective**: Redesign the UI of the **Finance Page** (`/brand/payments/page.tsx`) and the **Invite Creator Modal** (`CreateInviteModal.tsx`).
-* **what was already completed**: An implementation plan was proposed and approved by the user. The dynamic Topbar fix was deployed.
-* **what remains**: Writing the actual React/Tailwind code to apply the Vooki theme to these two files.
-* **files being modified**: `d:\collaber\frontend\src\app\brand\payments\page.tsx`, `d:\collaber\frontend\src\components\collaboration\CreateInviteModal.tsx`.
-* **current implementation approach**: For the finance page, we want a glassmorphic hero dashboard with sleek transaction rows/cards featuring vibrant status badges and hover lifts. For the invite modal, break the long form into structured, card-like sections with premium controls.
-* **known blockers**: The AI agent failed to apply the code edit to `payments/page.tsx` because `TargetContent` for the `replace_file_content` tool could not exactly match the large file block.
-* **next steps**: Perform smaller, chunked edits using `multi_replace_file_content` or `replace_file_content` on `payments/page.tsx`, or overwrite the file entirely if it's safer.
+* **current objective**: Simplify collaboration timelines (removed multi-date flow `postingStartDate`, `postingEndDate`, `draftDueDate`, `responseDeadline` in favor of a single `targetDate` and `postAt`) and clean up schema consistency.
+* **what was already completed**: 
+  - Redesign of Finance page (`/brand/payments/page.tsx`) and Create Invite Modal (`CreateInviteModal.tsx`).
+  - Codebase standardization of `influencerDetails` -> `InfluencerProfile` sub-schema.
+  - Simplified timeline schema in `DiscoverInvite.ts` and `Promotion.ts`.
+  - Updated `collaborationInvite.controller.ts` and `promotion.controller.ts` to use simplified `targetDate` / `postAt`.
+  - Updated frontend forms and dashboards (`CreateInviteModal.tsx`, `promotion-workspace.tsx`, `messages-hub.tsx`, `brand/dashboard/page.tsx`, `influencer/dashboard/page.tsx`).
+  - Verified backend compilation (`tsc --noEmit` clean with 0 errors).
+* **what remains**: Verify any runtime behaviors or further profile renames requested by user.
+* **files modified**: `DiscoverInvite.ts`, `Promotion.ts`, `collaborationInvite.controller.ts`, `promotion.controller.ts`, `CreateInviteModal.tsx`, `promotion-workspace.tsx`, `messages-hub.tsx`, `messages-hub-content.tsx`, `app/brand/dashboard/page.tsx`, `app/influencer/dashboard/page.tsx`.
 
 ## 11. Bugs & Known Problems
 
-* **Symptom**: `replace_file_content` failed on `payments/page.tsx`.
-  * **Suspected cause**: Trying to replace 200+ lines at once often results in whitespace/indentation mismatch errors in the tool.
-  * **Next investigation**: Use multiple smaller `ReplacementChunks` or write the whole file from scratch using `write_to_file` if safe.
-* **Symptom**: Network drop (`wsarecv`) between IDE and AI server.
+* **Resolved**: TypeScript compilation errors in `collaborationInvite.controller.ts` and `promotion.controller.ts` resolved after schema simplification.
+* **Transient Issue**: IDE-to-server SSE/network dropouts (`wsarecv` / connection closed). Handled by checkpoint resumes.
   * **Cause**: Transient infrastructure timeout; resolved by restarting the session with this context file.
 
 ## 12. Important Conversation Decisions
@@ -171,13 +172,14 @@
 ## 21. Completed Tasks
 
 1. Redesigned Finance Page (`payments/page.tsx`) with Vooki aesthetic (glassmorphism, vibrant badges, hover lifts). Addressed transaction map updates.
-2. Redesigned Invite Modal (`CreateInviteModal.tsx`) into structured cards with premium controls. Handled user feedback to normalize padding (`p-4`, `rounded-xl`) to maintain standard sizing.
+2. Redesigned Invite Modal (`CreateInviteModal.tsx`) into structured cards with premium controls. Handled user feedback to normalize padding (`p-4`, `rounded-xl`) to maintain standard sizing and dynamic deliverable formats based on platform.
+3. Updated topbar user info across Brand, Creator (Influencer), and Manager layouts (`WorkspaceShell`) to dynamically pull name, email/handle, profile photo (if available), or fall back to full name initials from `AuthContext`.
+4. **Localization (Paused)**: Created a `useCurrency` hook for Phase 1 multi-currency display (INR for creators, USD for brands). The user decided to undo this and pause currency work for later.
 
 ## 22. Next Steps
 
-1. Wait for user direction on the next component or page to update.
+1. Move on to the Brand Dashboard redesign or whichever UI/UX component the user prioritizes next.
 2. Read this `AI_CONTEXT.md` file completely before beginning new work.
-3. Verify changes by checking the local frontend server.
 
 ## 23. Instructions for the Next AI Agent
 

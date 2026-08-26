@@ -60,8 +60,6 @@ type Campaign = {
   endDate: string;
   invitedCreators: number;
   acceptedCreators: number;
-  deliverablesDone: number;
-  deliverablesTotal: number;
   updatedAt: string;
 };
 
@@ -86,7 +84,6 @@ type Promotion = {
   status: PromotionStatus;
   paymentAmount: number;
   paymentStatus: "pending" | "paid";
-  draftDueAt: string;
   postAt: string;
   performance: { reach: number; views: number; engagement: number };
   deliverySubmission?: {
@@ -404,7 +401,7 @@ function BrandDashboardContent() {
             ...base,
             icon: <Clock className="h-4 w-4" style={{ color: "#f0bb7a" }} />,
             title: "Content being created",
-            detail: `${p.campaignTitle} · draft due ${new Date(p.draftDueAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
+            detail: `${p.campaignTitle} · posting due ${new Date(p.postAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
             accent: "rgba(240,187,122,0.18)",
           });
           break;
@@ -787,8 +784,8 @@ function BrandDashboardContent() {
                 .slice(0, 4)
                 .map((c) => {
                   const pct =
-                    c.deliverablesTotal > 0
-                      ? Math.round((c.deliverablesDone / c.deliverablesTotal) * 100)
+                    c.budgetTotal > 0
+                      ? Math.min(100, Math.round((c.budgetSpent / c.budgetTotal) * 100))
                       : 0;
                   return (
                     <Link
@@ -820,7 +817,7 @@ function BrandDashboardContent() {
                         />
                       </div>
                       <p className="mt-1.5 text-xs text-[color:var(--vooki-app-text-muted)]">
-                        {c.deliverablesDone} of {c.deliverablesTotal} deliverables done
+                        {money(c.budgetSpent)} of {money(c.budgetTotal)} spent
                       </p>
                     </Link>
                   );

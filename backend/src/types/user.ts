@@ -1,4 +1,3 @@
-
 import { Types, Document } from "mongoose";
 
 export interface OAuthProvider {
@@ -20,6 +19,12 @@ export interface StatsConnection {
 }
 
 export type SocialConnection = StatsConnection;
+
+export interface FeaturedContentItem {
+  _id: Types.ObjectId;
+  url: string;
+  createdAt?: Date;
+}
 
 export interface InfluencerProfile {
   followers?: number;
@@ -43,6 +48,16 @@ export interface InfluencerProfile {
     story?: number;
     youtubeIntegration?: number;
   };
+  languages?: string[];
+  location?: string;
+  featuredContent?: FeaturedContentItem[];
+  preferences?: {
+    minimumRate?: {
+      amount: number;
+      currency: string;
+    };
+    contentBoundaries?: string;
+  };
 }
 
 export interface BrandProfile {
@@ -53,6 +68,12 @@ export interface BrandProfile {
   summary?: string;
   activeCampaigns?: number;
   pointsOfContact?: number;
+  contactRole?: string;
+  collaborationDefaults?: {
+    usageRights?: string;
+    revisions?: number;
+    exclusivityPeriod?: number;
+  };
   about?: string;
   preferredCategories?: string[];
   whitelist?: Types.ObjectId[];
@@ -89,17 +110,20 @@ export interface IUser extends Document {
   oauthProviders?: OAuthProvider[];
   rating: number;
   totalReviews: number;
-  influencerProfile?: InfluencerProfile;
-  brandProfile?: BrandProfile;
-  managerProfile?: ManagerProfile;
-  influencerDetails?: InfluencerProfile;
+  InfluencerProfile?: InfluencerProfile;
   brandDetails?: BrandProfile;
+  managerProfile?: ManagerProfile;
   isVerified: boolean;
   reservationExpiresAt?: Date;
   isTempAccount?: boolean;
   otp?: string;
   lastOtpSentAt?: Date;
   loginHistory: LoginMetadata[];
+  notificationPreferences?: {
+    newCollabInvites: boolean;
+    messageNotifications: boolean;
+    marketingUpdates: boolean;
+  };
   createdAt?: Date;
   updatedAt?: Date;
 }

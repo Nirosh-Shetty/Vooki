@@ -16,7 +16,12 @@ export function useRouteTitle(
     // Handle null pathname
     if (!pathname) return defaultTitle;
 
-    // Check dynamic route prefixes first (e.g., "/brand/campaigns/[id]")
+    // Check for an exact match first
+    if (routeTitleMap[pathname]) {
+      return routeTitleMap[pathname];
+    }
+
+    // Check dynamic route prefixes (e.g., "/brand/campaigns/[id]")
     if (dynamicRoutePrefixes) {
       for (const { prefix, title } of dynamicRoutePrefixes) {
         if (pathname.startsWith(prefix)) {
@@ -25,8 +30,8 @@ export function useRouteTitle(
       }
     }
 
-    // Fall back to exact route match or default
-    return routeTitleMap[pathname] ?? defaultTitle;
+    // Fall back to default
+    return defaultTitle;
   }, [pathname, routeTitleMap, defaultTitle, dynamicRoutePrefixes]);
 }
 

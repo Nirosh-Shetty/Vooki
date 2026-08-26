@@ -1,6 +1,7 @@
 import Message from "../models/Message";
 import Conversation from "../models/Conversation";
 import UserModel from "../models/Users";
+import { canSendMessageInConversation } from "../utils/messagingAuthorization";
 
 type OfferMessageData = {
   campaignId?: string;
@@ -154,14 +155,16 @@ export const handleMessaging = (
           });
         }
 
-        // Verify user is participant
-        const conversation = await Conversation.findById(conversationId);
-        if (!conversation || !conversation.participants.includes(userId)) {
+        // Verify user is authorized to send message in this conversation (Rules 2, 3, 4)
+        const auth = await canSendMessageInConversation(userId, conversationId);
+        if (!auth.allowed) {
           return callback?.({
             success: false,
-            message: "Unauthorized",
+            message: auth.reason || "Unauthorized",
           });
         }
+
+        const conversation = auth.conversation;
 
         // Create message
         const message = new Message({
@@ -273,6 +276,65 @@ export const handleMessaging = (
         });
       } catch (error) {
         console.error("Error marking messages as read:", error);
+        callback?.({
+          success: false,
+          message: "Internal server error",
+        });
+      }
+    }
+  );
+
+  // Toggle pausing creator messages via socket
+  socket.on(
+    "toggle-creator-messages",
+    async (
+      data: { conversationId: string; stopped?: boolean },
+      callback?: (arg0: any) => void
+    ) => {
+      try {
+        const { conversationId, stopped } = data;
+        const conversation = await Conversation.findById(conversationId);
+
+        if (!conversation || !conversation.participants.includes(userId)) {
+          return callback?.({
+            success: false,
+            message: "Forbidden: Not a participant in this conversation.",
+          });
+        }
+
+        const requester = await UserModel.findById(userId, { role: 1 }).lean();
+        if (!requester || (requester.role !== "brand" && requester.role !== "manager")) {
+          return callback?.({
+            success: false,
+            message: "Only brands can pause or resume creator messages.",
+          });
+        }
+
+        const nextState = typeof stopped === "boolean" ? stopped : !conversation.isStoppedByBrand;
+        conversation.isStoppedByBrand = nextState;
+        conversation.stoppedBy = nextState ? userId : null;
+        conversation.stoppedAt = nextState ? new Date() : null;
+        await conversation.save();
+
+        const roomName = `conversation:${conversationId}`;
+        const payload = {
+          conversationId,
+          isStoppedByBrand: conversation.isStoppedByBrand,
+          stoppedBy: conversation.stoppedBy,
+          stoppedAt: conversation.stoppedAt,
+        };
+
+        io.to(roomName).emit("conversation-status-updated", payload);
+        io.to(roomName).emit("conversation-updated", payload);
+
+        callback?.({
+          success: true,
+          isStoppedByBrand: conversation.isStoppedByBrand,
+          stoppedBy: conversation.stoppedBy,
+          stoppedAt: conversation.stoppedAt,
+        });
+      } catch (error) {
+        console.error("Error toggling creator messages:", error);
         callback?.({
           success: false,
           message: "Internal server error",

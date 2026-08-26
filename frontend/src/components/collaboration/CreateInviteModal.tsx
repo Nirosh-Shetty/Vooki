@@ -98,10 +98,7 @@ export function CreateInviteModal({
   const [brandMessage, setBrandMessage] = useState("")
 
   // Timeline state
-  const [postingStartDate, setPostingStartDate] = useState("")
-  const [postingEndDate, setPostingEndDate] = useState("")
-  const [draftDueDate, setDraftDueDate] = useState("")
-  const [responseDeadline, setResponseDeadline] = useState("")
+  const [targetDate, setTargetDate] = useState("")
 
 
   const handleAddDeliverable = () => {
@@ -179,10 +176,7 @@ export function CreateInviteModal({
         collaborationType: collaborationType || "sponsored_post",
         deliverables,
         timeline: {
-          postingStartDate: postingStartDate ? new Date(postingStartDate) : defaultStart,
-          postingEndDate: postingEndDate ? new Date(postingEndDate) : defaultEnd,
-          draftDueDate: draftDueDate ? new Date(draftDueDate) : undefined,
-          responseDeadline: responseDeadline ? new Date(responseDeadline) : defaultDeadline,
+          targetDate: targetDate ? new Date(targetDate) : defaultEnd,
         },
         compensation: {
           type: compensationType,
@@ -390,69 +384,19 @@ export function CreateInviteModal({
             </div>
           </div>
 
-          {/* Timeline - Advanced Settings */}
+          {/* Timeline */}
           <div className="space-y-1.5 border-t border-[color:var(--vooki-app-border)] pt-4">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-col gap-2 mb-2">
               <label className="block text-sm font-semibold text-[color:var(--vooki-app-text-strong)]">
-                Timeline (Optional)
+                Target Posting Date (Optional)
               </label>
-              <button
-                type="button"
-                className="text-xs font-bold text-[color:var(--vooki-accent)] hover:text-[color:var(--vooki-app-text-strong)] transition-colors"
-                onClick={() => setShowAdvanced(!showAdvanced)}
-              >
-                {showAdvanced ? "Hide Details" : "Show Dates"}
-              </button>
+              <Input
+                type="date"
+                value={targetDate}
+                onChange={(e) => setTargetDate(e.target.value)}
+                className="h-11 border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-bg)] rounded-xl text-sm font-medium text-[color:var(--vooki-app-text-strong)] focus:ring-[color:var(--vooki-accent)] sm:max-w-xs"
+              />
             </div>
-
-            {showAdvanced && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                <div>
-                  <label className="block text-xs font-semibold text-[color:var(--vooki-app-text-soft)] mb-1.5">
-                    Posting Start Date
-                  </label>
-                  <Input
-                    type="date"
-                    value={postingStartDate}
-                    onChange={(e) => setPostingStartDate(e.target.value)}
-                    className="h-11 border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-bg)] rounded-xl text-sm font-medium text-[color:var(--vooki-app-text-strong)] focus:ring-[color:var(--vooki-accent)]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[color:var(--vooki-app-text-soft)] mb-1.5">
-                    Posting End Date
-                  </label>
-                  <Input
-                    type="date"
-                    value={postingEndDate}
-                    onChange={(e) => setPostingEndDate(e.target.value)}
-                    className="h-11 border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-bg)] rounded-xl text-sm font-medium text-[color:var(--vooki-app-text-strong)] focus:ring-[color:var(--vooki-accent)]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[color:var(--vooki-app-text-soft)] mb-1.5">
-                    Draft Due Date
-                  </label>
-                  <Input
-                    type="date"
-                    value={draftDueDate}
-                    onChange={(e) => setDraftDueDate(e.target.value)}
-                    className="h-11 border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-bg)] rounded-xl text-sm font-medium text-[color:var(--vooki-app-text-strong)] focus:ring-[color:var(--vooki-accent)]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[color:var(--vooki-app-text-soft)] mb-1.5">
-                    Response Deadline
-                  </label>
-                  <Input
-                    type="date"
-                    value={responseDeadline}
-                    onChange={(e) => setResponseDeadline(e.target.value)}
-                    className="h-11 border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-bg)] rounded-xl text-sm font-medium text-[color:var(--vooki-app-text-strong)] focus:ring-[color:var(--vooki-accent)]"
-                  />
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Compensation */}

@@ -19,7 +19,7 @@ type Deliverable = { platform: string; format: string; quantity: number }
 type Campaign = {
   id: string; name: string; objective: string; niche: string; status: CampaignStatus; priority: CampaignPriority;
   budgetTotal: number; budgetSpent: number; roi: number; startDate: string; endDate: string;
-  invitedCreators: number; acceptedCreators: number; deliverablesDone: number; deliverablesTotal: number;
+  invitedCreators: number; acceptedCreators: number;
 }
 
 type Promotion = {

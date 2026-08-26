@@ -23,8 +23,6 @@ export interface ICampaign extends Document {
   endDate: Date;
   invitedCreators: number;
   acceptedCreators: number;
-  deliverablesDone: number;
-  deliverablesTotal: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -103,16 +101,6 @@ const CampaignSchema = new Schema<ICampaign>(
       min: 0,
     },
     acceptedCreators: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-    deliverablesDone: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-    deliverablesTotal: {
       type: Number,
       default: 0,
       min: 0,

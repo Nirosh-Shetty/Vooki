@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vooki — Coming Soon</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --vooki-accent: #c7e27a;
+            --vooki-accent-text: #1f2514;
+            --font-sans: 'Inter', sans-serif;
+
+            /* Light mode variables */
+            --vooki-home-bg: #f7f2e8;
+            --vooki-home-nav: rgba(247, 242, 232, 0.85);
+            --vooki-home-surface-muted: rgba(0, 0, 0, 0.03);
+            --vooki-home-border: rgba(0, 0, 0, 0.1);
+            --vooki-home-border-soft: rgba(0, 0, 0, 0.06);
+            --vooki-home-text: #221d16;
+            --vooki-home-text-soft: #5d564c;
+            --vooki-home-text-muted: #8b8477;
+            --vooki-home-text-faint: #a19a8d;
+            --vooki-home-glow-green: rgba(199, 226, 122, 0.3);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                /* Dark mode variables */
+                --vooki-home-bg: #11130f;
+                --vooki-home-nav: rgba(17, 19, 15, 0.8);
+                --vooki-home-surface-muted: rgba(255, 255, 255, 0.03);
+                --vooki-home-border: rgba(255, 255, 255, 0.1);
+                --vooki-home-border-soft: rgba(255, 255, 255, 0.08);
+                --vooki-home-text: #f4f1e8;
+                --vooki-home-text-soft: #f0ede5;
+                --vooki-home-text-muted: #b4aea1;
+                --vooki-home-text-faint: #8f8a7f;
+                --vooki-home-glow-green: rgba(185, 217, 108, 0.12);
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        body {
+            background-color: var(--vooki-home-bg);
+            color: var(--vooki-home-text);
+            font-family: var(--font-sans);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            min-height: 100vh;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        /* ─────────────────────────────────────────────
+           Scroll-triggered fade-in animation
+           ───────────────────────────────────────────── */
+        .reveal {
+            opacity: 0;
+            transform: translateY(32px);
+            transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: transparent;
+            transition: background 0.3s, backdrop-filter 0.3s, border-color 0.3s;
+        }
+
+        nav.scrolled {
+            background: var(--vooki-home-nav);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--vooki-home-border-soft);
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            height: 100%;
+        }
+
+        .logo-mark {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--vooki-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .logo-mark-inner {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--vooki-home-bg);
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-30%, -30%);
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--vooki-home-text);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .btn-coming-soon {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--vooki-home-text-muted);
+            padding: 8px 20px;
+            border-radius: 8px;
+            background: var(--vooki-home-surface-muted);
+            border: 1px solid var(--vooki-home-border-soft);
+            cursor: default;
+        }
+
+        /* Hero */
+        .hero-section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 120px 24px 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-glow {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background: var(--vooki-home-glow-green);
+            border-radius: 50%;
+            filter: blur(120px);
+            pointer-events: none;
+        }
+
+        .hero-h1 {
+            font-size: clamp(36px, 6vw, 72px);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.08;
+            max-width: 780px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .hero-p {
+            font-size: clamp(16px, 2vw, 20px);
+            color: var(--vooki-home-text-muted);
+            max-width: 520px;
+            margin: 28px auto 0;
+            line-height: 1.6;
+            font-weight: 400;
+        }
+
+        .hero-visual {
+            margin-top: 80px;
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+        }
+
+        /* Mess Section */
+        .mess-section {
+            padding: 120px 24px 100px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .section-h2 {
+            font-size: clamp(28px, 4vw, 48px);
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            line-height: 1.15;
+            text-align: center;
+            margin-bottom: 64px;
+        }
+
+        .mess-chips {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px 12px;
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 20px 0;
+        }
+
+        .chip {
+            display: inline-block;
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--vooki-home-text-muted);
+            background: var(--vooki-home-surface-muted);
+            border: 1px solid var(--vooki-home-border-soft);
+            border-radius: 8px;
+            white-space: nowrap;
+        }
+
+        .mess-p {
+            text-align: center;
+            font-size: clamp(16px, 2vw, 20px);
+            color: var(--vooki-home-text-faint);
+            margin-top: 56px;
+            font-weight: 400;
+        }
+
+        /* Idea Section */
+        .idea-section {
+            padding: 120px 24px;
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .flow-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            padding: 32px 0;
+        }
+
+        .flow-step {
+            display: flex;
+            align-items: center;
+        }
+
+        .flow-text {
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            padding: 8px 0;
+        }
+
+        .flow-text.accent {
+            color: var(--vooki-accent);
+        }
+
+        .flow-arrow {
+            margin: 0 14px;
+            color: var(--vooki-home-text-faint);
+            font-size: 14px;
+            opacity: 0.5;
+        }
+
+        .idea-p {
+            font-size: clamp(15px, 1.8vw, 18px);
+            color: var(--vooki-home-text-muted);
+            max-width: 560px;
+            margin: 32px auto 0;
+            line-height: 1.7;
+        }
+
+        /* How It Works Section */
+        .how-section {
+            padding: 120px 24px;
+            max-width: 1080px;
+            margin: 0 auto;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 48px;
+        }
+
+        .moment-number {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--vooki-accent);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            opacity: 0.8;
+        }
+
+        .moment-h3 {
+            font-size: clamp(22px, 3vw, 28px);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            margin-bottom: 14px;
+        }
+
+        .moment-p {
+            font-size: 16px;
+            line-height: 1.65;
+            color: var(--vooki-home-text-muted);
+            font-weight: 400;
+        }
+
+        /* Two Sides Section */
+        .sides-section {
+            padding: 120px 24px;
+            max-width: 1080px;
+            margin: 0 auto;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 64px;
+        }
+
+        .side-header {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+
+        .side-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .side-dot.creator {
+            background: var(--vooki-accent);
+        }
+
+        .side-dot.brand {
+            background: var(--vooki-home-text-muted);
+        }
+
+        .side-label {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .side-label.creator {
+            color: var(--vooki-accent);
+        }
+
+        .side-label.brand {
+            color: var(--vooki-home-text-muted);
+        }
+
+        .side-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .side-item {
+            font-size: 17px;
+            line-height: 1.5;
+            color: var(--vooki-home-text-soft);
+            font-weight: 400;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .side-dash {
+            position: absolute;
+            left: 0;
+            top: 4px;
+            color: var(--vooki-home-text-faint);
+            font-size: 14px;
+        }
+
+        /* Philosophy Section */
+        .philosophy-section {
+            padding: 120px 24px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .phil-container {
+            display: flex;
+            flex-direction: column;
+            gap: 64px;
+        }
+
+        .phil-item {
+            border-left: 2px solid var(--vooki-home-border);
+            padding-left: 28px;
+        }
+
+        .phil-h3 {
+            font-size: clamp(18px, 2.5vw, 24px);
+            font-weight: 700;
+            letter-spacing: -0.015em;
+            margin-bottom: 8px;
+        }
+
+        .phil-p {
+            font-size: 17px;
+            color: var(--vooki-home-text-muted);
+            line-height: 1.6;
+            font-weight: 400;
+        }
+
+        /* Final CTA */
+        .cta-section {
+            padding: 120px 24px 80px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-glow {
+            position: absolute;
+            bottom: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 500px;
+            height: 500px;
+            background: var(--vooki-home-glow-green);
+            border-radius: 50%;
+            filter: blur(140px);
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .cta-h2 {
+            font-size: clamp(28px, 4.5vw, 52px);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .btn-large-soon {
+            display: inline-block;
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--vooki-home-text-muted);
+            background: var(--vooki-home-surface-muted);
+            border: 1px solid var(--vooki-home-border-soft);
+            padding: 16px 40px;
+            border-radius: 10px;
+            position: relative;
+            cursor: default;
+        }
+
+        .cta-subtext {
+            font-size: 14px;
+            color: var(--vooki-home-text-faint);
+            margin-top: 20px;
+            font-weight: 400;
+            position: relative;
+        }
+
+        /* Footer */
+        footer {
+            padding: 48px 24px;
+            text-align: center;
+            border-top: 1px solid var(--vooki-home-border-soft);
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .footer-mark {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--vooki-accent);
+            position: relative;
+        }
+
+        .footer-mark-inner {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--vooki-home-bg);
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-30%, -30%);
+        }
+
+        .footer-text {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--vooki-home-text-muted);
+            letter-spacing: -0.01em;
+        }
+
+        .footer-copy {
+            font-size: 13px;
+            color: var(--vooki-home-text-faint);
+            font-weight: 400;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAVIGATION -->
+    <nav id="navbar">
+        <a href="#" class="logo-container">
+            <img src="/images/company_logo/Vooki_logo_bgRemovedSvg.svg" alt="Vooki Logo"
+                style="height: 32px; width: auto;" />
+            <span class="logo-text">vooki</span>
+        </a>
+        <div class="nav-actions">
+            <div class="btn-coming-soon">Coming Soon</div>
+        </div>
+    </nav>
+
+    <!-- SECTION 1 — HERO -->
+    <section class="hero-section">
+        <div class="hero-glow"></div>
+        <div class="reveal">
+            <h1 class="hero-h1">
+                Creator–brand collaborations<br>
+                shouldn't be this complicated.
+            </h1>
+        </div>
+        <div class="reveal" style="transition-delay: 120ms">
+            <p class="hero-p">
+                One place for the entire collaboration — from the first message to the last payment.
+            </p>
+        </div>
+
+        <div class="reveal" style="transition-delay: 400ms; width: 100%; display: flex; justify-content: center;">
+            <div class="hero-visual">
+                <svg viewBox="0 0 640 120" fill="none" style="width: 100%; height: auto;">
+                    <!-- Flow line -->
+                    <path d="M 80 60 C 160 20, 240 100, 320 60 C 400 20, 480 100, 560 60"
+                        stroke="var(--vooki-home-border)" stroke-width="1.5" fill="none" />
+                    <!-- Creator circle -->
+                    <circle cx="80" cy="60" r="22" fill="var(--vooki-accent)" opacity="0.9" />
+                    <text x="80" y="100" text-anchor="middle" fill="var(--vooki-home-text-muted)" font-size="11"
+                        font-weight="500">Creator</text>
+                    <!-- Brand circle -->
+                    <circle cx="560" cy="60" r="22" fill="var(--vooki-home-text)" opacity="0.15" />
+                    <circle cx="560" cy="60" r="22" stroke="var(--vooki-home-text)" stroke-width="1.5" fill="none"
+                        opacity="0.4" />
+                    <text x="560" y="100" text-anchor="middle" fill="var(--vooki-home-text-muted)" font-size="11"
+                        font-weight="500">Brand</text>
+                    <!-- Mid-point nodes -->
+                    <g>
+                        <circle cx="200" cy="42.3" r="5" fill="var(--vooki-accent)" opacity="0.6" />
+                        <text x="200" y="28.3" text-anchor="middle" fill="var(--vooki-home-text-faint)" font-size="10"
+                            font-weight="500" letter-spacing="0.04em">Deal</text>
+                    </g>
+                    <g>
+                        <circle cx="320" cy="60" r="5" fill="var(--vooki-accent)" opacity="0.6" />
+                        <text x="320" y="46" text-anchor="middle" fill="var(--vooki-home-text-faint)" font-size="10"
+                            font-weight="500" letter-spacing="0.04em">Content</text>
+                    </g>
+                    <g>
+                        <circle cx="440" cy="42.3" r="5" fill="var(--vooki-accent)" opacity="0.6" />
+                        <text x="440" y="28.3" text-anchor="middle" fill="var(--vooki-home-text-faint)" font-size="10"
+                            font-weight="500" letter-spacing="0.04em">Payment</text>
+                    </g>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 2 — THE MESS -->
+    <section class="mess-section">
+        <div class="reveal">
+            <h2 class="section-h2">You already know how this goes.</h2>
+        </div>
+
+        <div class="reveal mess-chips" style="transition-delay: 150ms">
+            <span class="chip" style="transform: rotate(-3deg);">Instagram DMs</span>
+            <span class="chip" style="transform: rotate(2deg);">WhatsApp</span>
+            <span class="chip" style="transform: rotate(-1deg);">Email threads</span>
+            <span class="chip" style="transform: rotate(4deg);">Google Drive</span>
+            <span class="chip" style="transform: rotate(-2deg);">"Did you post it?"</span>
+            <span class="chip" style="transform: rotate(3deg);">Spreadsheets</span>
+            <span class="chip" style="transform: rotate(-4deg);">Payment screenshots</span>
+            <span class="chip" style="transform: rotate(1deg);">"When do I get paid?"</span>
+            <span class="chip" style="transform: rotate(-3deg);">Contract PDFs</span>
+            <span class="chip" style="transform: rotate(2deg);">"Can you send the brief again?"</span>
+            <span class="chip" style="transform: rotate(-1deg);">Content approvals</span>
+            <span class="chip" style="transform: rotate(5deg);">Follow-up #4</span>
+        </div>
+
+        <div class="reveal" style="transition-delay: 300ms">
+            <p class="mess-p">Both sides lose context. Every time.</p>
+        </div>
+    </section>
+
+    <!-- SECTION 3 — THE IDEA -->
+    <section class="idea-section">
+        <div class="reveal">
+            <h2 class="section-h2" style="margin-bottom: 56px">
+                Everything about the collaboration.<br>
+                <span style="color: var(--vooki-accent)">In one place.</span>
+            </h2>
+        </div>
+
+        <div class="reveal flow-container" style="transition-delay: 150ms">
+            <div class="flow-step"><span class="flow-text accent">Discover</span><span class="flow-arrow">→</span></div>
+            <div class="flow-step"><span class="flow-text">Invite</span><span class="flow-arrow">→</span></div>
+            <div class="flow-step"><span class="flow-text">Negotiate</span><span class="flow-arrow">→</span></div>
+            <div class="flow-step"><span class="flow-text">Agree</span><span class="flow-arrow">→</span></div>
+            <div class="flow-step"><span class="flow-text">Create</span><span class="flow-arrow">→</span></div>
+            <div class="flow-step"><span class="flow-text">Review</span><span class="flow-arrow">→</span></div>
+            <div class="flow-step"><span class="flow-text">Pay</span><span class="flow-arrow">→</span></div>
+            <div class="flow-step"><span class="flow-text accent">Measure</span></div>
+        </div>
+
+        <div class="reveal" style="transition-delay: 250ms">
+            <p class="idea-p">
+                Vooki brings the entire collaboration lifecycle into one workspace.
+                No scattered DMs. No lost files. No chasing payments.
+            </p>
+        </div>
+    </section>
+
+    <!-- SECTION 4 — HOW IT WORKS -->
+    <section class="how-section">
+        <div class="grid-3">
+            <div class="reveal">
+                <div class="moment-number">01</div>
+                <h3 class="moment-h3">Find the right creator.</h3>
+                <p class="moment-p">Search by niche, platform, reach, engagement — or browse actual work. Not just
+                    follower counts.</p>
+            </div>
+            <div class="reveal" style="transition-delay: 120ms">
+                <div class="moment-number">02</div>
+                <h3 class="moment-h3">Make the deal clear.</h3>
+                <p class="moment-p">Send a structured invite. Negotiate openly. Agree on terms both sides can see.</p>
+            </div>
+            <div class="reveal" style="transition-delay: 240ms">
+                <div class="moment-number">03</div>
+                <h3 class="moment-h3">Track everything that matters.</h3>
+                <p class="moment-p">Deliverables. Approvals. Payments. Performance. All in the collaboration workspace.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 5 — TWO SIDES -->
+    <section class="sides-section">
+        <div class="grid-2">
+            <!-- Creator side -->
+            <div class="reveal">
+                <div class="side-header">
+                    <div class="side-dot creator"></div>
+                    <span class="side-label creator">For creators</span>
+                </div>
+                <ul class="side-list">
+                    <li class="side-item"><span class="side-dash">—</span>See real offers, not vague DMs</li>
+                    <li class="side-item"><span class="side-dash">—</span>Know exactly what's expected</li>
+                    <li class="side-item"><span class="side-dash">—</span>Get paid on time, with visibility</li>
+                    <li class="side-item"><span class="side-dash">—</span>Build a portfolio that proves your work</li>
+                </ul>
+            </div>
+
+            <!-- Brand side -->
+            <div class="reveal" style="transition-delay: 150ms">
+                <div class="side-header">
+                    <div class="side-dot brand"></div>
+                    <span class="side-label brand">For brands</span>
+                </div>
+                <ul class="side-list">
+                    <li class="side-item"><span class="side-dash">—</span>Find creators based on actual content</li>
+                    <li class="side-item"><span class="side-dash">—</span>Negotiate in one place</li>
+                    <li class="side-item"><span class="side-dash">—</span>Manage deliverables without spreadsheets</li>
+                    <li class="side-item"><span class="side-dash">—</span>See what your money delivered</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 6 — PHILOSOPHY -->
+    <section class="philosophy-section">
+        <div class="reveal">
+            <h2 class="section-h2" style="margin-bottom: 80px">
+                Built around relationships,<br>
+                not transactions.
+            </h2>
+        </div>
+
+        <div class="phil-container">
+            <div class="reveal phil-item">
+                <h3 class="phil-h3">No commission on payments.</h3>
+                <p class="phil-p">Brand pays the creator directly. Vooki tracks it.</p>
+            </div>
+            <div class="reveal phil-item" style="transition-delay: 100ms">
+                <h3 class="phil-h3">Actual work matters.</h3>
+                <p class="phil-p">Creators are evaluated by content quality and performance — not just followers.</p>
+            </div>
+            <div class="reveal phil-item" style="transition-delay: 200ms">
+                <h3 class="phil-h3">The whole lifecycle.</h3>
+                <p class="phil-p">From the first discovery to the fifth collaboration. Every interaction in one place.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 7 — FINAL CTA -->
+    <section class="cta-section">
+        <div class="cta-glow"></div>
+        <div class="reveal">
+            <h2 class="cta-h2">
+                Ready to make collaborations<br>
+                simpler?
+            </h2>
+        </div>
+        <div class="reveal" style="transition-delay: 120ms">
+            <div class="btn-large-soon">Coming Soon</div>
+        </div>
+        <div class="reveal" style="transition-delay: 200ms">
+            <p class="cta-subtext">Free to join. No commission on your collaborations.</p>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-logo">
+            <img src="/images/company_logo/Vooki_logo_bgRemovedSvg.svg" alt="Vooki Logo"
+                style="height: 24px; width: auto;" />
+            <span class="footer-text">vooki</span>
+        </div>
+        <p class="footer-copy">© 2026 Vooki. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Scroll navigation effect
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 40) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Intersection Observer for fade-in animations
+        const revealElements = document.querySelectorAll('.reveal');
+
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.15
+        };
+
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        revealElements.forEach(el => {
+            observer.observe(el);
+        });
+    </script>
+</body>
+
+</html>

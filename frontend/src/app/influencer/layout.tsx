@@ -15,6 +15,7 @@ import {
 
 import { useRouteTitle } from "@/hooks/useRouteTitle";
 import { WorkspaceShell, type WorkspaceNavItem } from "@/components/workspace/workspace-shell";
+import { useAuth } from "@/context/auth-context";
 
 const sidebarItems: WorkspaceNavItem[] = [
   { label: "Dashboard", href: "/influencer/dashboard", icon: HomeIcon },
@@ -56,9 +57,20 @@ const routeTitle: Record<string, string> = {
 };
 
 export default function InfluencerLayout({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const pageTitle = useRouteTitle(routeTitle, "Creator Workspace", [
     { prefix: "/influencer/my-collabs/", title: "Collaboration Detail" },
   ]);
+
+  const name = user?.name || user?.username || "Creator";
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .map((n) => n[0])
+    .join("")
+    .substring(0, 2)
+    .toUpperCase();
+  const meta = user?.username ? `@${user.username}` : user?.email || "@creator";
 
   return (
     <WorkspaceShell
@@ -67,9 +79,10 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
       pageTitle={pageTitle}
       brandIcon={Sparkles}
       brandIconAccent="var(--vooki-violet)"
-      accountName="John Doe"
-      accountMeta="@johndoe"
-      accountInitials="JD"
+      accountName={name}
+      accountMeta={meta}
+      accountInitials={initials || "CR"}
+      accountAvatar={user?.avatar || "/images/defaults/creator.svg"}
       sidebarItems={sidebarItems}
       mobilePrimary={mobilePrimary}
       settingsHref="/influencer/settings"

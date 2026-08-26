@@ -22,6 +22,8 @@ export const initializeSocket = (expressApp: any) => {
       transports: ["websocket", "polling"],
     });
 
+    expressApp.set("io", io);
+
     // Apply authentication middleware
     io.use((socket: any, next: any) => {
       socketAuthMiddleware(socket, next);

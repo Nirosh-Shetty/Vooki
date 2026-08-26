@@ -3,11 +3,14 @@ import Conversation from "../../models/Conversation";
 import Message from "../../models/Message";
 import UserModel from "../../models/Users";
 import DiscoverInviteModel from "../../models/DiscoverInvite";
+import PromotionModel from "../../models/Promotion";
 import { getRequestUserId } from "../../utils/requestUser";
 import {
   findOrCreateDirectConversation,
   reconcileDirectConversationsForUser,
+  cleanupEmptyDirectConversations,
 } from "../../utils/directConversation";
+import { canInitiateConversation } from "../../utils/messagingAuthorization";
 
 // Get all conversations for a user with pagination
 export const getConversations = async (
@@ -23,13 +26,14 @@ export const getConversations = async (
     const { page = 1, limit = 20, status = "active" } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
+    await cleanupEmptyDirectConversations(userId);
     await reconcileDirectConversationsForUser(userId);
 
     const conversations = await Conversation.find({
       participants: userId,
       status,
     })
-      .sort({ lastMessageAt: -1 })
+      .sort({ lastMessageAt: -1, updatedAt: -1, createdAt: -1 })
       .skip(skip)
       .limit(Number(limit))
       .lean();
@@ -39,12 +43,20 @@ export const getConversations = async (
         const otherParticipantId = conv.participants.find(
           (id: string) => id !== userId
         );
-        const otherUser = await UserModel.findById(otherParticipantId, {
+        const otherUserDoc = await UserModel.findById(otherParticipantId, {
           name: 1,
           username: 1,
+          avatar: 1,
           profilePicture: 1,
           role: 1,
         }).lean();
+
+        const otherUser = otherUserDoc
+          ? {
+              ...otherUserDoc,
+              profilePicture: otherUserDoc.avatar || (otherUserDoc as any).profilePicture || null,
+            }
+          : null;
 
         const unreadCount = await Message.countDocuments({
           conversationId: conv._id,
@@ -72,6 +84,9 @@ export const getConversations = async (
           lastMessage: conv.lastMessage || "",
           lastMessageAt: conv.lastMessageAt,
           status: conv.status,
+          isStoppedByBrand: Boolean(conv.isStoppedByBrand),
+          stoppedBy: conv.stoppedBy || null,
+          stoppedAt: conv.stoppedAt || null,
           unreadCount,
           otherUser,
           invites: formattedInvites,
@@ -123,15 +138,51 @@ export const getMessages = async (
       .limit(Number(limit))
       .lean();
 
+    // Mark messages from other participants as read when reading messages
+    const updateResult = await Message.updateMany(
+      {
+        conversationId,
+        senderId: { $ne: userId },
+        read: false,
+      },
+      {
+        read: true,
+        readAt: new Date(),
+      }
+    );
+
+    if (updateResult.modifiedCount > 0) {
+      const io = req.app.get("io");
+      if (io) {
+        const roomName = `conversation:${conversationId}`;
+        io.to(roomName).emit("messages-read", {
+          conversationId,
+          readBy: userId,
+          readAt: new Date(),
+        });
+      }
+    }
+
     const orderedMessages = messages.reverse();
 
     const enrichedMessages = await Promise.all(
       orderedMessages.map(async (msg: any) => {
-        const sender = await UserModel.findById(msg.senderId, {
+        const senderDoc = await UserModel.findById(msg.senderId, {
           name: 1,
           username: 1,
+          avatar: 1,
           profilePicture: 1,
         }).lean();
+
+        const sender = senderDoc
+          ? {
+              ...senderDoc,
+              profilePicture: senderDoc.avatar || (senderDoc as any).profilePicture || null,
+            }
+          : null;
+
+        const isMe = String(msg.senderId) === String(userId);
+        const isRead = isMe ? msg.read : true; // Messages read by current user
 
         return {
           id: (msg._id as any).toString(),
@@ -142,8 +193,8 @@ export const getMessages = async (
           offerData: msg.offerData || null,
           mediaUrl: msg.mediaUrl,
           mediaType: msg.mediaType,
-          read: msg.read,
-          readAt: msg.readAt,
+          read: isRead,
+          readAt: msg.readAt || (isRead ? new Date() : undefined),
           createdAt: msg.createdAt,
         };
       })
@@ -180,18 +231,34 @@ export const getOrCreateConversation = async (
       return res.status(400).json({ message: "otherUserId is required" });
     }
 
+    // Role-based security check (Rules 1, 2, 3)
+    const auth = await canInitiateConversation(userId, String(otherUserId));
+    if (!auth.allowed) {
+      return res.status(403).json({ message: auth.reason || "Forbidden" });
+    }
+
+    await cleanupEmptyDirectConversations(userId);
+
     const conversation = await findOrCreateDirectConversation(userId, String(otherUserId));
     if (conversation.status !== "active") {
       conversation.status = "active";
       await conversation.save();
     }
 
-    const otherUser = await UserModel.findById(otherUserId, {
+    const otherUserDoc = await UserModel.findById(otherUserId, {
       name: 1,
       username: 1,
+      avatar: 1,
       profilePicture: 1,
       role: 1,
     }).lean();
+
+    const otherUser = otherUserDoc
+      ? {
+          ...otherUserDoc,
+          profilePicture: otherUserDoc.avatar || (otherUserDoc as any).profilePicture || null,
+        }
+      : null;
 
     const unreadCount = await Message.countDocuments({
       conversationId: conversation._id,
@@ -206,12 +273,79 @@ export const getOrCreateConversation = async (
         lastMessage: conversation.lastMessage || "",
         lastMessageAt: conversation.lastMessageAt,
         status: conversation.status,
+        isStoppedByBrand: Boolean(conversation.isStoppedByBrand),
+        stoppedBy: conversation.stoppedBy || null,
+        stoppedAt: conversation.stoppedAt || null,
         unreadCount,
         otherUser,
       },
     });
   } catch (error) {
     console.error("Error getting/creating conversation:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Toggle pausing/resuming creator messages in a conversation (Rule 4)
+export const toggleStopCreatorMessages = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const userId = getRequestUserId(req);
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { conversationId } = req.params;
+    const { stopped } = req.body; // optional explicit boolean
+
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation || !conversation.participants.includes(userId)) {
+      return res.status(403).json({ message: "Forbidden: Not a participant in this conversation." });
+    }
+
+    // Verify requester is a brand or manager
+    const requester = await UserModel.findById(userId, { role: 1 }).lean();
+    if (!requester || (requester.role !== "brand" && requester.role !== "manager")) {
+      return res.status(403).json({ message: "Only brands can pause or resume creator messages." });
+    }
+
+    const nextState = typeof stopped === "boolean" ? stopped : !conversation.isStoppedByBrand;
+    conversation.isStoppedByBrand = nextState;
+    conversation.stoppedBy = nextState ? userId : null;
+    conversation.stoppedAt = nextState ? new Date() : null;
+
+    await conversation.save();
+
+    // Broadcast update via socket to conversation room
+    const io = req.app.get("io");
+    if (io) {
+      const roomName = `conversation:${conversationId}`;
+      io.to(roomName).emit("conversation-status-updated", {
+        conversationId,
+        isStoppedByBrand: conversation.isStoppedByBrand,
+        stoppedBy: conversation.stoppedBy,
+        stoppedAt: conversation.stoppedAt,
+      });
+      io.to(roomName).emit("conversation-updated", {
+        conversationId,
+        isStoppedByBrand: conversation.isStoppedByBrand,
+        stoppedBy: conversation.stoppedBy,
+        stoppedAt: conversation.stoppedAt,
+      });
+    }
+
+    return res.status(200).json({
+      message: conversation.isStoppedByBrand
+        ? "Creator messages paused successfully"
+        : "Creator messages resumed successfully",
+      isStoppedByBrand: conversation.isStoppedByBrand,
+      stoppedBy: conversation.stoppedBy,
+      stoppedAt: conversation.stoppedAt,
+    });
+  } catch (error) {
+    console.error("Error toggling creator messages:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -237,7 +371,7 @@ export const markMessagesAsRead = async (
       return res.status(403).json({ message: "Forbidden" });
     }
 
-    await Message.updateMany(
+    const updateResult = await Message.updateMany(
       {
         conversationId,
         senderId: { $ne: userId },
@@ -249,7 +383,20 @@ export const markMessagesAsRead = async (
       }
     );
 
-    return res.status(200).json({ message: "Messages marked as read" });
+    const io = req.app.get("io");
+    if (io) {
+      const roomName = `conversation:${conversationId}`;
+      io.to(roomName).emit("messages-read", {
+        conversationId,
+        readBy: userId,
+        readAt: new Date(),
+      });
+    }
+
+    return res.status(200).json({
+      message: "Messages marked as read",
+      updatedCount: updateResult.modifiedCount,
+    });
   } catch (error) {
     console.error("Error marking messages as read:", error);
     return res.status(500).json({ message: "Internal server error" });
@@ -297,25 +444,72 @@ export const searchMessaging = async (
     }
 
     if (type === "all" || type === "users") {
-      const users = await UserModel.find(
-        {
-          $or: [
-            { name: { $regex: searchQuery, $options: "i" } },
-            { username: { $regex: searchQuery, $options: "i" } },
-          ],
-          _id: { $ne: userId },
-        },
-        {
-          name: 1,
-          username: 1,
-          profilePicture: 1,
-          role: 1,
-        }
-      )
-        .limit(10)
-        .lean();
+      const requester = await UserModel.findById(userId, { role: 1 }).lean();
 
-      results.users = users;
+      if (requester?.role === "influencer") {
+        // Creators cannot search other creators (Rule 3)
+        // Creators can only find brands that sent them an invite or collaboration
+        const [invites, promotions] = await Promise.all([
+          DiscoverInviteModel.find({ influencerId: userId }).select("brandId").lean(),
+          PromotionModel.find({ influencerId: userId }).select("brandId").lean(),
+        ]);
+        const allowedBrandIds = Array.from(
+          new Set([
+            ...invites.map((i) => String(i.brandId)),
+            ...promotions.map((p) => String(p.brandId)),
+          ])
+        );
+
+        const users = await UserModel.find(
+          {
+            _id: { $in: allowedBrandIds },
+            role: "brand",
+            $or: [
+              { name: { $regex: searchQuery, $options: "i" } },
+              { username: { $regex: searchQuery, $options: "i" } },
+            ],
+          },
+          {
+            name: 1,
+            username: 1,
+            avatar: 1,
+            profilePicture: 1,
+            role: 1,
+          }
+        )
+          .limit(10)
+          .lean();
+
+        results.users = users.map((u: any) => ({
+          ...u,
+          profilePicture: u.avatar || u.profilePicture || null,
+        }));
+      } else {
+        // Brands and managers can search for creators and users
+        const users = await UserModel.find(
+          {
+            $or: [
+              { name: { $regex: searchQuery, $options: "i" } },
+              { username: { $regex: searchQuery, $options: "i" } },
+            ],
+            _id: { $ne: userId },
+          },
+          {
+            name: 1,
+            username: 1,
+            avatar: 1,
+            profilePicture: 1,
+            role: 1,
+          }
+        )
+          .limit(10)
+          .lean();
+
+        results.users = users.map((u: any) => ({
+          ...u,
+          profilePicture: u.avatar || u.profilePicture || null,
+        }));
+      }
     }
 
     return res.status(200).json(results);
@@ -352,6 +546,42 @@ export const archiveConversation = async (
     return res.status(200).json({ message: "Conversation archived" });
   } catch (error) {
     console.error("Error archiving conversation:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Delete an empty direct conversation if no message was sent
+export const deleteEmptyConversation = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const userId = getRequestUserId(req);
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { conversationId } = req.params;
+    if (!conversationId) {
+      return res.status(400).json({ message: "conversationId is required" });
+    }
+
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation || !conversation.participants.includes(userId)) {
+      return res.status(404).json({ message: "Conversation not found" });
+    }
+
+    const msgCount = await Message.countDocuments({ conversationId, isDeleted: false });
+    const inviteCount = await DiscoverInviteModel.countDocuments({ conversationId: String(conversationId) });
+
+    if (msgCount === 0 && inviteCount === 0 && !conversation.campaignId && !conversation.promotionId) {
+      await conversation.deleteOne();
+      return res.status(200).json({ success: true, message: "Empty conversation deleted" });
+    }
+
+    return res.status(200).json({ success: false, message: "Conversation is not empty" });
+  } catch (error) {
+    console.error("Error deleting empty conversation:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };

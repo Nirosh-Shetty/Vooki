@@ -346,26 +346,26 @@
   --vooki-shadow-app: 0 22px 60px rgba(0, 0, 0, 0.12);
   --vooki-shadow-app-soft: 0 12px 40px rgba(15, 17, 13, 0.04);
 
-  --vooki-home-bg: #11130f;
-  --vooki-home-bg-strong: #0f110d;
-  --vooki-home-nav: rgba(17, 19, 15, 0.8);
-  --vooki-home-surface: rgba(23, 25, 21, 0.85);
-  --vooki-home-surface-strong: #1b1d18;
-  --vooki-home-surface-muted: rgba(255, 255, 255, 0.03);
-  --vooki-home-surface-hover: rgba(255, 255, 255, 0.06);
-  --vooki-home-chip: rgba(255, 255, 255, 0.05);
-  --vooki-home-chip-hover: rgba(255, 255, 255, 0.08);
-  --vooki-home-border: rgba(255, 255, 255, 0.1);
-  --vooki-home-border-soft: rgba(255, 255, 255, 0.08);
-  --vooki-home-text: #f4f1e8;
-  --vooki-home-text-soft: #f0ede5;
-  --vooki-home-text-muted: #b4aea1;
-  --vooki-home-text-subtle: #a8a398;
-  --vooki-home-text-faint: #8f8a7f;
-  --vooki-home-text-dim: #9e988b;
-  --vooki-home-glow-green: rgba(185, 217, 108, 0.12);
-  --vooki-home-glow-violet: rgba(184, 168, 232, 0.12);
-  --vooki-home-glow-blue: rgba(141, 169, 214, 0.1);
+  --vooki-home-bg: #f7f2e8;
+  --vooki-home-bg-strong: #f0ebdf;
+  --vooki-home-nav: rgba(247, 242, 232, 0.85);
+  --vooki-home-surface: rgba(255, 255, 255, 0.85);
+  --vooki-home-surface-strong: #ffffff;
+  --vooki-home-surface-muted: rgba(0, 0, 0, 0.03);
+  --vooki-home-surface-hover: rgba(0, 0, 0, 0.06);
+  --vooki-home-chip: rgba(0, 0, 0, 0.04);
+  --vooki-home-chip-hover: rgba(0, 0, 0, 0.08);
+  --vooki-home-border: rgba(0, 0, 0, 0.1);
+  --vooki-home-border-soft: rgba(0, 0, 0, 0.06);
+  --vooki-home-text: #221d16;
+  --vooki-home-text-soft: #5d564c;
+  --vooki-home-text-muted: #8b8477;
+  --vooki-home-text-subtle: #6f6a60;
+  --vooki-home-text-faint: #a19a8d;
+  --vooki-home-text-dim: #b8b1a4;
+  --vooki-home-glow-green: rgba(199, 226, 122, 0.3);
+  --vooki-home-glow-violet: rgba(184, 168, 232, 0.3);
+  --vooki-home-glow-blue: rgba(141, 169, 214, 0.3);
 
   --vooki-app-bg: #f7f2e8;
   --vooki-app-surface: rgba(252, 250, 244, 0.85);
@@ -414,6 +414,27 @@
   --vooki-app-glow-green: rgba(185, 217, 108, 0.1);
   --vooki-app-glow-violet: rgba(184, 168, 232, 0.1);
   --vooki-app-glow-blue: rgba(141, 169, 214, 0.1);
+
+  --vooki-home-bg: #11130f;
+  --vooki-home-bg-strong: #0f110d;
+  --vooki-home-nav: rgba(17, 19, 15, 0.8);
+  --vooki-home-surface: rgba(23, 25, 21, 0.85);
+  --vooki-home-surface-strong: #1b1d18;
+  --vooki-home-surface-muted: rgba(255, 255, 255, 0.03);
+  --vooki-home-surface-hover: rgba(255, 255, 255, 0.06);
+  --vooki-home-chip: rgba(255, 255, 255, 0.05);
+  --vooki-home-chip-hover: rgba(255, 255, 255, 0.08);
+  --vooki-home-border: rgba(255, 255, 255, 0.1);
+  --vooki-home-border-soft: rgba(255, 255, 255, 0.08);
+  --vooki-home-text: #f4f1e8;
+  --vooki-home-text-soft: #f0ede5;
+  --vooki-home-text-muted: #b4aea1;
+  --vooki-home-text-subtle: #a8a398;
+  --vooki-home-text-faint: #8f8a7f;
+  --vooki-home-text-dim: #9e988b;
+  --vooki-home-glow-green: rgba(185, 217, 108, 0.12);
+  --vooki-home-glow-violet: rgba(184, 168, 232, 0.12);
+  --vooki-home-glow-blue: rgba(141, 169, 214, 0.1);
 }
 
 /* Hide scrollbar while keeping scroll functionality */

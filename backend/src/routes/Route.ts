@@ -8,6 +8,8 @@ import profileRouter from "./profile.route";
 import promotionRouter from "./promotion.route";
 import socialRouter from "./social.route";
 import collaborationRouter from "./collaborationInvite.route";
+import influencerRouter from "./influencer/influencer.route";
+import settingsRouter from "./settings.route";
 const router = express.Router();
 
 router.use("/auth", authRouter);
@@ -19,5 +21,7 @@ router.use("/profile", profileRouter);
 router.use("/promotions", promotionRouter);
 router.use("/social", socialRouter);
 router.use("/collaborations", collaborationRouter);
+router.use("/influencer", influencerRouter);
+router.use("/settings", settingsRouter);
 
 export default router;

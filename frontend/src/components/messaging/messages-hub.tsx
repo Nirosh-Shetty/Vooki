@@ -18,12 +18,20 @@ import {
   Loader2,
   MoreVertical,
   Paperclip,
+  PauseCircle,
+  PlayCircle,
   Plus,
   Search,
   Send,
   Smile,
   User,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { CounterOfferModal } from "@/components/collaboration/CounterOfferModal";
 import { DeclineConfirmDialog } from "@/components/collaboration/DeclineConfirmDialog";
 
@@ -37,7 +45,6 @@ interface HubOfferData {
   deliverableSummary?: string;
   paymentAmount?: number;
   advanceAmount?: number;
-  draftDueAt?: string | Date | null;
   postAt?: string | Date | null;
   hashtags?: string[];
   discountCode?: string;
@@ -55,6 +62,9 @@ export interface HubConversation {
   lastMessageAt: string;
   unreadCount: number;
   status: "active" | "pending" | "closed";
+  isStoppedByBrand?: boolean;
+  stoppedBy?: string | null;
+  stoppedAt?: string | null;
   online: boolean;
   threadType?: "direct" | "campaign" | "collaboration";
   campaignId?: string;
@@ -89,6 +99,7 @@ interface MessagesHubProps {
     payload: { conversation: HubConversation; message: HubMessage }
   ) => Promise<void> | void;
   onCreateConversation?: (userId: string) => Promise<void>;
+  onToggleStopCreatorMessages?: (conversationId: string, stopped?: boolean) => Promise<void> | void;
   isLoading?: boolean;
   initialDraft?: string;
 }
@@ -154,12 +165,21 @@ function ConversationAvatar({
   online?: boolean;
   size?: "sm" | "md";
 }) {
-  const isImage = Boolean(conversation.profileURL);
+  const [imgError, setImgError] = useState(false);
+  const potentialPic =
+    conversation.profileURL ||
+    (conversation.avatar?.startsWith("http") ||
+    conversation.avatar?.startsWith("/") ||
+    conversation.avatar?.startsWith("data:")
+      ? conversation.avatar
+      : null);
+  const imageUrl = !imgError && potentialPic ? potentialPic.trim() : null;
+  const isImage = Boolean(imageUrl);
   const label = getAvatarInitial(conversation);
   const avatarStyle = getAvatarStyle(conversation);
   const sizeClasses = size === "sm"
-    ? "h-9 w-9 sm:h-11 sm:w-11 rounded-xl sm:rounded-2xl text-xs sm:text-sm"
-    : "h-10 w-10 rounded-2xl text-sm";
+    ? "h-10 w-10 sm:h-11 sm:w-11 rounded-full text-xs sm:text-sm"
+    : "h-11 w-11 rounded-full text-sm";
   const badgeClass = size === "sm"
     ? "h-2.5 w-2.5 sm:h-3 sm:w-3"
     : "h-3 w-3";
@@ -172,11 +192,12 @@ function ConversationAvatar({
       >
         {isImage ? (
           <img
-            src={conversation.profileURL!}
+            src={imageUrl!}
             alt={conversation.name}
+            onError={() => setImgError(true)}
             className="h-full w-full object-cover"
           />
-        ) : conversation.icon ? (
+        ) : conversation.icon && conversation.icon.length <= 2 ? (
           <span>{conversation.icon}</span>
         ) : (
           <span>{label}</span>
@@ -242,11 +263,7 @@ function StructuredOfferCard({ message, actions }: { message: HubMessage; action
             </p>
           </div>
           <div className="rounded-xl border border-current/10 bg-[color:var(--vooki-app-surface-card)] px-3 py-2 ">
-            <p className="text-[11px] uppercase tracking-wide opacity-60">Draft due</p>
-            <p className="mt-1 font-medium">{formatDate(offer?.draftDueAt)}</p>
-          </div>
-          <div className="rounded-xl border border-current/10 bg-[color:var(--vooki-app-surface-card)] px-3 py-2 ">
-            <p className="text-[11px] uppercase tracking-wide opacity-60">Post by</p>
+            <p className="text-[11px] uppercase tracking-wide opacity-60">Target Posting Date</p>
             <p className="mt-1 font-medium">{formatDate(offer?.postAt)}</p>
           </div>
           <div className="rounded-xl border border-current/10 bg-[color:var(--vooki-app-surface-card)] px-3 py-2 ">
@@ -291,6 +308,8 @@ export function MessagesHub({
   onSendMessage,
   onStructuredMessageAction,
   onCreateConversation,
+  onToggleStopCreatorMessages,
+  isLoading = false,
   initialDraft,
 }: MessagesHubProps) {
   const [activeTab, setActiveTab] = useState<HubConversation["status"] | "all">("all");
@@ -302,6 +321,7 @@ export function MessagesHub({
   const [draft, setDraft] = useState("");
   const [searchDialogOpen, setSearchDialogOpen] = useState(false);
   const [creatingConversation, setCreatingConversation] = useState(false);
+  const [togglingStop, setTogglingStop] = useState(false);
   const [cardActionKey, setCardActionKey] = useState<string | null>(null);
   const [cardActionError, setCardActionError] = useState<string | null>(null);
   const [counterModal, setCounterModal] = useState<{
@@ -312,6 +332,18 @@ export function MessagesHub({
   const [declineModal, setDeclineModal] = useState<{ open: boolean; inviteId: string } | null>(
     null
   );
+
+  const handleToggleStopCreator = async (conversationId: string, stopped?: boolean) => {
+    if (!onToggleStopCreatorMessages) return;
+    try {
+      setTogglingStop(true);
+      await onToggleStopCreatorMessages(conversationId, stopped);
+    } catch (error) {
+      console.error("Failed to toggle creator messages:", error);
+    } finally {
+      setTogglingStop(false);
+    }
+  };
 
   useEffect(() => {
     if (providedSelectedId !== undefined) {
@@ -379,10 +411,18 @@ export function MessagesHub({
   const handleUserSelected = async (user: any) => {
     try {
       setCreatingConversation(true);
+      setCardActionError(null);
       await onCreateConversation?.(user.id);
+      setMobileChatOpen(true);
       setSearchDialogOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to create conversation:", error);
+      setCardActionError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Unable to start conversation with this user."
+      );
+      setSearchDialogOpen(false);
     } finally {
       setCreatingConversation(false);
     }
@@ -441,14 +481,16 @@ export function MessagesHub({
                     className="h-11 rounded-full border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] pl-10 text-[color:var(--vooki-app-text-strong)] placeholder:text-[color:var(--vooki-app-text-muted)]"
                   />
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setSearchDialogOpen(true)}
-                  className="h-11 w-11 rounded-full border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-hover)]"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
+                {(role === "brand" || role === "manager") && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSearchDialogOpen(true)}
+                    className="h-11 w-11 rounded-full border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-hover)]"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
               <Tabs
                 value={activeTab}
@@ -503,9 +545,14 @@ export function MessagesHub({
                           <p className="truncate text-[11px] sm:text-xs text-[color:var(--vooki-app-text-soft)]">
                             {conversation.lastMessage}
                           </p>
-                          <div className="ml-2 flex items-center gap-2">
+                          <div className="ml-2 flex items-center gap-1.5">
+                            {conversation.isStoppedByBrand ? (
+                              <Badge className="border border-amber-300 dark:border-amber-500/30 bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-500/20 px-2 py-0.5 text-[10px] font-medium rounded-full">
+                                Paused
+                              </Badge>
+                            ) : null}
                             <Dot className={`h-4 w-4 ${statusDotStyles[conversation.status]}`} />
-                            {conversation.unreadCount > 0 ? (
+                            {conversation.unreadCount > 0 && !isSelected ? (
                               <Badge className="border-0 bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] hover:bg-[color:var(--vooki-accent)] px-1.5 py-0 text-[10px]">
                                 {conversation.unreadCount}
                               </Badge>
@@ -533,8 +580,13 @@ export function MessagesHub({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 rounded-full text-[color:var(--vooki-app-text-soft)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)] lg:hidden"
-                        onClick={() => setMobileChatOpen(false)}
+                        className="h-8 w-8 shrink-0 rounded-full text-[color:var(--vooki-app-text-soft)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)]"
+                        onClick={() => {
+                          setMobileChatOpen(false);
+                          setSelectedId(null);
+                          onSelectConversation?.("");
+                        }}
+                        title="Back"
                       >
                         <ArrowLeft className="h-4 w-4" />
                       </Button>
@@ -544,21 +596,67 @@ export function MessagesHub({
                         size="md"
                       />
                       <div className="min-w-0">
-                        <CardTitle className="truncate text-base text-[color:var(--vooki-app-text-strong)]">
-                          {selectedConversation.name}
-                        </CardTitle>
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="truncate text-base text-[color:var(--vooki-app-text-strong)]">
+                            {selectedConversation.name}
+                          </CardTitle>
+                          {selectedConversation.isStoppedByBrand ? (
+                            <Badge className="border border-amber-300 dark:border-amber-500/30 bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-500/20 text-xs px-2.5 py-0.5 font-medium rounded-full shadow-xs">
+                              Messages Paused
+                            </Badge>
+                          ) : null}
+                        </div>
                         <p className="text-xs text-[color:var(--vooki-app-text-muted)]">
                           {selectedConversation.context}
                         </p>
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-full text-[color:var(--vooki-app-text-muted)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)]"
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
+
+                    {(role === "brand" || role === "manager") ? (
+                      <DropdownMenu modal={false}>
+                        <DropdownMenuTrigger asChild id={`conversation-more-menu-trigger-${selectedConversation.id}`}>
+                          <Button
+                            id={`conversation-more-menu-button-${selectedConversation.id}`}
+                            variant="ghost"
+                            size="icon"
+                            disabled={togglingStop}
+                            className="h-8 w-8 rounded-full text-[color:var(--vooki-app-text-muted)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)]"
+                          >
+                            {togglingStop ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <MoreVertical className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" id={`conversation-more-menu-content-${selectedConversation.id}`} className="w-56 rounded-2xl border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-card)] p-1.5 shadow-xl">
+                          <DropdownMenuItem
+                            onClick={() => handleToggleStopCreator(selectedConversation.id, !selectedConversation.isStoppedByBrand)}
+                            className="flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-hover)] focus:bg-[color:var(--vooki-app-surface-hover)]"
+                          >
+                            {selectedConversation.isStoppedByBrand ? (
+                              <>
+                                <PlayCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                <span className="text-emerald-800 dark:text-emerald-300">Resume Creator Messages</span>
+                              </>
+                            ) : (
+                              <>
+                                <PauseCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                <span className="text-amber-900 dark:text-amber-300">Pause Creator Messages</span>
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-full text-[color:var(--vooki-app-text-muted)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)]"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </CardHeader>
 
@@ -572,181 +670,208 @@ export function MessagesHub({
                     </div>
                   ) : null}
 
-                  {selectedMessages.map((message) => {
-                    const isStructured =
-                      message.messageType === "offer" || message.messageType === "counter_offer";
-                    const collaborationHref = getCollaborationHref(
-                      role,
-                      message.offerData?.promotionId
-                    );
-                    const isIncoming = message.sender === "other";
+                  {isLoading ? (
+                    <div className="flex h-full min-h-[220px] flex-col items-center justify-center gap-3 text-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-[color:var(--vooki-accent)]" />
+                      <p className="text-xs font-medium text-[color:var(--vooki-app-text-muted)]">
+                        Loading messages...
+                      </p>
+                    </div>
+                  ) : selectedMessages.length === 0 ? (
+                    <div className="flex h-full min-h-[220px] flex-col items-center justify-center gap-2 text-center">
+                      <p className="text-sm font-medium text-[color:var(--vooki-app-text-strong)]">
+                        No messages yet
+                      </p>
+                      <p className="text-xs text-[color:var(--vooki-app-text-muted)]">
+                        Send a message to start the conversation.
+                      </p>
+                    </div>
+                  ) : (
+                    selectedMessages.map((message) => {
+                      const isStructured =
+                        message.messageType === "offer" || message.messageType === "counter_offer";
+                      const collaborationHref = getCollaborationHref(
+                        role,
+                        message.offerData?.promotionId
+                      );
+                      const isIncoming = message.sender === "other";
 
-                    const messageInviteId = message.offerData?.inviteId;
-                    const messageInvite = messageInviteId
-                      ? selectedConversation?.invites?.[messageInviteId]
-                      : undefined;
+                      const messageInviteId = message.offerData?.inviteId;
+                      const messageInvite = messageInviteId
+                        ? selectedConversation?.invites?.[messageInviteId]
+                        : undefined;
 
-                    const messageKey =
-                      messageInviteId || message.offerData?.campaignId || "default";
-                    const isLatestStructured =
-                      message.id === latestStructuredMessageIdsByInvite[messageKey];
+                      const messageKey =
+                        messageInviteId || message.offerData?.campaignId || "default";
+                      const isLatestStructured =
+                        message.id === latestStructuredMessageIdsByInvite[messageKey];
 
-                    const isPending = messageInvite
-                      ? messageInvite.status === "pending" ||
-                        messageInvite.status === "counter_offered"
-                      : selectedConversation?.status === "pending";
+                      const isPending = messageInvite
+                        ? messageInvite.status === "pending" ||
+                          messageInvite.status === "counter_offered"
+                        : selectedConversation?.status === "pending";
 
-                    const showAcceptRejectActions =
-                      isPending &&
-                      isLatestStructured &&
-                      (!messageInvite || !message.offerData?.promotionId) &&
-                      ((role === "influencer" &&
-                        isIncoming &&
-                        (message.messageType === "offer" ||
-                          message.messageType === "counter_offer")) ||
-                        ((role === "brand" || role === "manager") &&
+                      const showAcceptRejectActions =
+                        isPending &&
+                        isLatestStructured &&
+                        (!messageInvite || !message.offerData?.promotionId) &&
+                        ((role === "influencer" &&
                           isIncoming &&
-                          message.messageType === "counter_offer"));
+                          (message.messageType === "offer" ||
+                            message.messageType === "counter_offer")) ||
+                          ((role === "brand" || role === "manager") &&
+                            isIncoming &&
+                            message.messageType === "counter_offer"));
 
-                    const actions =
-                      isStructured && isIncoming ? (
-                        <>
-                          {showAcceptRejectActions ? (
-                            <>
-                              <Button
-                                size="sm"
-                                onClick={() =>
-                                  handleStructuredAction(
-                                    "accept_offer",
-                                    selectedConversation,
-                                    message
-                                  )
-                                }
-                                disabled={cardActionKey !== null}
-                                className="rounded-full border border-[color:var(--vooki-accent-border)] bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] shadow-[var(--vooki-shadow-accent)] hover:bg-[color:var(--vooki-accent-strong)]"
-                              >
-                                {cardActionKey === `${message.id}:accept_offer` ? (
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                ) : null}
-                                Accept offer
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  handleStructuredAction(
-                                    "request_changes",
-                                    selectedConversation,
-                                    message
-                                  )
-                                }
-                                disabled={cardActionKey !== null}
-                              >
-                                {cardActionKey === `${message.id}:request_changes` ? (
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                ) : null}
-                                Ask for revision
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="text-[color:var(--vooki-warm)] hover:bg-[color:var(--vooki-warm-soft)] hover:text-[color:var(--vooki-warm)]"
-                                onClick={() =>
-                                  handleStructuredAction("decline", selectedConversation, message)
-                                }
-                                disabled={cardActionKey !== null}
-                              >
-                                Decline
-                              </Button>
-                            </>
-                          ) : null}
-
-                          {!showAcceptRejectActions && collaborationHref ? (
-                            <Button size="sm" variant="outline" asChild>
-                              <Link href={collaborationHref}>Open collaboration</Link>
-                            </Button>
-                          ) : null}
-                        </>
-                      ) : null;
-
-                    return (
-                      <div
-                        key={message.id}
-                        className={`flex ${message.sender === "me" ? "justify-end" : "justify-start"}`}
-                      >
-                        {isStructured ? (
-                          <StructuredOfferCard message={message} actions={actions} />
-                        ) : (
-                          <div
-                            className={`max-w-[78%] rounded-[22px] px-4 py-2.5 ${
-                              message.sender === "me"
-                                ? "bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)]"
-                                : "border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-strong)]"
-                            }`}
-                          >
-                            <div className="space-y-1">
-                              {(message.text || "").split("\n").map((line, index) => (
-                                <p
-                                  key={`${message.id}-${index}`}
-                                  className="text-sm leading-relaxed"
+                      const actions =
+                        isStructured && isIncoming ? (
+                          <>
+                            {showAcceptRejectActions ? (
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() =>
+                                    handleStructuredAction(
+                                      "accept_offer",
+                                      selectedConversation,
+                                      message
+                                    )
+                                  }
+                                  disabled={cardActionKey !== null}
+                                  className="rounded-full border border-[color:var(--vooki-accent-border)] bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] shadow-[var(--vooki-shadow-accent)] hover:bg-[color:var(--vooki-accent-strong)]"
                                 >
-                                  {line || " "}
-                                </p>
-                              ))}
-                            </div>
-                            <div className="mt-1.5 flex items-center justify-end gap-1 text-[11px] opacity-80">
-                              <span>{message.timestamp}</span>
-                              {message.sender === "me" ? (
-                                message.read ? (
-                                  <CheckCheck className="h-3 w-3" />
+                                  {cardActionKey === `${message.id}:accept_offer` ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  ) : null}
+                                  Accept offer
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    handleStructuredAction(
+                                      "request_changes",
+                                      selectedConversation,
+                                      message
+                                    )
+                                  }
+                                  disabled={cardActionKey !== null}
+                                >
+                                  {cardActionKey === `${message.id}:request_changes` ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  ) : null}
+                                  Ask for revision
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-[color:var(--vooki-warm)] hover:bg-[color:var(--vooki-warm-soft)] hover:text-[color:var(--vooki-warm)]"
+                                  onClick={() =>
+                                    handleStructuredAction("decline", selectedConversation, message)
+                                  }
+                                  disabled={cardActionKey !== null}
+                                >
+                                  Decline
+                                </Button>
+                              </>
+                            ) : null}
+
+                            {!showAcceptRejectActions && collaborationHref ? (
+                              <Button size="sm" variant="outline" asChild>
+                                <Link href={collaborationHref}>Open collaboration</Link>
+                              </Button>
+                            ) : null}
+                          </>
+                        ) : null;
+
+                      return (
+                        <div
+                          key={message.id}
+                          className={`flex ${message.sender === "me" ? "justify-end" : "justify-start"}`}
+                        >
+                          {isStructured ? (
+                            <StructuredOfferCard message={message} actions={actions} />
+                          ) : (
+                            <div
+                              className={`max-w-[78%] rounded-[22px] px-4 py-2.5 ${
+                                message.sender === "me"
+                                  ? "bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)]"
+                                  : "border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-strong)]"
+                              }`}
+                            >
+                              <div className="space-y-1">
+                                {(message.text || "").split("\n").map((line, index) => (
+                                  <p
+                                    key={`${message.id}-${index}`}
+                                    className="text-sm leading-relaxed"
+                                  >
+                                    {line || " "}
+                                  </p>
+                                ))}
+                              </div>
+                              <div className="mt-1.5 flex items-center justify-end gap-1 text-[11px] opacity-80">
+                                <span>{message.timestamp}</span>
+                                {message.sender === "me" ? (
+                                  message.read ? (
+                                    <CheckCheck className="h-3 w-3" />
+                                  ) : (
+                                    <Check className="h-3 w-3" />
+                                  )
                                 ) : (
-                                  <Check className="h-3 w-3" />
-                                )
-                              ) : (
-                                <Circle className="h-1.5 w-1.5 fill-current stroke-none" />
-                              )}
+                                  <Circle className="h-1.5 w-1.5 fill-current stroke-none" />
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
                 </CardContent>
 
-                <div className="border-t border-[color:var(--vooki-app-border-strong)] p-3 sm:p-4">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9 rounded-full text-[color:var(--vooki-app-text-muted)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)]"
-                    >
-                      <Paperclip className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9 rounded-full text-[color:var(--vooki-app-text-muted)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)]"
-                    >
-                      <Smile className="h-4 w-4" />
-                    </Button>
-                    <Input
-                      placeholder={composerPlaceholder}
-                      value={draft}
-                      onChange={(event) => setDraft(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") sendMessage();
-                      }}
-                      className="h-11 rounded-full border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-strong)] placeholder:text-[color:var(--vooki-app-text-muted)]"
-                    />
-                    <Button
-                      onClick={sendMessage}
-                      disabled={!draft.trim()}
-                      className="h-11 w-11 rounded-full bg-[color:var(--vooki-accent)] p-0 text-[color:var(--vooki-accent-text)] shadow-[var(--vooki-shadow-accent)] hover:bg-[color:var(--vooki-accent-strong)]"
-                    >
-                      <Send className="h-4 w-4" />
-                    </Button>
+                {selectedConversation.isStoppedByBrand && role === "influencer" ? (
+                  <div className="border-t border-[color:var(--vooki-app-border-strong)] p-4">
+                    <div className="flex items-center justify-center gap-2.5 rounded-2xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-xs font-medium text-amber-950 dark:text-amber-200 shadow-xs">
+                      <PauseCircle className="h-4 w-4 shrink-0 text-amber-700 dark:text-amber-400" />
+                      <span>The brand has paused messages for this conversation. You will be able to reply when the brand resumes messages.</span>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="border-t border-[color:var(--vooki-app-border-strong)] p-3 sm:p-4">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 rounded-full text-[color:var(--vooki-app-text-muted)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)]"
+                      >
+                        <Paperclip className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 rounded-full text-[color:var(--vooki-app-text-muted)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)]"
+                      >
+                        <Smile className="h-4 w-4" />
+                      </Button>
+                      <Input
+                        placeholder={composerPlaceholder}
+                        value={draft}
+                        onChange={(event) => setDraft(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") sendMessage();
+                        }}
+                        className="h-11 rounded-full border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-strong)] placeholder:text-[color:var(--vooki-app-text-muted)]"
+                      />
+                      <Button
+                        onClick={sendMessage}
+                        disabled={!draft.trim()}
+                        className="h-11 w-11 rounded-full bg-[color:var(--vooki-accent)] p-0 text-[color:var(--vooki-accent-text)] shadow-[var(--vooki-shadow-accent)] hover:bg-[color:var(--vooki-accent-strong)]"
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               <div className="flex h-full items-center justify-center p-6 text-center">

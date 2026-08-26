@@ -63,15 +63,22 @@ const saveSocialConnection = async (
   platform: string,
   payload: SocialConnection
 ) => {
-  const connections = toSocialConnectionsMap(user.statsConnection);
-  const nextConnection = mergeSocialConnection(platform, connections.get(platform), payload);
+  if (!user.InfluencerProfile) {
+    user.InfluencerProfile = {} as any;
+  }
+
+  const connections = toSocialConnectionsMap(user.InfluencerProfile!.statsConnection);
+
+  const nextConnection = mergeSocialConnection(
+    platform,
+    connections.get(platform),
+    payload
+  );
   connections.set(platform, nextConnection);
-  user.statsConnection = connections;
-  user.influencerProfile = {
-    ...(user.influencerProfile || {}),
-    statsConnection: connections,
-  };
-  user.markModified("statsConnection");
+
+  user.InfluencerProfile!.statsConnection = connections;
+
+  user.markModified("InfluencerProfile.statsConnection");
   await user.save();
   return nextConnection;
 };
@@ -173,28 +180,62 @@ export const handleYoutubeCallback = async (req: Request, res: Response) => {
   if (error) {
     return res.status(400).json({ message: "YouTube connection denied" });
   }
+
   await handleSocialCallback(state as string, res, async (userId) => {
     const oauth2Client = buildYoutubeClient();
     const { tokens } = await oauth2Client.getToken(code as string);
     oauth2Client.setCredentials(tokens);
+
     const youtube = google.youtube("v3");
+    const ytAnalytics = google.youtubeAnalytics("v2");
+
+    // 1. Fetch channel snippet & basic stats
     const response = await youtube.channels.list({
       auth: oauth2Client,
       part: ["snippet", "statistics"],
       mine: true,
     });
+
     const channel = response.data.items?.[0];
     if (!channel) {
       throw { status: 400, message: "Unable to fetch YouTube channel" };
     }
+
+    let totalLikes = 0;
+    let totalComments = 0;
+
+    // 2. Fetch channel-wide aggregate likes and comments
+    try {
+      const analyticsRes = await ytAnalytics.reports.query({
+        auth: oauth2Client,
+        ids: "channel==MINE",
+        startDate: "2005-01-01",
+        endDate: new Date().toISOString().split("T")[0],
+        metrics: "likes,comments",
+      });
+
+      const rows = analyticsRes.data.rows;
+      if (rows && rows.length > 0) {
+        totalLikes = Number(rows[0][0] || 0);
+        totalComments = Number(rows[0][1] || 0);
+      }
+    } catch (analyticsErr) {
+      console.warn("Analytics API query failed, skipping aggregate engagement:", analyticsErr);
+    }
+
+    // 3. Assign metrics directly without checking channel.statistics.commentCount
     const metrics = {
       subscribers: Number(channel.statistics?.subscriberCount || 0),
       totalViews: Number(channel.statistics?.viewCount || 0),
       videoCount: Number(channel.statistics?.videoCount || 0),
       hiddenSubscriberCount: Boolean(channel.statistics?.hiddenSubscriberCount),
+      likes: totalLikes,
+      comments: totalComments,
     };
+
     const user = await UserModel.findById(userId);
     if (!user) throw { status: 404, message: "User not found" };
+
     await saveSocialConnection(user, "youtube", {
       platform: "youtube",
       accessToken: tokens.access_token ?? undefined,
@@ -211,11 +252,11 @@ export const handleYoutubeCallback = async (req: Request, res: Response) => {
       metrics,
       lastSynced: new Date(),
     });
+
     setAuthTokenCookie(res, user);
     return res.redirect(`${process.env.FRONTEND_URL}/influencer/profile?connected=youtube`);
   });
 };
-
 export const startInstagramConnect = async (req: Request, res: Response) => {
   const userId = requireAuthUser(req, res);
   if (!userId) return;
@@ -300,14 +341,41 @@ export const connectSocialAccount = async (req: Request, res: Response) => {
 };
 
 export const getSocialConnections = async (req: Request, res: Response) => {
-  const userId = requireAuthUser(req, res);
-  if (!userId) return;
-  const user = await UserModel.findById(userId).select("statsConnection influencerProfile.statsConnection");
-  if (!user) return res.status(404).json({ message: "User not found" });
-  const source = user.statsConnection || user.influencerProfile?.statsConnection;
-  return res.status(200).json({
-    connections: normalizeSocialConnectionsRecord(source),
-  });
+  try {
+    const userId = requireAuthUser(req, res);
+    if (!userId) return;
+
+    // Use .lean() for fast read-only queries and plain JS objects
+    const user = await UserModel.findById(userId)
+      .select("statsConnection InfluencerProfile.statsConnection")
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const source = user.InfluencerProfile?.statsConnection || (user as any).statsConnection;
+    const rawConnections = normalizeSocialConnectionsRecord(source);
+
+    // Sanitize to prevent leaking sensitive OAuth access/refresh tokens to the client
+    const connections: Record<string, any> = {};
+    if (rawConnections && typeof rawConnections === "object") {
+      for (const [platform, conn] of Object.entries(rawConnections)) {
+        if (!conn) continue;
+        const c = conn as any;
+        connections[platform] = {
+          platform: c.platform || platform,
+          profile: c.profile || null,
+          metrics: c.metrics || null,
+          lastSynced: c.lastSynced || null,
+        };
+      }
+    }
+    return res.status(200).json({ connections });
+  } catch (error) {
+    console.error("Error in getSocialConnections:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 };
 
 export const updateSocialMetrics = async (req: Request, res: Response) => {
@@ -320,7 +388,7 @@ export const updateSocialMetrics = async (req: Request, res: Response) => {
   }
   const user = await UserModel.findById(userId);
   if (!user) return res.status(404).json({ message: "User not found" });
-  const connections = toSocialConnectionsMap(user.statsConnection || user.influencerProfile?.statsConnection);
+  const connections = toSocialConnectionsMap(user.statsConnection || user.InfluencerProfile?.statsConnection);
   if (!connections.get(platform)) {
     return res.status(404).json({ message: "Connection not found" });
   }
@@ -330,4 +398,98 @@ export const updateSocialMetrics = async (req: Request, res: Response) => {
     lastSynced: new Date(),
   });
   return res.status(200).json({ message: "Stats updated", platform });
+};
+
+export const getConnectedAccounts = async (req: Request, res: Response) => {
+  const userId = requireAuthUser(req, res);
+  if (!userId) return;
+
+  // Use .lean() for read-only queries
+  const user = await UserModel.findById(userId).lean();
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  const connections: Record<string, SocialConnection> = {};
+  const statsMap = user.InfluencerProfile?.statsConnection;
+
+  if (statsMap) {
+    // If statsMap is a Map or a plain Object from lean()
+    const entries = statsMap instanceof Map
+      ? Array.from(statsMap.entries())
+      : Object.entries(statsMap);
+
+    for (const [platformKey, conn] of entries) {
+      if (!conn) continue;
+
+      connections[platformKey] = {
+        platform: conn.platform || platformKey,
+        profile: conn.profile,
+        metrics: conn.metrics,
+        lastSynced: conn.lastSynced
+          ? conn.lastSynced instanceof Date ? conn.lastSynced : new Date(conn.lastSynced)
+          : null,
+      };
+    }
+  }
+
+  return res.status(200).json({ connections });
+};
+
+
+export const handleYoutubeDisconnect = async (req: Request, res: Response) => {
+  try {
+    const userId = requireAuthUser(req, res);
+    if (!userId) return;
+
+    if (!ensureInfluencer(req)) {
+      return res.status(403).json({ message: "Only influencers can manage connected accounts" });
+    }
+
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const connections = toSocialConnectionsMap(
+      user.InfluencerProfile?.statsConnection || (user as any).statsConnection
+    );
+
+    const ytConnection = connections.get("youtube");
+    if (!ytConnection) {
+      return res.status(404).json({ message: "YouTube account is not connected" });
+    }
+
+    // Attempt to revoke the Google OAuth token
+    const tokenToRevoke = ytConnection.refreshToken || ytConnection.accessToken;
+    if (tokenToRevoke) {
+      try {
+        const oauth2Client = buildYoutubeClient();
+        await oauth2Client.revokeToken(tokenToRevoke);
+      } catch (revokeErr) {
+        console.warn("Failed to revoke YouTube OAuth token with Google:", revokeErr);
+      }
+    }
+
+    // Remove YouTube from the connection map
+    connections.delete("youtube");
+
+    if (user.InfluencerProfile) {
+      user.InfluencerProfile.statsConnection = connections;
+      user.markModified("InfluencerProfile.statsConnection");
+    }
+
+    if ((user as any).statsConnection) {
+      (user as any).statsConnection = connections;
+      user.markModified("statsConnection");
+    }
+
+    await user.save();
+
+    return res.status(200).json({
+      message: "YouTube account disconnected successfully",
+      platform: "youtube",
+    });
+  } catch (error) {
+    console.error("Error in handleYoutubeDisconnect:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 };

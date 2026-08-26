@@ -59,8 +59,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         const tokenPayload = decodeToken(token);
         setUserId(tokenPayload?.id ?? null);
 
-        console.log("Fetched socket token:", tokenPayload);
-
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
         // Initialize socket connection
