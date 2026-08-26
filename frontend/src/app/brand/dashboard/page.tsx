@@ -60,8 +60,6 @@ type Campaign = {
   endDate: string;
   invitedCreators: number;
   acceptedCreators: number;
-  deliverablesDone: number;
-  deliverablesTotal: number;
   updatedAt: string;
 };
 
@@ -786,8 +784,8 @@ function BrandDashboardContent() {
                 .slice(0, 4)
                 .map((c) => {
                   const pct =
-                    c.deliverablesTotal > 0
-                      ? Math.round((c.deliverablesDone / c.deliverablesTotal) * 100)
+                    c.budgetTotal > 0
+                      ? Math.min(100, Math.round((c.budgetSpent / c.budgetTotal) * 100))
                       : 0;
                   return (
                     <Link
@@ -819,7 +817,7 @@ function BrandDashboardContent() {
                         />
                       </div>
                       <p className="mt-1.5 text-xs text-[color:var(--vooki-app-text-muted)]">
-                        {c.deliverablesDone} of {c.deliverablesTotal} deliverables done
+                        {money(c.budgetSpent)} of {money(c.budgetTotal)} spent
                       </p>
                     </Link>
                   );

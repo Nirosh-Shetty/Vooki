@@ -47,8 +47,6 @@ const formatCampaign = (campaign: any) => ({
   endDate: campaign.endDate,
   invitedCreators: Number(campaign.invitedCreators || 0),
   acceptedCreators: Number(campaign.acceptedCreators || 0),
-  deliverablesDone: Number(campaign.deliverablesDone || 0),
-  deliverablesTotal: Number(campaign.deliverablesTotal || 0),
   createdAt: campaign.createdAt,
   updatedAt: campaign.updatedAt,
 });
@@ -79,8 +77,6 @@ export const createCampaign = async (
       roi = 0,
       startDate,
       endDate,
-      deliverablesTotal = 0,
-      deliverablesDone = 0,
       invitedCreators = 0,
       acceptedCreators = 0,
     } = req.body || {};
@@ -92,8 +88,6 @@ export const createCampaign = async (
     const totalBudget = parseNumber(budgetTotal);
     const spentBudget = parseNumber(budgetSpent) ?? 0;
     const parsedRoi = parseNumber(roi) ?? 0;
-    const parsedDeliverablesTotal = Math.max(0, parseNumber(deliverablesTotal) ?? 0);
-    const parsedDeliverablesDone = Math.max(0, parseNumber(deliverablesDone) ?? 0);
     const parsedInvitedCreators = Math.max(0, parseNumber(invitedCreators) ?? 0);
     const parsedAcceptedCreators = Math.max(0, parseNumber(acceptedCreators) ?? 0);
     const parsedStartDate = startDate ? new Date(startDate) : null;
@@ -124,9 +118,6 @@ export const createCampaign = async (
     if (parsedAcceptedCreators > parsedInvitedCreators) {
       return res.status(400).json({ message: "acceptedCreators cannot exceed invitedCreators" });
     }
-    if (parsedDeliverablesDone > parsedDeliverablesTotal) {
-      return res.status(400).json({ message: "deliverablesDone cannot exceed deliverablesTotal" });
-    }
 
     const campaign = await CampaignModel.create({
       brandId: requester.id,
@@ -141,8 +132,6 @@ export const createCampaign = async (
       roi: parsedRoi,
       startDate: parsedStartDate,
       endDate: parsedEndDate,
-      deliverablesTotal: parsedDeliverablesTotal,
-      deliverablesDone: parsedDeliverablesDone,
       invitedCreators: parsedInvitedCreators,
       acceptedCreators: parsedAcceptedCreators,
     });
@@ -307,8 +296,6 @@ export const updateCampaign = async (
       endDate,
       invitedCreators,
       acceptedCreators,
-      deliverablesDone,
-      deliverablesTotal,
     } = req.body || {};
 
     if (name !== undefined) {
@@ -383,20 +370,6 @@ export const updateCampaign = async (
       }
       updates.acceptedCreators = value;
     }
-    if (deliverablesDone !== undefined) {
-      const value = parseNumber(deliverablesDone);
-      if (value === undefined || value < 0) {
-        return res.status(400).json({ message: "deliverablesDone must be a non-negative number" });
-      }
-      updates.deliverablesDone = value;
-    }
-    if (deliverablesTotal !== undefined) {
-      const value = parseNumber(deliverablesTotal);
-      if (value === undefined || value < 0) {
-        return res.status(400).json({ message: "deliverablesTotal must be a non-negative number" });
-      }
-      updates.deliverablesTotal = value;
-    }
 
     const nextBudgetTotal = updates.budgetTotal ?? campaign.budgetTotal;
     const nextBudgetSpent = updates.budgetSpent ?? campaign.budgetSpent;
@@ -404,9 +377,6 @@ export const updateCampaign = async (
     const nextEndDate = updates.endDate ?? campaign.endDate;
     const nextInvitedCreators = updates.invitedCreators ?? campaign.invitedCreators;
     const nextAcceptedCreators = updates.acceptedCreators ?? campaign.acceptedCreators;
-    const nextDeliverablesDone = updates.deliverablesDone ?? campaign.deliverablesDone;
-    const nextDeliverablesTotal =
-      updates.deliverablesTotal ?? campaign.deliverablesTotal;
 
     if (nextBudgetSpent > nextBudgetTotal) {
       return res.status(400).json({ message: "budgetSpent cannot exceed budgetTotal" });
@@ -416,9 +386,6 @@ export const updateCampaign = async (
     }
     if (nextAcceptedCreators > nextInvitedCreators) {
       return res.status(400).json({ message: "acceptedCreators cannot exceed invitedCreators" });
-    }
-    if (nextDeliverablesDone > nextDeliverablesTotal) {
-      return res.status(400).json({ message: "deliverablesDone cannot exceed deliverablesTotal" });
     }
 
     Object.assign(campaign, updates);

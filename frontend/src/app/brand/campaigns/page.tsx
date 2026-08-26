@@ -46,8 +46,6 @@ type Campaign = {
   endDate: string
   invitedCreators: number
   acceptedCreators: number
-  deliverablesDone: number
-  deliverablesTotal: number
 }
 
 type CampaignListResponse = {

@@ -84,20 +84,21 @@
 
 ## 10. Current Task / Work In Progress
 
-* **current objective**: Redesign the UI of the **Finance Page** (`/brand/payments/page.tsx`) and the **Invite Creator Modal** (`CreateInviteModal.tsx`).
-* **what was already completed**: An implementation plan was proposed and approved by the user. The dynamic Topbar fix was deployed.
-* **what remains**: Writing the actual React/Tailwind code to apply the Vooki theme to these two files.
-* **files being modified**: `d:\collaber\frontend\src\app\brand\payments\page.tsx`, `d:\collaber\frontend\src\components\collaboration\CreateInviteModal.tsx`.
-* **current implementation approach**: For the finance page, we want a glassmorphic hero dashboard with sleek transaction rows/cards featuring vibrant status badges and hover lifts. For the invite modal, break the long form into structured, card-like sections with premium controls.
-* **known blockers**: The AI agent failed to apply the code edit to `payments/page.tsx` because `TargetContent` for the `replace_file_content` tool could not exactly match the large file block.
-* **next steps**: Perform smaller, chunked edits using `multi_replace_file_content` or `replace_file_content` on `payments/page.tsx`, or overwrite the file entirely if it's safer.
+* **current objective**: Simplify collaboration timelines (removed multi-date flow `postingStartDate`, `postingEndDate`, `draftDueDate`, `responseDeadline` in favor of a single `targetDate` and `postAt`) and clean up schema consistency.
+* **what was already completed**: 
+  - Redesign of Finance page (`/brand/payments/page.tsx`) and Create Invite Modal (`CreateInviteModal.tsx`).
+  - Codebase standardization of `influencerDetails` -> `InfluencerProfile` sub-schema.
+  - Simplified timeline schema in `DiscoverInvite.ts` and `Promotion.ts`.
+  - Updated `collaborationInvite.controller.ts` and `promotion.controller.ts` to use simplified `targetDate` / `postAt`.
+  - Updated frontend forms and dashboards (`CreateInviteModal.tsx`, `promotion-workspace.tsx`, `messages-hub.tsx`, `brand/dashboard/page.tsx`, `influencer/dashboard/page.tsx`).
+  - Verified backend compilation (`tsc --noEmit` clean with 0 errors).
+* **what remains**: Verify any runtime behaviors or further profile renames requested by user.
+* **files modified**: `DiscoverInvite.ts`, `Promotion.ts`, `collaborationInvite.controller.ts`, `promotion.controller.ts`, `CreateInviteModal.tsx`, `promotion-workspace.tsx`, `messages-hub.tsx`, `messages-hub-content.tsx`, `app/brand/dashboard/page.tsx`, `app/influencer/dashboard/page.tsx`.
 
 ## 11. Bugs & Known Problems
 
-* **Symptom**: `replace_file_content` failed on `payments/page.tsx`.
-  * **Suspected cause**: Trying to replace 200+ lines at once often results in whitespace/indentation mismatch errors in the tool.
-  * **Next investigation**: Use multiple smaller `ReplacementChunks` or write the whole file from scratch using `write_to_file` if safe.
-* **Symptom**: Network drop (`wsarecv`) between IDE and AI server.
+* **Resolved**: TypeScript compilation errors in `collaborationInvite.controller.ts` and `promotion.controller.ts` resolved after schema simplification.
+* **Transient Issue**: IDE-to-server SSE/network dropouts (`wsarecv` / connection closed). Handled by checkpoint resumes.
   * **Cause**: Transient infrastructure timeout; resolved by restarting the session with this context file.
 
 ## 12. Important Conversation Decisions
