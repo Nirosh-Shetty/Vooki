@@ -137,7 +137,7 @@ export default function NewCampaignPage() {
 
   /* ── render ────────────────────────────────────────────────── */
   return (
-    <div className="relative flex h-[calc(100vh-64px)] flex-col text-[color:var(--vooki-app-text-strong)] overflow-hidden">
+    <div className="relative flex flex-col lg:h-[calc(100vh-64px)] min-h-[calc(100vh-64px)] text-[color:var(--vooki-app-text-strong)] lg:overflow-hidden">
       {/* glows */}
       <div className="pointer-events-none absolute -top-10 left-1/4 h-80 w-80 rounded-full bg-[color:var(--vooki-app-glow-green)] blur-3xl opacity-30" />
       <div className="pointer-events-none absolute top-1/3 right-1/4 h-80 w-80 rounded-full bg-[color:var(--vooki-app-glow-violet)] blur-3xl opacity-20" />
@@ -159,9 +159,9 @@ export default function NewCampaignPage() {
           type="submit"
           form="campaign-form"
           disabled={submitting || !checklist.ready}
-          className="hidden sm:flex h-9 rounded-xl px-5 text-sm font-extrabold bg-[color:var(--vooki-accent)] text-black hover:bg-[color:var(--vooki-accent-strong)] shadow-[var(--vooki-shadow-accent)] transition-transform hover:scale-[1.01] disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex h-9 rounded-xl px-4 sm:px-5 text-xs sm:text-sm font-extrabold bg-[color:var(--vooki-accent)] text-black hover:bg-[color:var(--vooki-accent-strong)] shadow-[var(--vooki-shadow-accent)] transition-transform hover:scale-[1.01] disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating...</> : "Launch Campaign"}
+          {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Wait...</> : "Launch"}
         </Button>
       </header>
 
@@ -169,7 +169,7 @@ export default function NewCampaignPage() {
       <div className="relative z-10 flex flex-1 gap-6 lg:gap-10 mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 min-h-0">
 
         {/* LEFT — scrollable form */}
-        <div className="flex-1 overflow-y-auto scrollbar-hide pb-10 px-2 -mx-2 min-w-0">
+        <div className="flex-1 lg:overflow-y-auto scrollbar-hide pb-8 lg:pb-10 px-2 -mx-2 min-w-0">
           <form onSubmit={handleSubmit} id="campaign-form" className="space-y-8">
 
             {error && (
@@ -387,7 +387,18 @@ export default function NewCampaignPage() {
               </div>
             </section>
 
-            <div className="h-2" />
+            {/* Mobile Inline CTA */}
+            <div className="lg:hidden pt-4">
+              <Button
+                type="submit"
+                disabled={submitting || !checklist.ready}
+                className="w-full h-11 rounded-xl font-extrabold bg-[color:var(--vooki-accent)] text-black hover:bg-[color:var(--vooki-accent-strong)] shadow-[var(--vooki-shadow-accent)] disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating...</> : "Launch Campaign"}
+              </Button>
+            </div>
+
+            <div className="h-4" />
           </form>
         </div>
 
@@ -463,18 +474,6 @@ export default function NewCampaignPage() {
               {/* CTA moved to header */}
           </div>
         </aside>
-      </div>
-
-      {/* Mobile bottom CTA */}
-      <div className="lg:hidden shrink-0 border-t border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface)] backdrop-blur-xl px-4 py-3">
-        <Button
-          type="submit"
-          form="campaign-form"
-          disabled={submitting || !checklist.ready}
-          className="w-full h-10 rounded-xl font-extrabold bg-[color:var(--vooki-accent)] text-black hover:bg-[color:var(--vooki-accent-strong)] shadow-[var(--vooki-shadow-accent)] disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating...</> : "Launch Campaign"}
-        </Button>
       </div>
     </div>
   )
