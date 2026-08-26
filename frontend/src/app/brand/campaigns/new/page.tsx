@@ -142,27 +142,24 @@ export default function NewCampaignPage() {
       <div className="pointer-events-none absolute -top-10 left-1/4 h-80 w-80 rounded-full bg-[color:var(--vooki-app-glow-green)] blur-3xl opacity-30" />
       <div className="pointer-events-none absolute top-1/3 right-1/4 h-80 w-80 rounded-full bg-[color:var(--vooki-app-glow-violet)] blur-3xl opacity-20" />
 
-      {/* ── fixed header ───────────────────────────────────────── */}
-      <header className="relative z-10 shrink-0 mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-5 pb-4 flex items-end justify-between">
-        <div>
-          <Button
-            asChild variant="ghost" size="sm"
-            className="group -ml-2 mb-1 gap-1.5 text-xs font-semibold text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] rounded-full px-3"
-          >
-            <Link href="/brand/campaigns">
-              <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
-              Campaigns
-            </Link>
-          </Button>
-          <h1 className="text-2xl font-extrabold tracking-tight">New Campaign</h1>
-        </div>
+      {/* ── Action Bar ───────────────────────────────────────── */}
+      <header className="relative z-10 shrink-0 mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 pt-4 pb-2 flex items-center justify-between">
+        <Button
+          asChild variant="ghost" size="sm"
+          className="group -ml-2 gap-1.5 text-xs font-semibold text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] rounded-full px-3"
+        >
+          <Link href="/brand/campaigns">
+            <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+            Back to Campaigns
+          </Link>
+        </Button>
 
         {/* Top CTA */}
         <Button
           type="submit"
           form="campaign-form"
           disabled={submitting || !checklist.ready}
-          className="hidden sm:flex h-10 rounded-xl px-6 font-extrabold bg-[color:var(--vooki-accent)] text-black hover:bg-[color:var(--vooki-accent-strong)] shadow-[var(--vooki-shadow-accent)] transition-transform hover:scale-[1.01] disabled:opacity-40 disabled:cursor-not-allowed"
+          className="hidden sm:flex h-9 rounded-xl px-5 text-sm font-extrabold bg-[color:var(--vooki-accent)] text-black hover:bg-[color:var(--vooki-accent-strong)] shadow-[var(--vooki-shadow-accent)] transition-transform hover:scale-[1.01] disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating...</> : "Launch Campaign"}
         </Button>
@@ -395,9 +392,8 @@ export default function NewCampaignPage() {
         </div>
 
         {/* RIGHT — sticky preview panel */}
-        <aside className="hidden lg:flex lg:w-[340px] xl:w-[360px] shrink-0 flex-col min-h-0">
-          <div className="flex-1 overflow-y-auto scrollbar-hide pb-8">
-            <div className="rounded-3xl border border-[color:var(--vooki-app-border-strong)] bg-gradient-to-b from-[color:var(--vooki-app-surface-card)] to-[color:var(--vooki-app-surface)] shadow-[var(--vooki-shadow-card)] backdrop-blur-2xl p-5 space-y-5">
+        <aside className="hidden lg:block lg:w-[340px] xl:w-[360px] shrink-0">
+          <div className="rounded-3xl border border-[color:var(--vooki-app-border-strong)] bg-gradient-to-b from-[color:var(--vooki-app-surface-card)] to-[color:var(--vooki-app-surface)] shadow-[var(--vooki-shadow-card)] backdrop-blur-2xl p-5 space-y-5">
 
               {/* Preview header */}
               <div className="flex items-center justify-between">
@@ -465,7 +461,6 @@ export default function NewCampaignPage() {
               </div>
 
               {/* CTA moved to header */}
-            </div>
           </div>
         </aside>
       </div>
