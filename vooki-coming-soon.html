@@ -211,6 +211,38 @@
             max-width: 640px;
         }
 
+        /* SVG scaling for mobile to prevent it from getting too tiny */
+        @media (max-width: 768px) {
+            .hero-svg .node-text {
+                font-size: 19px;
+            }
+
+            .hero-svg .node-big {
+                r: 36px;
+                stroke-width: 2.5px;
+            }
+
+            .hero-svg .node-small {
+                r: 9px;
+            }
+
+            .hero-svg .hero-line {
+                stroke-width: 2.5px;
+            }
+
+            .hero-svg .text-below {
+                transform: translateY(26px);
+            }
+
+            .hero-svg .text-above-high {
+                transform: translateY(-12px);
+            }
+
+            .hero-svg .text-above-low {
+                transform: translateY(-8px);
+            }
+        }
+
         /* Mess Section */
         .mess-section {
             padding: 120px 24px 100px;
@@ -553,8 +585,9 @@
     <!-- NAVIGATION -->
     <nav id="navbar">
         <a href="#" class="logo-container">
-            <img src="/images/company_logo/Vooki_logo_bgRemovedSvg.svg" alt="Vooki Logo"
-                style="height: 32px; width: auto;" />
+            <div class="logo-mark">
+                <div class="logo-mark-inner"></div>
+            </div>
             <span class="logo-text">vooki</span>
         </a>
         <div class="nav-actions">
@@ -579,35 +612,38 @@
 
         <div class="reveal" style="transition-delay: 400ms; width: 100%; display: flex; justify-content: center;">
             <div class="hero-visual">
-                <svg viewBox="0 0 640 120" fill="none" style="width: 100%; height: auto;">
+                <svg class="hero-svg" viewBox="0 0 640 120" fill="none" style="width: 100%; height: auto;">
                     <!-- Flow line -->
-                    <path d="M 80 60 C 160 20, 240 100, 320 60 C 400 20, 480 100, 560 60"
+                    <path class="hero-line" d="M 80 60 C 160 20, 240 100, 320 60 C 400 20, 480 100, 560 60"
                         stroke="var(--vooki-home-border)" stroke-width="1.5" fill="none" />
                     <!-- Creator circle -->
-                    <circle cx="80" cy="60" r="22" fill="var(--vooki-accent)" opacity="0.9" />
-                    <text x="80" y="100" text-anchor="middle" fill="var(--vooki-home-text-muted)" font-size="11"
-                        font-weight="500">Creator</text>
+                    <circle class="node-big" cx="80" cy="60" r="22" fill="var(--vooki-accent)" opacity="0.9" />
+                    <text class="node-text text-below" x="80" y="100" text-anchor="middle"
+                        fill="var(--vooki-home-text-muted)" font-size="11" font-weight="500">Creator</text>
                     <!-- Brand circle -->
-                    <circle cx="560" cy="60" r="22" fill="var(--vooki-home-text)" opacity="0.15" />
-                    <circle cx="560" cy="60" r="22" stroke="var(--vooki-home-text)" stroke-width="1.5" fill="none"
-                        opacity="0.4" />
-                    <text x="560" y="100" text-anchor="middle" fill="var(--vooki-home-text-muted)" font-size="11"
-                        font-weight="500">Brand</text>
+                    <circle class="node-big" cx="560" cy="60" r="22" fill="var(--vooki-home-text)" opacity="0.15" />
+                    <circle class="node-big" cx="560" cy="60" r="22" stroke="var(--vooki-home-text)" stroke-width="1.5"
+                        fill="none" opacity="0.4" />
+                    <text class="node-text text-below" x="560" y="100" text-anchor="middle"
+                        fill="var(--vooki-home-text-muted)" font-size="11" font-weight="500">Brand</text>
                     <!-- Mid-point nodes -->
                     <g>
-                        <circle cx="200" cy="42.3" r="5" fill="var(--vooki-accent)" opacity="0.6" />
-                        <text x="200" y="28.3" text-anchor="middle" fill="var(--vooki-home-text-faint)" font-size="10"
-                            font-weight="500" letter-spacing="0.04em">Deal</text>
+                        <circle class="node-small" cx="200" cy="42.3" r="5" fill="var(--vooki-accent)" opacity="0.6" />
+                        <text class="node-text text-above-high" x="200" y="28.3" text-anchor="middle"
+                            fill="var(--vooki-home-text-faint)" font-size="10" font-weight="500"
+                            letter-spacing="0.04em">Deal</text>
                     </g>
                     <g>
-                        <circle cx="320" cy="60" r="5" fill="var(--vooki-accent)" opacity="0.6" />
-                        <text x="320" y="46" text-anchor="middle" fill="var(--vooki-home-text-faint)" font-size="10"
-                            font-weight="500" letter-spacing="0.04em">Content</text>
+                        <circle class="node-small" cx="320" cy="60" r="5" fill="var(--vooki-accent)" opacity="0.6" />
+                        <text class="node-text text-above-low" x="320" y="46" text-anchor="middle"
+                            fill="var(--vooki-home-text-faint)" font-size="10" font-weight="500"
+                            letter-spacing="0.04em">Content</text>
                     </g>
                     <g>
-                        <circle cx="440" cy="42.3" r="5" fill="var(--vooki-accent)" opacity="0.6" />
-                        <text x="440" y="28.3" text-anchor="middle" fill="var(--vooki-home-text-faint)" font-size="10"
-                            font-weight="500" letter-spacing="0.04em">Payment</text>
+                        <circle class="node-small" cx="440" cy="42.3" r="5" fill="var(--vooki-accent)" opacity="0.6" />
+                        <text class="node-text text-above-high" x="440" y="28.3" text-anchor="middle"
+                            fill="var(--vooki-home-text-faint)" font-size="10" font-weight="500"
+                            letter-spacing="0.04em">Payment</text>
                     </g>
                 </svg>
             </div>
@@ -770,13 +806,22 @@
     <!-- FOOTER -->
     <footer>
         <div class="footer-logo">
-            <img src="/images/company_logo/Vooki_logo_bgRemovedSvg.svg" alt="Vooki Logo"
-                style="height: 24px; width: auto;" />
+            <div class="footer-mark">
+                <div class="footer-mark-inner"></div>
+            </div>
             <span class="footer-text">vooki</span>
         </div>
         <p class="footer-copy">© 2026 Vooki. All rights reserved.</p>
     </footer>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-9JXVXTX6Z1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
 
+        gtag('config', 'G-9JXVXTX6Z1');
+    </script>
     <script>
         // Scroll navigation effect
         const navbar = document.getElementById('navbar');
