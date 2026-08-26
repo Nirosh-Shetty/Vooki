@@ -1,16 +1,16 @@
-# Graph Report - collaber  (2026-08-20)
+# Graph Report - collaber  (2026-08-26)
 
 ## Corpus Check
-- 205 files · ~166,988 words
+- 209 files · ~176,056 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1135 nodes · 2344 edges · 87 communities (77 shown, 10 thin omitted)
+- 1138 nodes · 2345 edges · 85 communities (75 shown, 10 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 2 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `eb272308`
+- Built from commit: `d0d9a78d`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -73,10 +73,8 @@
 - [[_COMMUNITY_Community 77|Community 77]]
 - [[_COMMUNITY_Community 78|Community 78]]
 - [[_COMMUNITY_Community 79|Community 79]]
-- [[_COMMUNITY_Community 80|Community 80]]
 - [[_COMMUNITY_Community 81|Community 81]]
 - [[_COMMUNITY_Community 82|Community 82]]
-- [[_COMMUNITY_Community 83|Community 83]]
 - [[_COMMUNITY_Community 84|Community 84]]
 - [[_COMMUNITY_Community 85|Community 85]]
 - [[_COMMUNITY_Community 86|Community 86]]
@@ -91,31 +89,31 @@
 7. `CardHeader` - 26 edges
 8. `CardTitle` - 25 edges
 9. `Input()` - 25 edges
-10. `getRequestUserId()` - 24 edges
+10. `AI CONTEXT — STARTUP PROJECT` - 24 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `InfluencerDashboardContent()` --calls--> `useAuth()`  [INFERRED]
   frontend/src/app/influencer/dashboard/page.tsx → frontend/src/hooks/useAuth.ts
-- `AlertDialogOverlay()` --calls--> `cn()`  [EXTRACTED]
-  frontend/src/components/ui/alert-dialog.tsx → frontend/src/lib/utils.ts
 - `DialogFooter()` --calls--> `cn()`  [EXTRACTED]
   frontend/src/components/ui/dialog.tsx → frontend/src/lib/utils.ts
 - `DropdownMenuShortcut()` --calls--> `cn()`  [EXTRACTED]
   frontend/src/components/ui/dropdown-menu.tsx → frontend/src/lib/utils.ts
 - `requestOtp()` --calls--> `mailer()`  [EXTRACTED]
   backend/src/controllers/auth/auth.controller.ts → backend/src/utils/mailer/index.ts
+- `completeSocialAuth()` --calls--> `uploadProfilePhotoToCloud()`  [EXTRACTED]
+  backend/src/controllers/auth/auth.controller.ts → backend/src/utils/uploadProfilePhotoToCloud.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (87 total, 10 thin omitted)
+## Communities (85 total, 10 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.18
 Nodes (19): clamp(), createEarning(), enrichEarnings(), getEarningById(), getEarningsByCampaign(), getEarningViewer(), getInfluencerEarnings(), getInfluencerEarningsSummary() (+11 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.25
+Cohesion: 0.26
 Nodes (13): completeSocialAuth(), getCurrentUser(), getOAuthSession(), getSocketToken(), requestOtp(), signIn(), signout(), signUpBasicInfo() (+5 more)
 
 ### Community 2 - "Community 2"
@@ -131,8 +129,8 @@ Cohesion: 0.15
 Nodes (31): allowedStatuses, canAccessPromotion(), clamp(), confirmPaymentReceived(), createPromotion(), editableStatuses, formatPromotion(), getPromotionById() (+23 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.12
-Nodes (13): flowSteps, messChips, roles, ResultConfig, ResultStatus, forgotPasswordSchema, resetPasswordSchema, Button() (+5 more)
+Cohesion: 0.09
+Nodes (14): flowSteps, messChips, PaymentMethod, Priority, roles, PLATFORM_CONFIG, PlatformKey, QuickLinksProps (+6 more)
 
 ### Community 6 - "Community 6"
 Cohesion: 0.10
@@ -140,7 +138,7 @@ Nodes (39): buildInstagramUrl(), buildState(), buildYoutubeClient(), connectSoci
 
 ### Community 7 - "Community 7"
 Cohesion: 0.08
-Nodes (34): AboutCard(), AboutCardProps, CollabHistory, CollaborationsCard(), CollaborationsCardProps, InviteCardProps, statusMap, emptyForm (+26 more)
+Nodes (29): AboutCardProps, CollabHistory, CollaborationsCardProps, InviteCardProps, statusMap, EarningRecord, EarningStatus, EarningSummary (+21 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.10
@@ -151,8 +149,8 @@ Cohesion: 0.07
 Nodes (25): ProtectedRoute(), ProtectedRouteProps, activeCollaborations, ActivityEvent, audiencePulse, BrandDashboardContent(), Campaign, compact() (+17 more)
 
 ### Community 10 - "Community 10"
-Cohesion: 0.05
-Nodes (45): Campaign, CampaignListResponse, CampaignPriority, CampaignsPage(), CampaignStatus, formatMoney(), PaymentMethod, priorityPillClass (+37 more)
+Cohesion: 0.07
+Nodes (35): Campaign, CampaignListResponse, CampaignPriority, CampaignsPage(), CampaignStatus, formatMoney(), PaymentMethod, priorityPillClass (+27 more)
 
 ### Community 11 - "Community 11"
 Cohesion: 0.07
@@ -167,20 +165,20 @@ Cohesion: 0.11
 Nodes (17): Campaign, CampaignDetailPage(), CampaignInvite, CampaignPriority, CampaignResponse, CampaignStatus, Deliverable, formatDate() (+9 more)
 
 ### Community 14 - "Community 14"
-Cohesion: 0.07
-Nodes (19): earningsData, engagementData, platformData, summaryCards, tooltipStyle, topContent, InviteCard(), managedCreators (+11 more)
+Cohesion: 0.12
+Nodes (14): earningsData, engagementData, platformData, summaryCards, tooltipStyle, topContent, CounterOfferModalProps, InviteCard() (+6 more)
 
 ### Community 15 - "Community 15"
-Cohesion: 0.09
-Nodes (31): AskQuestionDialog(), AskQuestionDialogProps, CounterOfferModal(), DeclineConfirmDialog(), DeclineConfirmDialogProps, avatarPalette, ConversationAvatar(), formatDate() (+23 more)
+Cohesion: 0.12
+Nodes (17): CounterOfferModal(), DeclineConfirmDialog(), avatarPalette, ConversationAvatar(), formatDate(), formatMoney(), getAvatarInitial(), getAvatarStyle() (+9 more)
 
 ### Community 16 - "Community 16"
 Cohesion: 0.22
 Nodes (10): changePassword(), forgotPassword(), resetPassword(), setPasswordForOAuth(), mailer(), MailType, transporter, otpTemplate() (+2 more)
 
 ### Community 17 - "Community 17"
-Cohesion: 0.13
-Nodes (16): ConnectedAccounts(), ConnectedAccountsProps, FacebookConnectionEntry, formatMetric(), GenericSocialConnectionEntry, getPlatformTitle(), InstagramConnectionEntry, isFacebookConnection() (+8 more)
+Cohesion: 0.08
+Nodes (29): AboutCard(), CollaborationsCard(), ConnectedAccounts(), ConnectedAccountsProps, FacebookConnectionEntry, formatMetric(), GenericSocialConnectionEntry, getPlatformTitle() (+21 more)
 
 ### Community 18 - "Community 18"
 Cohesion: 0.10
@@ -188,7 +186,7 @@ Nodes (19): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModu
 
 ### Community 19 - "Community 19"
 Cohesion: 0.07
-Nodes (36): inter, BrandLayout(), mobilePrimary, routeTitle, sidebarItems, ThemeProvider(), AuthContext, AuthContextType (+28 more)
+Nodes (37): inter, BrandLayout(), mobilePrimary, routeTitle, sidebarItems, ThemeProvider(), AuthContext, AuthContextType (+29 more)
 
 ### Community 20 - "Community 20"
 Cohesion: 0.16
@@ -215,8 +213,8 @@ Cohesion: 0.13
 Nodes (15): devDependencies, autoprefixer, eslint, eslint-config-next, @eslint/eslintrc, postcss, prettier, tailwindcss (+7 more)
 
 ### Community 26 - "Community 26"
-Cohesion: 0.23
-Nodes (14): ThemeToggle(), cn(), Field(), FieldContent(), FieldDescription(), FieldError(), FieldGroup(), FieldLabel() (+6 more)
+Cohesion: 0.07
+Nodes (40): AskQuestionDialog(), AskQuestionDialogProps, DeclineConfirmDialogProps, ThemeToggle(), cn(), Alert, AlertDescription, AlertTitle (+32 more)
 
 ### Community 27 - "Community 27"
 Cohesion: 0.26
@@ -235,12 +233,12 @@ Cohesion: 0.08
 Nodes (24): 10. Current Task / Work In Progress, 11. Bugs & Known Problems, 12. Important Conversation Decisions, 13. User Requirements, 14. Coding Conventions, 15. Environment & Commands, 16. Environment Variables, 17. External Services (+16 more)
 
 ### Community 31 - "Community 31"
-Cohesion: 0.30
+Cohesion: 0.26
 Nodes (7): Request, User, AuthenticatedRequestUser, UserRole, AccessTokenPayload, RefreshTokenPayload, PassportUser
 
 ### Community 32 - "Community 32"
 Cohesion: 0.18
-Nodes (7): ChartConfig, ChartContainer, ChartContext, ChartContextProps, ChartLegendContent, ChartTooltipContent, THEMES
+Nodes (8): mockNetwork, NetworkInfluencer, NetworkStatus, forgotPasswordSchema, resetPasswordSchema, Button(), Input(), Label()
 
 ### Community 33 - "Community 33"
 Cohesion: 0.24
@@ -251,8 +249,8 @@ Cohesion: 0.25
 Nodes (15): addToDiscoverShortlist(), buildPromotionSeedFromCampaign(), clamp(), createDiscoverInvites(), ensureConversationForInvite(), findOrCreatePromotionForAcceptedInvite(), getDiscoverInfluencers(), getDiscoverInvites() (+7 more)
 
 ### Community 35 - "Community 35"
-Cohesion: 0.12
-Nodes (16): updateInfluencerSettings(), authMiddleware(), authRouter, campaignRouter, collaborationRouter, discoverRouter, router, messagingRouter (+8 more)
+Cohesion: 0.13
+Nodes (15): updateInfluencerSettings(), authMiddleware(), authRouter, campaignRouter, discoverRouter, router, messagingRouter, router (+7 more)
 
 ### Community 36 - "Community 36"
 Cohesion: 0.29
@@ -275,12 +273,12 @@ Cohesion: 0.40
 Nodes (4): devDependencies, prettier, scripts, install:all
 
 ### Community 41 - "Community 41"
-Cohesion: 0.40
-Nodes (4): Alert, AlertDescription, AlertTitle, alertVariants
+Cohesion: 0.14
+Nodes (6): priorityRank, Promotion, PromotionResponse, PromotionStatus, statusMeta, tabs
 
 ### Community 42 - "Community 42"
-Cohesion: 0.38
-Nodes (10): acceptCounterOffer(), acceptInvite(), askQuestion(), brandCounterOffer(), counterInvite(), createCollaborationInvite(), declineInvite(), getBrandInvites() (+2 more)
+Cohesion: 0.28
+Nodes (12): acceptCounterOffer(), acceptInvite(), askQuestion(), brandCounterOffer(), counterInvite(), createCollaborationInvite(), declineInvite(), getBrandInvites() (+4 more)
 
 ### Community 43 - "Community 43"
 Cohesion: 0.50
@@ -291,36 +289,28 @@ Cohesion: 0.67
 Nodes (3): config, getUserRoleFromToken(), middleware()
 
 ### Community 54 - "Community 54"
-Cohesion: 0.40
-Nodes (3): PLATFORM_CONFIG, PlatformKey, QuickLinksProps
+Cohesion: 0.22
+Nodes (9): CreateInviteModal(), BrandInviteItem, BrandInviteListResponse, CampaignListResponse, CampaignOption, DiscoverProfilePage(), formatCompact(), previewProfiles (+1 more)
 
 ### Community 55 - "Community 55"
 Cohesion: 0.20
 Nodes (9): Backend-specific guidance, Behavior, Examples of useful prompts, Formatting and tooling, Frontend-specific guidance, graphify, Important conventions, Notes for maintainers (+1 more)
 
 ### Community 78 - "Community 78"
-Cohesion: 0.22
+Cohesion: 0.18
 Nodes (8): BrandProfileSchema, FeaturedContentSchema, InfluencerProfileSchema, LoginMetadataSchema, ManagerProfileSchema, OAuthProviderSchema, StatsConnectionSchema, UserSchema
 
 ### Community 79 - "Community 79"
 Cohesion: 0.38
 Nodes (9): applyLocaleSafeString(), clamp(), decodeImageInput(), getPublicInfluencerProfile(), profile(), sanitizeSocialLinks(), updateBrandProfile(), updateInfluencerProfile() (+1 more)
 
-### Community 80 - "Community 80"
-Cohesion: 0.33
-Nodes (3): Portfolio(), ShowcaseItem, ShowcaseProps
-
 ### Community 81 - "Community 81"
-Cohesion: 0.29
-Nodes (7): addFeaturedContent(), deleteFeaturedContent(), getFeaturedContent(), updateFeaturedContent(), influencerRouter, getUsernameAvailability(), requireRole()
+Cohesion: 0.36
+Nodes (6): addFeaturedContent(), deleteFeaturedContent(), getFeaturedContent(), updateFeaturedContent(), influencerRouter, getUsernameAvailability()
 
 ### Community 82 - "Community 82"
 Cohesion: 0.19
 Nodes (15): archiveConversation(), getConversations(), getMessages(), getOrCreateConversation(), markMessagesAsRead(), searchMessaging(), ConversationSchema, IConversation (+7 more)
-
-### Community 83 - "Community 83"
-Cohesion: 0.13
-Nodes (11): EarningRecord, EarningStatus, EarningSummary, PaymentMethod, paymentMethodLabels, statusColors, statusLabels, PaymentMethod (+3 more)
 
 ### Community 84 - "Community 84"
 Cohesion: 0.22
@@ -331,24 +321,24 @@ Cohesion: 0.50
 Nodes (3): 1. Multi-Currency Support (Localization), 2. Payouts and Wallets, Future Tasks / Backlog
 
 ## Knowledge Gaps
-- **440 isolated node(s):** `name`, `version`, `description`, `main`, `start` (+435 more)
+- **441 isolated node(s):** `INSTAGRAM_SCOPES`, `YOUTUBE_SCOPES`, `LoginMetadataSchema`, `OAuthProviderSchema`, `StatsConnectionSchema` (+436 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **10 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `cn()` connect `Community 26` to `Community 32`, `Community 5`, `Community 7`, `Community 41`, `Community 10`, `Community 14`, `Community 15`, `Community 19`, `Community 83`?**
-  _High betweenness centrality (0.033) - this node is a cross-community bridge._
-- **Why does `Button()` connect `Community 5` to `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 13`, `Community 14`, `Community 15`, `Community 80`, `Community 17`, `Community 83`, `Community 84`, `Community 19`, `Community 54`, `Community 26`?**
-  _High betweenness centrality (0.027) - this node is a cross-community bridge._
-- **Why does `getRequestUser()` connect `Community 34` to `Community 0`, `Community 4`, `Community 6`, `Community 42`, `Community 82`, `Community 20`, `Community 21`?**
-  _High betweenness centrality (0.016) - this node is a cross-community bridge._
-- **What connects `name`, `version`, `description` to the rest of the system?**
-  _440 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Why does `Button()` connect `Community 32` to `Community 5`, `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 41`, `Community 13`, `Community 14`, `Community 15`, `Community 17`, `Community 19`, `Community 84`, `Community 54`, `Community 26`?**
+  _High betweenness centrality (0.026) - this node is a cross-community bridge._
+- **Why does `cn()` connect `Community 26` to `Community 32`, `Community 5`, `Community 7`, `Community 10`, `Community 14`, `Community 19`?**
+  _High betweenness centrality (0.020) - this node is a cross-community bridge._
+- **Why does `Card` connect `Community 5` to `Community 32`, `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 41`, `Community 13`, `Community 14`, `Community 15`, `Community 17`, `Community 84`, `Community 54`?**
+  _High betweenness centrality (0.014) - this node is a cross-community bridge._
+- **What connects `INSTAGRAM_SCOPES`, `YOUTUBE_SCOPES`, `LoginMetadataSchema` to the rest of the system?**
+  _441 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 2` be split into smaller, more focused modules?**
   _Cohesion score 0.09830866807610994 - nodes in this community are weakly interconnected._
 - **Should `Community 5` be split into smaller, more focused modules?**
-  _Cohesion score 0.12077294685990338 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0907563025210084 - nodes in this community are weakly interconnected._
 - **Should `Community 6` be split into smaller, more focused modules?**
   _Cohesion score 0.09898989898989899 - nodes in this community are weakly interconnected._
