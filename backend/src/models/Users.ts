@@ -159,7 +159,7 @@ const UserSchema = new Schema<IUser>(
     oauthProviders: [OAuthProviderSchema],
     rating: { type: Number, default: 0 },
     totalReviews: { type: Number, default: 0 },
-    influencerDetails: { type: InfluencerProfileSchema, default: () => ({}) },
+    InfluencerProfile: { type: InfluencerProfileSchema, default: () => ({}) },
     brandDetails: { type: BrandProfileSchema, default: () => ({}) },
     managerProfile: { type: ManagerProfileSchema, default: () => ({}) },
     isVerified: { type: Boolean, default: false },

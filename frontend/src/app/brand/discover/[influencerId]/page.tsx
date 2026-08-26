@@ -41,7 +41,7 @@ type PublicProfile = {
   followers: number
   rating?: number
   totalReviews?: number
-  influencerDetails?: {
+  InfluencerProfile?: {
     statsConnection?: {
       instagram?: { followers: number; engagementRate?: number }
       youtube?: { subscribers: number; engagementRate?: number }
@@ -314,10 +314,10 @@ export default function DiscoverProfilePage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 rounded-3xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-card)] p-6 shadow-sm">
             <div className="flex items-center gap-5">
               <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] overflow-hidden">
-                <img 
-                  src={profile.profilePicture || "/images/defaults/creator.svg"} 
-                  alt={profile.name} 
-                  className="h-full w-full object-cover" 
+                <img
+                  src={profile.profilePicture || "/images/defaults/creator.svg"}
+                  alt={profile.name}
+                  className="h-full w-full object-cover"
                 />
                 {profile.verified && (
                   <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[color:var(--vooki-app-bg)]">
@@ -337,7 +337,7 @@ export default function DiscoverProfilePage() {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-3">
               <Button asChild variant="outline" className="h-12 px-6 rounded-xl border border-[color:var(--vooki-app-border-strong)] bg-transparent text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)] transition-all font-bold">
                 <Link href={`/brand/messages`}>
@@ -357,10 +357,10 @@ export default function DiscoverProfilePage() {
                     {campaigns.length === 0
                       ? "No Campaigns"
                       : inviteStatus === "pending"
-                      ? "Invite Pending"
-                      : inviteStatus === "accepted" || inviteStatus === "rejected" || inviteStatus === "expired"
-                        ? "Invite Again"
-                        : "Invite to Campaign"}
+                        ? "Invite Pending"
+                        : inviteStatus === "accepted" || inviteStatus === "rejected" || inviteStatus === "expired"
+                          ? "Invite Again"
+                          : "Invite to Campaign"}
                   </Button>
                 }
               />
@@ -369,7 +369,7 @@ export default function DiscoverProfilePage() {
 
           {/* Top Section: Dashboard Insights */}
           <div className="grid gap-6 lg:grid-cols-3">
-            
+
             {/* Reputation & Value */}
             <div className="rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-6 shadow-sm flex flex-col justify-between">
               <div>
@@ -395,7 +395,7 @@ export default function DiscoverProfilePage() {
             <div className="rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-6 shadow-sm flex flex-col justify-between">
               <div>
                 <h3 className="mb-5 text-sm font-bold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)]">Platforms</h3>
-                
+
                 <div className="space-y-4">
                   {/* Instagram Stats */}
                   <a href={profile.socialLinks?.instagram || "#"} target={profile.socialLinks?.instagram ? "_blank" : "_self"} rel="noreferrer" className="flex items-center justify-between p-3 rounded-2xl bg-[color:var(--vooki-app-surface-strong)]/30 border border-[color:var(--vooki-app-border)] gap-2 hover:border-[color:var(--vooki-accent)] transition-all group cursor-pointer">
@@ -409,7 +409,7 @@ export default function DiscoverProfilePage() {
                       </div>
                     </div>
                     <span className="text-lg font-black tracking-tight text-[color:var(--vooki-app-text-strong)] shrink-0">
-                      {formatCompact(profile.influencerDetails?.statsConnection?.instagram?.followers || profile.followers || 0)}
+                      {formatCompact(profile.InfluencerProfile?.statsConnection?.instagram?.followers || profile.followers || 0)}
                     </span>
                   </a>
 
@@ -425,7 +425,7 @@ export default function DiscoverProfilePage() {
                       </div>
                     </div>
                     <span className="text-lg font-black tracking-tight text-[color:var(--vooki-app-text-strong)] shrink-0">
-                      {formatCompact(profile.influencerDetails?.statsConnection?.youtube?.subscribers || 0)}
+                      {formatCompact(profile.InfluencerProfile?.statsConnection?.youtube?.subscribers || 0)}
                     </span>
                   </a>
                 </div>
@@ -440,7 +440,7 @@ export default function DiscoverProfilePage() {
                   <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-500 border-0 text-[10px]">Verified Data</Badge>
                 )}
               </div>
-              
+
               {(!profile.audienceDemographics || !profile.audienceDemographics.genderSplit || Object.keys(profile.audienceDemographics.genderSplit).length === 0) ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-[color:var(--vooki-app-surface-strong)]/30 rounded-2xl border border-dashed border-[color:var(--vooki-app-border-strong)]">
                   <div className="h-10 w-10 bg-[color:var(--vooki-app-surface-strong)] rounded-full flex items-center justify-center mb-3">
@@ -473,7 +473,7 @@ export default function DiscoverProfilePage() {
                       <span className="font-bold text-[color:var(--vooki-app-text-strong)]">{profile.audienceDemographics?.topAgeBracket || "N/A"}</span>
                     </div>
                   </div>
-                  
+
                   {/* Location */}
                   <div>
                     <div className="flex justify-between text-sm mb-2">
@@ -492,15 +492,15 @@ export default function DiscoverProfilePage() {
           {/* Bottom Section: Tabbed Content */}
           <div className="mt-10">
             <div className="flex items-center gap-6 border-b border-[color:var(--vooki-app-border-strong)] mb-6 overflow-x-auto">
-              <button 
-                onClick={() => setActiveTab("content")} 
+              <button
+                onClick={() => setActiveTab("content")}
                 className={`pb-4 text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === 'content' ? 'border-b-2 border-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-text-strong)]' : 'border-b-2 border-transparent text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)]'}`}
               >
                 <Grid className="w-4 h-4" />
                 Recent Content
               </button>
-              <button 
-                onClick={() => setActiveTab("collabs")} 
+              <button
+                onClick={() => setActiveTab("collabs")}
                 className={`pb-4 text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === 'collabs' ? 'border-b-2 border-[color:var(--vooki-app-text-strong)] text-[color:var(--vooki-app-text-strong)]' : 'border-b-2 border-transparent text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)]'}`}
               >
                 <Briefcase className="w-4 h-4" />
@@ -512,21 +512,21 @@ export default function DiscoverProfilePage() {
             {activeTab === "content" && (
               <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                 {(!profile.recentContent || profile.recentContent.length === 0) ? (
-                   <div className="py-20 rounded-3xl border border-dashed border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-card)] text-center flex flex-col items-center">
+                  <div className="py-20 rounded-3xl border border-dashed border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-card)] text-center flex flex-col items-center">
                     <Grid className="w-10 h-10 text-[color:var(--vooki-app-text-subtle)] mb-4" />
                     <h3 className="text-lg font-bold text-[color:var(--vooki-app-text-strong)]">No Content Available</h3>
                     <p className="text-sm text-[color:var(--vooki-app-text-soft)]">This creator has not synced recent media.</p>
-                   </div>
+                  </div>
                 ) : (
                   <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6">
                     {profile.recentContent.map((imgUrl, idx) => (
                       <div key={idx} className="group relative overflow-hidden rounded-3xl break-inside-avoid shadow-sm hover:shadow-md transition-all border border-[color:var(--vooki-app-border)]">
                         <div className="absolute inset-0 bg-[color:var(--vooki-app-surface-strong)] animate-pulse" />
-                        <Image 
-                          src={imgUrl} 
+                        <Image
+                          src={imgUrl}
                           alt={`Recent content from ${profile.name}`}
                           width={400}
-                          height={idx % 3 === 0 ? 500 : 350} 
+                          height={idx % 3 === 0 ? 500 : 350}
                           className="relative z-10 w-full h-auto object-cover transform transition-transform duration-700 group-hover:scale-105"
                           unoptimized
                         />
@@ -541,11 +541,11 @@ export default function DiscoverProfilePage() {
             {activeTab === "collabs" && (
               <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                 {(!profile.pastCollaborations || profile.pastCollaborations.length === 0) ? (
-                   <div className="py-20 rounded-3xl border border-dashed border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-card)] text-center flex flex-col items-center">
+                  <div className="py-20 rounded-3xl border border-dashed border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-card)] text-center flex flex-col items-center">
                     <Briefcase className="w-10 h-10 text-[color:var(--vooki-app-text-subtle)] mb-4" />
                     <h3 className="text-lg font-bold text-[color:var(--vooki-app-text-strong)]">No Past Collaborations</h3>
                     <p className="text-sm text-[color:var(--vooki-app-text-soft)]">No brand collaborations have been listed.</p>
-                   </div>
+                  </div>
                 ) : (
                   <div className="flex flex-wrap gap-3">
                     {profile.pastCollaborations.map(brand => (

@@ -220,17 +220,17 @@ export const getBrandInvites = async (
     const { campaignId, status, limit } = req.query;
 
     let query: any = { brandId: requester.id };
-    
+
     if (campaignId) {
       query.campaignId = String(campaignId);
     }
-    
+
     if (status && status !== "all") {
       query.status = String(status);
     }
 
     let invitesQuery = DiscoverInviteModel.find(query).sort({ createdAt: -1 });
-    
+
     if (limit) {
       invitesQuery = invitesQuery.limit(Number(limit));
     }
@@ -241,7 +241,7 @@ export const getBrandInvites = async (
     const invitesWithInfluencerInfo = await Promise.all(
       invites.map(async (invite: any) => {
         const influencer = await UserModel.findById(invite.influencerId).select(
-          "_id name username influencerDetails.niche avatar"
+          "_id name username InfluencerProfile.niche avatar"
         );
 
         return {
@@ -249,7 +249,7 @@ export const getBrandInvites = async (
           influencerId: invite.influencerId,
           influencerName: influencer?.name || "",
           influencerHandle: influencer?.username || "",
-          influencerNiche: influencer?.influencerDetails?.niche || "",
+          influencerNiche: influencer?.InfluencerProfile?.niche || "",
           campaignId: invite.campaignId,
           campaignLabel: invite.campaignTitle,
           note: invite.brandMessage || "",

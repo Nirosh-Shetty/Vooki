@@ -121,7 +121,7 @@ export default function influencerDetailsEditPage() {
         const data = await response.json();
         if (data.role !== "influencer") throw new Error("Expected influencer account");
 
-        const details = data.influencerDetails ?? {};
+        const details = data.InfluencerProfile ?? {};
         const fetchedUsername = String(data.username ?? "");
 
         setInitialUsername(fetchedUsername);
@@ -253,7 +253,7 @@ export default function influencerDetailsEditPage() {
           .trim()
           .toLowerCase(),
         phone: String(form.phone ?? "").trim(),
-        influencerDetails: {
+        InfluencerProfile: {
           location: String(form.location ?? "").trim(),
           languages: String(form.languages ?? "")
             .split(",")
@@ -270,7 +270,7 @@ export default function influencerDetailsEditPage() {
         photo: photoData || undefined,
       };
 
-      const payload = {name : data.name, username: data.username, email: data.email, phone: data.phone, influencerDetails: data.influencerDetails, photo: data.photo}
+      const payload = { name: data.name, username: data.username, email: data.email, phone: data.phone, InfluencerProfile: data.InfluencerProfile, photo: data.photo }
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/profile/influencer`,
@@ -423,10 +423,10 @@ export default function influencerDetailsEditPage() {
                 <div className="relative">
                   <Input
                     className={`rounded-xl bg-[color:var(--vooki-app-surface-strong)] pr-9 transition-colors ${isUsernameAvailable === false
-                        ? "border-red-500 focus-visible:ring-red-500"
-                        : isUsernameAvailable === true
-                          ? "border-emerald-500 focus-visible:ring-emerald-500"
-                          : "border-[color:var(--vooki-app-border-strong)]"
+                      ? "border-red-500 focus-visible:ring-red-500"
+                      : isUsernameAvailable === true
+                        ? "border-emerald-500 focus-visible:ring-emerald-500"
+                        : "border-[color:var(--vooki-app-border-strong)]"
                       }`}
                     value={form.username}
                     onChange={(e) => handleFieldChange("username", e.target.value)}
@@ -589,10 +589,10 @@ export default function influencerDetailsEditPage() {
           {status && (
             <span
               className={`flex items-center gap-1.5 font-medium ${status.type === "success"
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : status.type === "error"
-                    ? "text-red-500"
-                    : "text-[color:var(--vooki-app-text-strong)]"
+                ? "text-emerald-600 dark:text-emerald-400"
+                : status.type === "error"
+                  ? "text-red-500"
+                  : "text-[color:var(--vooki-app-text-strong)]"
                 }`}
             >
               {status.type === "success" && <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />}

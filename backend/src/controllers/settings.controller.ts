@@ -18,13 +18,13 @@ export const updateInfluencerSettings = async (req: Request, res: Response): Pro
       return res.status(403).json({ message: "Only influencers can update settings" });
     }
 
-    const { influencerDetails: incomingDetails, notificationPreferences } = req.body;
+    const { InfluencerProfile: incomingDetails, notificationPreferences } = req.body;
 
     let isModified = false;
 
     // Handle Preferences (Minimum Rate & Content Boundaries)
     if (incomingDetails?.preferences) {
-      const existingDetails = user.influencerDetails || {};
+      const existingDetails = user.InfluencerProfile || {};
       const newPreferences = {
         minimumRate: {
           amount: Number(incomingDetails.preferences.minimumRate?.amount) || existingDetails.preferences?.minimumRate?.amount || 0,
@@ -33,7 +33,7 @@ export const updateInfluencerSettings = async (req: Request, res: Response): Pro
         contentBoundaries: incomingDetails.preferences.contentBoundaries ?? existingDetails.preferences?.contentBoundaries ?? "",
       };
 
-      user.influencerDetails = {
+      user.InfluencerProfile = {
         ...existingDetails,
         preferences: newPreferences,
       };

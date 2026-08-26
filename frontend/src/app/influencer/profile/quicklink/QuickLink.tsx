@@ -2,18 +2,18 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { 
-  Facebook, 
-  Instagram, 
-  Youtube, 
-  Plus, 
-  Trash2, 
-  X, 
-  AlertCircle, 
-  Edit2, 
+import {
+  Facebook,
+  Instagram,
+  Youtube,
+  Plus,
+  Trash2,
+  X,
+  AlertCircle,
+  Edit2,
   Loader2,
   ExternalLink,
-  Link as LinkIcon 
+  Link as LinkIcon
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,15 +30,15 @@ const PLATFORM_CONFIG = {
     colorClass: "text-pink-500 dark:text-pink-400",
     label: "Instagram",
   },
-  Facebook: { 
-    icon: Facebook, 
-    colorClass: "text-blue-600 dark:text-blue-400", 
-    label: "Facebook" 
+  Facebook: {
+    icon: Facebook,
+    colorClass: "text-blue-600 dark:text-blue-400",
+    label: "Facebook"
   },
-  YouTube: { 
-    icon: Youtube, 
-    colorClass: "text-red-500 dark:text-red-500", 
-    label: "YouTube" 
+  YouTube: {
+    icon: Youtube,
+    colorClass: "text-red-500 dark:text-red-500",
+    label: "YouTube"
   },
 } as const;
 
@@ -46,12 +46,12 @@ type PlatformKey = keyof typeof PLATFORM_CONFIG;
 
 export function QuickLinks({ links = {}, onUpdate }: QuickLinksProps) {
   const [currentLinks, setCurrentLinks] = useState<Record<string, string>>(links);
-  
+
   // Modal states
   const [managePlatform, setManagePlatform] = useState<PlatformKey | null>(null);
   const [editPlatform, setEditPlatform] = useState<PlatformKey | null>(null);
   const [deletePlatform, setDeletePlatform] = useState<PlatformKey | null>(null);
-  
+
   const [newUrl, setNewUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -69,7 +69,7 @@ export function QuickLinks({ links = {}, onUpdate }: QuickLinksProps) {
   const handleSaveAPI = async (payloadLinks: Record<string, string>) => {
     setIsLoading(true);
     try {
-      const payload = { influencerDetails : { socialLinks: payloadLinks } }; 
+      const payload = { InfluencerProfile: { socialLinks: payloadLinks } };
 
       console.log("Saving links to backend:", payload);
 
@@ -83,7 +83,7 @@ export function QuickLinks({ links = {}, onUpdate }: QuickLinksProps) {
       });
 
       if (!response.ok) throw new Error("Failed to update quick links");
-      
+
       setCurrentLinks(payloadLinks);
       onUpdate?.(payloadLinks);
     } catch (error) {
@@ -95,20 +95,20 @@ export function QuickLinks({ links = {}, onUpdate }: QuickLinksProps) {
 
   const handleSaveLink = async () => {
     if (!editPlatform || !newUrl.trim()) return;
-    
+
     const updatedLinks = { ...currentLinks };
     updatedLinks[editPlatform] = newUrl.trim();
-    
+
     console.log("Saving updated links:", updatedLinks);
     await handleSaveAPI(updatedLinks);
-    
+
     setEditPlatform(null);
     setNewUrl("");
   };
 
   const confirmDelete = async () => {
     if (!deletePlatform) return;
-    
+
     const updatedLinks = { ...currentLinks };
     Object.keys(updatedLinks).forEach(key => {
       if (key.toLowerCase() === deletePlatform.toLowerCase()) {

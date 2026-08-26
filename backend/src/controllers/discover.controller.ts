@@ -132,12 +132,12 @@ export const getDiscoverInfluencers = async (
       query.$or = [
         { name: regex },
         { username: regex },
-        { "influencerDetails.niche": regex },
+        { "InfluencerProfile.niche": regex },
       ];
     }
 
     if (String(niche).trim()) {
-      query["influencerDetails.niche"] = new RegExp(String(niche).trim(), "i");
+      query["InfluencerProfile.niche"] = new RegExp(String(niche).trim(), "i");
     }
 
     if (verified === "true") {
@@ -150,7 +150,7 @@ export const getDiscoverInfluencers = async (
     if (minFollowersNum > 0) followerRange.$gte = minFollowersNum;
     if (typeof maxFollowersNum === "number") followerRange.$lte = maxFollowersNum;
     if (Object.keys(followerRange).length > 0) {
-      query["influencerDetails.followers"] = followerRange;
+      query["InfluencerProfile.followers"] = followerRange;
     }
 
     const skip = (pageNum - 1) * limitNum;
@@ -158,7 +158,7 @@ export const getDiscoverInfluencers = async (
     const [influencers, total] = await Promise.all([
       UserModel.find(query)
         .select(
-          "name username profilePicture isVerified influencerDetails.niche influencerDetails.followers"
+          "name username profilePicture isVerified InfluencerProfile.niche InfluencerProfile.followers"
         )
         .sort({ updatedAt: -1 })
         .skip(skip)
@@ -169,7 +169,7 @@ export const getDiscoverInfluencers = async (
 
     const formatted = influencers
       .map((influencer: any) => {
-        const followers = Number(influencer?.influencerDetails?.followers || 0);
+        const followers = Number(influencer?.InfluencerProfile?.followers || 0);
         const engagementRate = clamp(
           3 + Math.log10(Math.max(followers, 10)) * 1.35,
           1.8,
@@ -190,7 +190,7 @@ export const getDiscoverInfluencers = async (
           id: String(influencer._id),
           name: influencer.name || "",
           handle: influencer.username ? `@${influencer.username}` : "",
-          niche: influencer?.influencerDetails?.niche || "General",
+          niche: influencer?.InfluencerProfile?.niche || "General",
           location: "Unknown",
           followers,
           engagementRate: Number(engagementRate.toFixed(1)),
@@ -516,7 +516,7 @@ export const getDiscoverInvites = async (
       );
       const influencers = await UserModel.find(
         { _id: { $in: influencerIds } },
-        { name: 1, username: 1, profilePicture: 1, "influencerDetails.niche": 1 }
+        { name: 1, username: 1, profilePicture: 1, "InfluencerProfile.niche": 1 }
       ).lean();
       const promotions = await PromotionModel.find(
         { sourceInviteId: { $in: inviteIds } },
@@ -538,7 +538,7 @@ export const getDiscoverInvites = async (
             influencerId: String(item.influencerId),
             influencerName: influencer?.name || influencer?.username || "Influencer",
             influencerHandle: influencer?.username ? `@${influencer.username}` : "",
-            influencerNiche: influencer?.influencerDetails?.niche || "",
+            influencerNiche: influencer?.InfluencerProfile?.niche || "",
             campaignId: String(item.campaignId || ""),
             campaignTitle: item.campaignTitle || "",
             note: item.note || "",

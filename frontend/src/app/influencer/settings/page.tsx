@@ -26,7 +26,7 @@ export default function InfluencerSettingsPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [passwordSaving, setPasswordSaving] = useState(false)
   const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
-  
+
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
@@ -34,7 +34,7 @@ export default function InfluencerSettingsPage() {
     minimumRate: 0,
     contentBoundaries: "",
   })
-  
+
   const [notifications, setNotifications] = useState({
     newCollabInvites: true,
     messageNotifications: true,
@@ -43,14 +43,14 @@ export default function InfluencerSettingsPage() {
 
   useEffect(() => {
     if (user) {
-      const details = (user as any).influencerDetails || {}
+      const details = (user as any).InfluencerProfile || {}
       const notifs = (user as any).notificationPreferences || {}
-      
+
       setPreferences({
         minimumRate: details.preferences?.minimumRate?.amount || 0,
         contentBoundaries: details.preferences?.contentBoundaries || "",
       })
-      
+
       setNotifications({
         newCollabInvites: notifs.newCollabInvites ?? true,
         messageNotifications: notifs.messageNotifications ?? true,
@@ -103,7 +103,7 @@ export default function InfluencerSettingsPage() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          influencerDetails: {
+          InfluencerProfile: {
             preferences: {
               minimumRate: { amount: preferences.minimumRate, currency: "INR" },
               contentBoundaries: preferences.contentBoundaries
@@ -131,7 +131,7 @@ export default function InfluencerSettingsPage() {
     const newValue = !notifications[key]
     // Optimistic UI update
     setNotifications(prev => ({ ...prev, [key]: newValue }))
-    
+
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/settings/influencer`, {
         method: "PATCH",
@@ -286,7 +286,7 @@ export default function InfluencerSettingsPage() {
           <div className="max-w-3xl space-y-6">
             <div className="rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface)] p-6 shadow-sm backdrop-blur-md">
               <h2 className="mb-6 text-lg font-bold text-[color:var(--vooki-app-text-strong)]">Collaboration Preferences</h2>
-              
+
               <div className="space-y-6">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">Minimum Rate</Label>
@@ -335,36 +335,36 @@ export default function InfluencerSettingsPage() {
           <div className="max-w-3xl space-y-6">
             <div className="rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface)] p-6 shadow-sm backdrop-blur-md">
               <h2 className="mb-6 text-lg font-bold text-[color:var(--vooki-app-text-strong)]">Notification Preferences</h2>
-              
+
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="text-sm font-semibold text-[color:var(--vooki-app-text-strong)]">New Collaboration Invites</h4>
                     <p className="text-xs text-[color:var(--vooki-app-text-soft)]">Receive an email when a brand invites you to a campaign.</p>
                   </div>
-                  <button 
+                  <button
                     onClick={() => handleToggleNotification('newCollabInvites')}
                     className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${notifications.newCollabInvites ? 'bg-indigo-500' : 'bg-slate-300 dark:bg-slate-600'}`}
                   >
-                    <span 
+                    <span
                       style={{ backgroundColor: '#ffffff' }}
-                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full shadow ring-0 transition duration-200 ease-in-out ${notifications.newCollabInvites ? 'translate-x-5' : 'translate-x-0'}`} 
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full shadow ring-0 transition duration-200 ease-in-out ${notifications.newCollabInvites ? 'translate-x-5' : 'translate-x-0'}`}
                     />
                   </button>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="text-sm font-semibold text-[color:var(--vooki-app-text-strong)]">Message Notifications</h4>
                     <p className="text-xs text-[color:var(--vooki-app-text-soft)]">Receive an email when you get a new message.</p>
                   </div>
-                  <button 
+                  <button
                     onClick={() => handleToggleNotification('messageNotifications')}
                     className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${notifications.messageNotifications ? 'bg-indigo-500' : 'bg-slate-300 dark:bg-slate-600'}`}
                   >
-                    <span 
+                    <span
                       style={{ backgroundColor: '#ffffff' }}
-                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full shadow ring-0 transition duration-200 ease-in-out ${notifications.messageNotifications ? 'translate-x-5' : 'translate-x-0'}`} 
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full shadow ring-0 transition duration-200 ease-in-out ${notifications.messageNotifications ? 'translate-x-5' : 'translate-x-0'}`}
                     />
                   </button>
                 </div>
@@ -374,13 +374,13 @@ export default function InfluencerSettingsPage() {
                     <h4 className="text-sm font-semibold text-[color:var(--vooki-app-text-strong)]">Marketing Updates</h4>
                     <p className="text-xs text-[color:var(--vooki-app-text-soft)]">Receive tips and news from Vooki.</p>
                   </div>
-                  <button 
+                  <button
                     onClick={() => handleToggleNotification('marketingUpdates')}
                     className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${notifications.marketingUpdates ? 'bg-indigo-500' : 'bg-slate-300 dark:bg-slate-600'}`}
                   >
-                    <span 
+                    <span
                       style={{ backgroundColor: '#ffffff' }}
-                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full shadow ring-0 transition duration-200 ease-in-out ${notifications.marketingUpdates ? 'translate-x-5' : 'translate-x-0'}`} 
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full shadow ring-0 transition duration-200 ease-in-out ${notifications.marketingUpdates ? 'translate-x-5' : 'translate-x-0'}`}
                     />
                   </button>
                 </div>
