@@ -26,10 +26,7 @@ export interface ICompensation {
 }
 
 export interface ITimeline {
-  postingStartDate: Date;
-  postingEndDate: Date;
-  draftDueDate?: Date;
-  responseDeadline: Date; // When creator must respond to this invite
+  targetDate: Date; // The single target date for the collaboration
 }
 
 export interface ICounterOffer {
@@ -93,10 +90,7 @@ const CompensationSchema = new Schema<ICompensation>(
 
 const TimelineSchema = new Schema<ITimeline>(
   {
-    postingStartDate: { type: Date, required: true },
-    postingEndDate: { type: Date, required: true },
-    draftDueDate: { type: Date },
-    responseDeadline: { type: Date, required: true },
+    targetDate: { type: Date, required: true },
   },
   { _id: false }
 );

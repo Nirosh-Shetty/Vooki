@@ -118,7 +118,6 @@ export function MessagesHubContent({
           deliverableSummary: message.offerData?.deliverableSummary || "",
           paymentAmount: message.offerData?.paymentAmount,
           advanceAmount: message.offerData?.advanceAmount,
-          draftDueAt: message.offerData?.draftDueAt || null,
           postAt: message.offerData?.postAt || null,
           hashtags: message.offerData?.hashtags || [],
           discountCode: message.offerData?.discountCode || "",

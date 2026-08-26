@@ -86,7 +86,6 @@ type Promotion = {
   status: PromotionStatus;
   paymentAmount: number;
   paymentStatus: "pending" | "paid";
-  draftDueAt: string;
   postAt: string;
   performance: { reach: number; views: number; engagement: number };
   deliverySubmission?: {
@@ -404,7 +403,7 @@ function BrandDashboardContent() {
             ...base,
             icon: <Clock className="h-4 w-4" style={{ color: "#f0bb7a" }} />,
             title: "Content being created",
-            detail: `${p.campaignTitle} · draft due ${new Date(p.draftDueAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
+            detail: `${p.campaignTitle} · posting due ${new Date(p.postAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
             accent: "rgba(240,187,122,0.18)",
           });
           break;

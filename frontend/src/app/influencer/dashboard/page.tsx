@@ -291,7 +291,7 @@ function InfluencerDashboardContent() {
                           {money(collab.paymentAmount)}
                         </p>
                         <p className="text-sm text-[color:var(--vooki-app-text-soft)]">
-                          {collab.draftDueAt ? `Due: ${new Date(collab.draftDueAt).toLocaleDateString()}` : "No due date"}
+                          {collab.postAt ? `Due: ${new Date(collab.postAt).toLocaleDateString()}` : "No due date"}
                         </p>
                       </div>
                     </div>

@@ -133,10 +133,7 @@ export const createCollaborationInvite = async (
     const defaultDeadline = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     const processedTimeline = {
-      postingStartDate: timeline?.postingStartDate ? new Date(timeline.postingStartDate) : defaultStart,
-      postingEndDate: timeline?.postingEndDate ? new Date(timeline.postingEndDate) : defaultEnd,
-      draftDueDate: timeline?.draftDueDate ? new Date(timeline.draftDueDate) : undefined,
-      responseDeadline: timeline?.responseDeadline ? new Date(timeline.responseDeadline) : defaultDeadline,
+      targetDate: timeline?.targetDate ? new Date(timeline.targetDate) : defaultEnd,
     };
 
     // Check for existing active invites
@@ -373,11 +370,10 @@ export const acceptInvite = async (
       product: invite.campaignTitle,
       campaignGoal: "awareness",
       deliverables: invite.deliverables,
-      draftDueAt: invite.timeline?.draftDueDate || new Date(),
-      postAt: invite.timeline?.postingEndDate || new Date(),
+      postAt: invite.timeline?.targetDate || new Date(),
       paymentAmount: invite.compensation?.amount || 0,
       advanceAmount: 0,
-      paymentDueAt: invite.timeline?.postingEndDate || new Date(),
+      paymentDueAt: invite.timeline?.targetDate || new Date(),
       paymentMethod: "direct",
       status: "accepted",
     });
@@ -702,13 +698,9 @@ export const acceptCounterOffer = async (
       product: invite.campaignTitle,
       campaignGoal: "awareness",
       deliverables: invite.activeCounterOffer?.deliverables || invite.deliverables,
-      draftDueAt:
-        invite.activeCounterOffer?.timeline?.draftDueDate ||
-        invite.timeline?.draftDueDate ||
-        new Date(),
       postAt:
-        invite.activeCounterOffer?.timeline?.postingEndDate ||
-        invite.timeline?.postingEndDate ||
+        invite.activeCounterOffer?.timeline?.targetDate ||
+        invite.timeline?.targetDate ||
         new Date(),
       paymentAmount:
         invite.activeCounterOffer?.compensation?.amount ||
@@ -717,8 +709,8 @@ export const acceptCounterOffer = async (
         0,
       advanceAmount: 0,
       paymentDueAt:
-        invite.activeCounterOffer?.timeline?.postingEndDate ||
-        invite.timeline?.postingEndDate ||
+        invite.activeCounterOffer?.timeline?.targetDate ||
+        invite.timeline?.targetDate ||
         new Date(),
       paymentMethod: "direct",
       status: "accepted",

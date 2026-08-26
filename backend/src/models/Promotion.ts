@@ -34,9 +34,7 @@ export interface IPromotion extends Document {
   product: string;
   campaignGoal: "awareness" | "sales" | "launch" | "other";
   deliverables: IDeliverable[];
-  draftDueAt: Date;
   postAt: Date;
-  requiresDraftApproval: boolean;
   captionRequirements: string;
   brandTagRequired: boolean;
   hashtags: string[];
@@ -103,9 +101,7 @@ const PromotionSchema = new Schema<IPromotion>(
       default: "awareness",
     },
     deliverables: { type: [DeliverableSchema], default: [] },
-    draftDueAt: { type: Date, required: true },
     postAt: { type: Date, required: true },
-    requiresDraftApproval: { type: Boolean, default: true },
     captionRequirements: { type: String, trim: true, default: "" },
     brandTagRequired: { type: Boolean, default: false },
     hashtags: { type: [String], default: [] },

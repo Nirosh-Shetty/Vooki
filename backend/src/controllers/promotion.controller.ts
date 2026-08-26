@@ -415,21 +415,10 @@ export const updatePromotionTerms = async (
       updates.deliverables = normalized;
     }
 
-    if (draftDueAt !== undefined) {
-      const date = parseDate(draftDueAt);
-      if (!date) return res.status(400).json({ message: "draftDueAt must be a valid date" });
-      updates.draftDueAt = date;
-    }
     if (postAt !== undefined) {
       const date = parseDate(postAt);
       if (!date) return res.status(400).json({ message: "postAt must be a valid date" });
       updates.postAt = date;
-    }
-
-    const nextDraftDueAt = updates.draftDueAt ?? promotion.draftDueAt;
-    const nextPostAt = updates.postAt ?? promotion.postAt;
-    if (nextPostAt < nextDraftDueAt) {
-      return res.status(400).json({ message: "postAt cannot be before draftDueAt" });
     }
 
     if (requiresDraftApproval !== undefined) updates.requiresDraftApproval = Boolean(requiresDraftApproval);

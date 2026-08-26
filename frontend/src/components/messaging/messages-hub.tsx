@@ -45,7 +45,6 @@ interface HubOfferData {
   deliverableSummary?: string;
   paymentAmount?: number;
   advanceAmount?: number;
-  draftDueAt?: string | Date | null;
   postAt?: string | Date | null;
   hashtags?: string[];
   discountCode?: string;
@@ -264,11 +263,7 @@ function StructuredOfferCard({ message, actions }: { message: HubMessage; action
             </p>
           </div>
           <div className="rounded-xl border border-current/10 bg-[color:var(--vooki-app-surface-card)] px-3 py-2 ">
-            <p className="text-[11px] uppercase tracking-wide opacity-60">Draft due</p>
-            <p className="mt-1 font-medium">{formatDate(offer?.draftDueAt)}</p>
-          </div>
-          <div className="rounded-xl border border-current/10 bg-[color:var(--vooki-app-surface-card)] px-3 py-2 ">
-            <p className="text-[11px] uppercase tracking-wide opacity-60">Post by</p>
+            <p className="text-[11px] uppercase tracking-wide opacity-60">Target Posting Date</p>
             <p className="mt-1 font-medium">{formatDate(offer?.postAt)}</p>
           </div>
           <div className="rounded-xl border border-current/10 bg-[color:var(--vooki-app-surface-card)] px-3 py-2 ">

@@ -50,7 +50,6 @@ type Promotion = {
   product: string
   campaignGoal: "awareness" | "sales" | "launch" | "other"
   deliverables: Deliverable[]
-  draftDueAt: string
   postAt: string
   requiresDraftApproval: boolean
   captionRequirements: string
@@ -100,7 +99,6 @@ type DeliverableDraft = {
 type TermsFormState = {
   product: string
   deliverables: DeliverableDraft[]
-  draftDueAt: string
   postAt: string
   captionRequirements: string
   hashtags: string
@@ -168,7 +166,6 @@ const buildStructuredOfferData = (promotion: Promotion, messageType: "offer" | "
   deliverableSummary: buildDeliverableSummary(promotion),
   paymentAmount: promotion.paymentAmount,
   advanceAmount: promotion.advanceAmount,
-  draftDueAt: promotion.draftDueAt || null,
   postAt: promotion.postAt || null,
   hashtags: promotion.hashtags,
   discountCode: promotion.discountCode || "",
@@ -231,7 +228,7 @@ export function PromotionWorkspace({ promotionId, role, backHref, backLabel }: {
   const [sendingStructuredMessage, setSendingStructuredMessage] = useState<"offer" | "counter_offer" | null>(null)
 
   const [terms, setTerms] = useState<TermsFormState>({
-    product: "", deliverables: [createDeliverableDraft()], draftDueAt: "", postAt: "", captionRequirements: "", hashtags: "",
+    product: "", deliverables: [createDeliverableDraft()], postAt: "", captionRequirements: "", hashtags: "",
     paymentAmount: "0", advanceAmount: "0", paymentDueAt: "", paymentMethod: "direct", exclusivityDays: "", discountCode: "",
   })
   const [metrics, setMetrics] = useState({ reach: "0", views: "0", engagement: "0", clicks: "0", conversions: "0" })
@@ -259,7 +256,6 @@ export function PromotionWorkspace({ promotionId, role, backHref, backLabel }: {
         setTerms({
           product: item.product || "",
           deliverables: item.deliverables?.length ? item.deliverables.map((d) => createDeliverableDraft({ platform: d.platform, format: d.format, quantity: String(d.quantity || 1) })) : [createDeliverableDraft()],
-          draftDueAt: toDateInput(item.draftDueAt),
           postAt: toDateInput(item.postAt),
           captionRequirements: item.captionRequirements || "",
           hashtags: item.hashtags.join(", "),
@@ -394,7 +390,7 @@ export function PromotionWorkspace({ promotionId, role, backHref, backLabel }: {
         body: JSON.stringify({
           product: terms.product.trim(),
           deliverables: terms.deliverables.map((d) => ({ platform: d.platform.trim(), format: d.format.trim(), quantity: Number(d.quantity || 1) })).filter((d) => d.platform && d.format),
-          draftDueAt: terms.draftDueAt, postAt: terms.postAt, captionRequirements: terms.captionRequirements.trim(),
+          postAt: terms.postAt, captionRequirements: terms.captionRequirements.trim(),
           hashtags: terms.hashtags.split(",").map((t) => t.trim()).filter(Boolean),
           paymentAmount: Number(terms.paymentAmount || 0), advanceAmount: Number(terms.advanceAmount || 0),
           paymentDueAt: terms.paymentDueAt, paymentMethod: terms.paymentMethod.trim(), exclusivityDays: terms.exclusivityDays ? Number(terms.exclusivityDays) : undefined, discountCode: terms.discountCode.trim(),
@@ -649,10 +645,9 @@ export function PromotionWorkspace({ promotionId, role, backHref, backLabel }: {
                         </div>
 
                         <div className="grid gap-6 sm:grid-cols-2 pt-6 border-t border-[color:var(--vooki-app-border-strong)]">
-                          <div><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Draft Due</Label><Input type="date" value={terms.draftDueAt} onChange={(e) => setTerms((prev) => ({ ...prev, draftDueAt: e.target.value }))} disabled={!canEditTerms} className="h-11 rounded-xl" /></div>
                           <div><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Post Due</Label><Input type="date" value={terms.postAt} onChange={(e) => setTerms((prev) => ({ ...prev, postAt: e.target.value }))} disabled={!canEditTerms} className="h-11 rounded-xl" /></div>
+                          <div className="sm:col-span-1"><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Hashtags (comma separated)</Label><Input value={terms.hashtags} onChange={(e) => setTerms((prev) => ({ ...prev, hashtags: e.target.value }))} disabled={!canEditTerms} className="h-11 rounded-xl" /></div>
                           <div className="sm:col-span-2"><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Caption requirements</Label><Textarea value={terms.captionRequirements} onChange={(e) => setTerms((prev) => ({ ...prev, captionRequirements: e.target.value }))} disabled={!canEditTerms} className="rounded-xl min-h-[100px] resize-y" /></div>
-                          <div className="sm:col-span-2"><Label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--vooki-app-text-soft)] mb-2 block">Hashtags (comma separated)</Label><Input value={terms.hashtags} onChange={(e) => setTerms((prev) => ({ ...prev, hashtags: e.target.value }))} disabled={!canEditTerms} className="h-11 rounded-xl" /></div>
                         </div>
 
                         <div className="grid gap-6 sm:grid-cols-2 pt-6 border-t border-[color:var(--vooki-app-border-strong)]">
@@ -686,11 +681,7 @@ export function PromotionWorkspace({ promotionId, role, backHref, backLabel }: {
                         <p className="text-base font-medium">{buildDeliverableSummary(promotion)}</p>
                       </div>
                       <div className="space-y-2">
-                        <p className="text-[10px] uppercase tracking-wider font-semibold text-[color:var(--vooki-app-text-soft)]">Draft Due</p>
-                        <p className="text-base font-medium">{formatDateTime(promotion.draftDueAt)}</p>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-[10px] uppercase tracking-wider font-semibold text-[color:var(--vooki-app-text-soft)]">Post Due</p>
+                        <p className="text-[10px] uppercase tracking-wider font-semibold text-[color:var(--vooki-app-text-soft)]">Target Posting Date</p>
                         <p className="text-base font-medium">{formatDateTime(promotion.postAt)}</p>
                       </div>
                       <div className="space-y-2">
