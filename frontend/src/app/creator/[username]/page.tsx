@@ -1027,18 +1027,20 @@ export default function CreatorPublicProfile() {
                   </div>
 
                   <div className="flex flex-wrap gap-2 pt-2">
-                    {profile.languages && profile.languages.length > 0 ? (
-                      profile.languages.map((lang, idx) => (
-                        <span
-                          key={idx}
-                          className="text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border-strong)] text-[color:var(--vooki-app-text-strong)] shadow-xs"
-                        >
-                          {lang.trim()}
-                        </span>
-                      ))
+                    {profile.languages && profile.languages.filter((lang) => lang && lang.trim()).length > 0 ? (
+                      profile.languages
+                        .filter((lang) => lang && lang.trim())
+                        .map((lang, idx) => (
+                          <span
+                            key={idx}
+                            className="text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border-strong)] text-[color:var(--vooki-app-text-strong)] shadow-xs"
+                          >
+                            {lang.trim()}
+                          </span>
+                        ))
                     ) : (
-                      <span className="text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border-strong)] text-[color:var(--vooki-app-text-strong)] shadow-xs">
-                        English
+                      <span className="text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border-strong)] text-[color:var(--vooki-app-text-muted)] shadow-xs">
+                        No languages available
                       </span>
                     )}
                   </div>
