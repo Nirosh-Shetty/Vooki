@@ -618,14 +618,6 @@ export default function CreatorPublicProfile() {
                         {getInitials(data.name)}
                       </AvatarFallback>
                     </Avatar>
-                    {data.isVerified && (
-                      <div
-                        title="Verified Creator"
-                        className="absolute bottom-0.5 right-0.5 flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] ring-2 ring-[color:var(--vooki-app-surface)] shadow-xs"
-                      >
-                        <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                      </div>
-                    )}
                   </div>
 
                   <div className="space-y-1.5">
