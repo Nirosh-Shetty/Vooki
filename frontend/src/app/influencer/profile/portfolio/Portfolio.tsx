@@ -343,7 +343,7 @@ export function Portfolio({ initialItems = [], onUpdate }: ShowcaseProps) {
             </p>
           </div>
 
-          {!isLoading && (
+          {!isLoading && items.length > 0 && (
             <button
               type="button"
               onClick={() => {
@@ -354,7 +354,7 @@ export function Portfolio({ initialItems = [], onUpdate }: ShowcaseProps) {
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl text-[color:var(--vooki-app-text-strong)] bg-[color:var(--vooki-app-surface-strong)] border border-[color:var(--vooki-app-border-strong)] hover:bg-[color:var(--vooki-app-surface)] transition-all disabled:opacity-50 cursor-pointer self-start sm:self-auto shrink-0 shadow-xs"
             >
               <Plus className="h-3.5 w-3.5" />
-              <span>Add Reel ({items.length}/{MAX_ITEMS})</span>
+              <span>Add ({items.length}/{MAX_ITEMS})</span>
             </button>
           )}
         </div>

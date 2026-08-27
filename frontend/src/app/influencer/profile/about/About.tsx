@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles, Users, Globe, MapPin } from "lucide-react";
+import { Users, Globe, MapPin } from "lucide-react";
 
 interface AboutCardProps {
   summary?: string;
@@ -34,21 +34,22 @@ export function AboutCard({
       )}
 
       {/* Highlight Banner */}
-      {highlight && (
-        <div className="rounded-2xl border border-[color:var(--vooki-app-active-border)] bg-[color:var(--vooki-app-active-bg)]/25 p-5 flex items-start gap-4">
-          <div className="h-8 w-8 rounded-xl bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] flex items-center justify-center shrink-0 shadow-xs">
-            <Sparkles className="h-4 w-4" />
-          </div>
-          <div className="space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--vooki-app-text-subtle)]">
-              Highlight
-            </span>
-            <p className="text-xs sm:text-sm font-medium text-[color:var(--vooki-app-text-strong)] leading-relaxed">
-              {highlight}
-            </p>
-          </div>
-        </div>
-      )}
+      <div className="rounded-2xl border border-[color:var(--vooki-app-active-border)] bg-[color:var(--vooki-app-active-bg)]/25 p-5 space-y-1">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--vooki-app-text-subtle)]">
+          Highlight
+        </span>
+        <p
+          className={`text-xs sm:text-sm font-medium leading-relaxed ${
+            highlight && highlight.trim()
+              ? "text-[color:var(--vooki-app-text-strong)]"
+              : "text-[color:var(--vooki-app-text-muted)]"
+          }`}
+        >
+          {highlight && highlight.trim()
+            ? highlight
+            : "Please add the highlight"}
+        </p>
+      </div>
 
       {/* Side-by-Side: Audience (with Gender Ratio) & Languages */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
@@ -123,7 +124,7 @@ export function AboutCard({
                 <Users className="w-5 h-5" />
               </div>
               <p className="text-sm font-bold text-[color:var(--vooki-app-text-strong)]">
-                Demographics Not Available
+                Demographics
               </p>
               <p className="text-xs text-[color:var(--vooki-app-text-muted)] max-w-xs leading-relaxed">
                 Audience age, gender split, and geography insights have not been synced
