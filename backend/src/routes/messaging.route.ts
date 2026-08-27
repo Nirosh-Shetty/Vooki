@@ -6,7 +6,6 @@ import {
   markMessagesAsRead,
   searchMessaging,
   archiveConversation,
-  toggleStopCreatorMessages,
   deleteEmptyConversation,
 } from "../controllers/messaging/messaging.controller";
 import { authMiddleware } from "../middleware/auth";
@@ -20,7 +19,6 @@ messagingRouter.use(authMiddleware);
 messagingRouter.get("/conversations", getConversations);
 messagingRouter.post("/conversations", getOrCreateConversation);
 messagingRouter.post("/conversations/archive", archiveConversation);
-messagingRouter.post("/conversations/:conversationId/toggle-stop", toggleStopCreatorMessages);
 messagingRouter.delete("/conversations/:conversationId/empty", deleteEmptyConversation);
 
 // Message routes

@@ -16,22 +16,12 @@ import {
   Circle,
   Dot,
   Loader2,
-  MoreVertical,
   Paperclip,
-  PauseCircle,
-  PlayCircle,
   Plus,
   Search,
   Send,
   Smile,
-  User,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { CounterOfferModal } from "@/components/collaboration/CounterOfferModal";
 import { DeclineConfirmDialog } from "@/components/collaboration/DeclineConfirmDialog";
 
@@ -62,9 +52,6 @@ export interface HubConversation {
   lastMessageAt: string;
   unreadCount: number;
   status: "active" | "pending" | "closed";
-  isStoppedByBrand?: boolean;
-  stoppedBy?: string | null;
-  stoppedAt?: string | null;
   online: boolean;
   threadType?: "direct" | "campaign" | "collaboration";
   campaignId?: string;
@@ -99,7 +86,6 @@ interface MessagesHubProps {
     payload: { conversation: HubConversation; message: HubMessage }
   ) => Promise<void> | void;
   onCreateConversation?: (userId: string) => Promise<void>;
-  onToggleStopCreatorMessages?: (conversationId: string, stopped?: boolean) => Promise<void> | void;
   isLoading?: boolean;
   initialDraft?: string;
 }
@@ -308,7 +294,6 @@ export function MessagesHub({
   onSendMessage,
   onStructuredMessageAction,
   onCreateConversation,
-  onToggleStopCreatorMessages,
   isLoading = false,
   initialDraft,
 }: MessagesHubProps) {
@@ -321,7 +306,6 @@ export function MessagesHub({
   const [draft, setDraft] = useState("");
   const [searchDialogOpen, setSearchDialogOpen] = useState(false);
   const [creatingConversation, setCreatingConversation] = useState(false);
-  const [togglingStop, setTogglingStop] = useState(false);
   const [cardActionKey, setCardActionKey] = useState<string | null>(null);
   const [cardActionError, setCardActionError] = useState<string | null>(null);
   const [counterModal, setCounterModal] = useState<{
@@ -332,18 +316,6 @@ export function MessagesHub({
   const [declineModal, setDeclineModal] = useState<{ open: boolean; inviteId: string } | null>(
     null
   );
-
-  const handleToggleStopCreator = async (conversationId: string, stopped?: boolean) => {
-    if (!onToggleStopCreatorMessages) return;
-    try {
-      setTogglingStop(true);
-      await onToggleStopCreatorMessages(conversationId, stopped);
-    } catch (error) {
-      console.error("Failed to toggle creator messages:", error);
-    } finally {
-      setTogglingStop(false);
-    }
-  };
 
   useEffect(() => {
     if (providedSelectedId !== undefined) {
@@ -546,11 +518,6 @@ export function MessagesHub({
                             {conversation.lastMessage}
                           </p>
                           <div className="ml-2 flex items-center gap-1.5">
-                            {conversation.isStoppedByBrand ? (
-                              <Badge className="border border-amber-300 dark:border-amber-500/30 bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-500/20 px-2 py-0.5 text-[10px] font-medium rounded-full">
-                                Paused
-                              </Badge>
-                            ) : null}
                             <Dot className={`h-4 w-4 ${statusDotStyles[conversation.status]}`} />
                             {conversation.unreadCount > 0 && !isSelected ? (
                               <Badge className="border-0 bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] hover:bg-[color:var(--vooki-accent)] px-1.5 py-0 text-[10px]">
@@ -575,88 +542,33 @@ export function MessagesHub({
             {selectedConversation ? (
               <>
                 <CardHeader className="border-b border-[color:var(--vooki-app-border-strong)] pb-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 shrink-0 rounded-full text-[color:var(--vooki-app-text-soft)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)]"
-                        onClick={() => {
-                          setMobileChatOpen(false);
-                          setSelectedId(null);
-                          onSelectConversation?.("");
-                        }}
-                        title="Back"
-                      >
-                        <ArrowLeft className="h-4 w-4" />
-                      </Button>
-                      <ConversationAvatar
-                        conversation={selectedConversation}
-                        online={selectedConversation.online}
-                        size="md"
-                      />
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <CardTitle className="truncate text-base text-[color:var(--vooki-app-text-strong)]">
-                            {selectedConversation.name}
-                          </CardTitle>
-                          {selectedConversation.isStoppedByBrand ? (
-                            <Badge className="border border-amber-300 dark:border-amber-500/30 bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-500/20 text-xs px-2.5 py-0.5 font-medium rounded-full shadow-xs">
-                              Messages Paused
-                            </Badge>
-                          ) : null}
-                        </div>
-                        <p className="text-xs text-[color:var(--vooki-app-text-muted)]">
-                          {selectedConversation.context}
-                        </p>
-                      </div>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0 rounded-full text-[color:var(--vooki-app-text-soft)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)]"
+                      onClick={() => {
+                        setMobileChatOpen(false);
+                        setSelectedId(null);
+                        onSelectConversation?.("");
+                      }}
+                      title="Back"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <ConversationAvatar
+                      conversation={selectedConversation}
+                      online={selectedConversation.online}
+                      size="md"
+                    />
+                    <div className="min-w-0">
+                      <CardTitle className="truncate text-base text-[color:var(--vooki-app-text-strong)]">
+                        {selectedConversation.name}
+                      </CardTitle>
+                      <p className="text-xs text-[color:var(--vooki-app-text-muted)]">
+                        {selectedConversation.context}
+                      </p>
                     </div>
-
-                    {(role === "brand" || role === "manager") ? (
-                      <DropdownMenu modal={false}>
-                        <DropdownMenuTrigger asChild id={`conversation-more-menu-trigger-${selectedConversation.id}`}>
-                          <Button
-                            id={`conversation-more-menu-button-${selectedConversation.id}`}
-                            variant="ghost"
-                            size="icon"
-                            disabled={togglingStop}
-                            className="h-8 w-8 rounded-full text-[color:var(--vooki-app-text-muted)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)]"
-                          >
-                            {togglingStop ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <MoreVertical className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" id={`conversation-more-menu-content-${selectedConversation.id}`} className="w-56 rounded-2xl border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-card)] p-1.5 shadow-xl">
-                          <DropdownMenuItem
-                            onClick={() => handleToggleStopCreator(selectedConversation.id, !selectedConversation.isStoppedByBrand)}
-                            className="flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-hover)] focus:bg-[color:var(--vooki-app-surface-hover)]"
-                          >
-                            {selectedConversation.isStoppedByBrand ? (
-                              <>
-                                <PlayCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                                <span className="text-emerald-800 dark:text-emerald-300">Resume Creator Messages</span>
-                              </>
-                            ) : (
-                              <>
-                                <PauseCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                                <span className="text-amber-900 dark:text-amber-300">Pause Creator Messages</span>
-                              </>
-                            )}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-full text-[color:var(--vooki-app-text-muted)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)]"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    )}
                   </div>
                 </CardHeader>
 
@@ -829,49 +741,40 @@ export function MessagesHub({
                   )}
                 </CardContent>
 
-                {selectedConversation.isStoppedByBrand && role === "influencer" ? (
-                  <div className="border-t border-[color:var(--vooki-app-border-strong)] p-4">
-                    <div className="flex items-center justify-center gap-2.5 rounded-2xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-xs font-medium text-amber-950 dark:text-amber-200 shadow-xs">
-                      <PauseCircle className="h-4 w-4 shrink-0 text-amber-700 dark:text-amber-400" />
-                      <span>The brand has paused messages for this conversation. You will be able to reply when the brand resumes messages.</span>
-                    </div>
+                <div className="border-t border-[color:var(--vooki-app-border-strong)] p-3 sm:p-4">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 rounded-full text-[color:var(--vooki-app-text-muted)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)]"
+                    >
+                      <Paperclip className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 rounded-full text-[color:var(--vooki-app-text-muted)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)]"
+                    >
+                      <Smile className="h-4 w-4" />
+                    </Button>
+                    <Input
+                      placeholder={composerPlaceholder}
+                      value={draft}
+                      onChange={(event) => setDraft(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") sendMessage();
+                      }}
+                      className="h-11 rounded-full border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-strong)] placeholder:text-[color:var(--vooki-app-text-muted)]"
+                    />
+                    <Button
+                      onClick={sendMessage}
+                      disabled={!draft.trim()}
+                      className="h-11 w-11 rounded-full bg-[color:var(--vooki-accent)] p-0 text-[color:var(--vooki-accent-text)] shadow-[var(--vooki-shadow-accent)] hover:bg-[color:var(--vooki-accent-strong)]"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
                   </div>
-                ) : (
-                  <div className="border-t border-[color:var(--vooki-app-border-strong)] p-3 sm:p-4">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-9 w-9 rounded-full text-[color:var(--vooki-app-text-muted)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)]"
-                      >
-                        <Paperclip className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-9 w-9 rounded-full text-[color:var(--vooki-app-text-muted)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)]"
-                      >
-                        <Smile className="h-4 w-4" />
-                      </Button>
-                      <Input
-                        placeholder={composerPlaceholder}
-                        value={draft}
-                        onChange={(event) => setDraft(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") sendMessage();
-                        }}
-                        className="h-11 rounded-full border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-strong)] placeholder:text-[color:var(--vooki-app-text-muted)]"
-                      />
-                      <Button
-                        onClick={sendMessage}
-                        disabled={!draft.trim()}
-                        className="h-11 w-11 rounded-full bg-[color:var(--vooki-accent)] p-0 text-[color:var(--vooki-accent-text)] shadow-[var(--vooki-shadow-accent)] hover:bg-[color:var(--vooki-accent-strong)]"
-                      >
-                        <Send className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                </div>
               </>
             ) : (
               <div className="flex h-full items-center justify-center p-6 text-center">
