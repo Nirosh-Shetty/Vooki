@@ -160,7 +160,7 @@ const UserSchema = new Schema<IUser>(
     rating: { type: Number, default: 0 },
     totalReviews: { type: Number, default: 0 },
     influencerProfile: { type: InfluencerProfileSchema, default: () => ({}) },
-    brandDetails: { type: BrandProfileSchema, default: () => ({}) },
+    brandProfile: { type: BrandProfileSchema, default: () => ({}) },
     managerProfile: { type: ManagerProfileSchema, default: () => ({}) },
     isVerified: { type: Boolean, default: false },
     reservationExpiresAt: { type: Date, default: null },

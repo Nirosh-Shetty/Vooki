@@ -453,7 +453,7 @@ export const getDiscoverInvites = async (
       const brandIds = Array.from(new Set(items.map((item: any) => String(item.brandId))));
       const brands = await UserModel.find(
         { _id: { $in: brandIds } },
-        { name: 1, username: 1, "brandDetails.companyName": 1, profilePicture: 1 }
+        { name: 1, username: 1, "brandProfile.companyName": 1, profilePicture: 1 }
       ).lean();
       const promotions = await PromotionModel.find(
         { sourceInviteId: { $in: inviteIds } },
@@ -472,7 +472,7 @@ export const getDiscoverInvites = async (
             id: String(item._id),
             brandId: String(item.brandId),
             brandName:
-              brand?.brandDetails?.companyName || brand?.name || brand?.username || "Brand",
+              brand?.brandProfile?.companyName || brand?.name || brand?.username || "Brand",
             brandHandle: brand?.username ? `@${brand.username}` : "",
             campaignId: String(item.campaignId || ""),
             campaignTitle: item.campaignTitle || "",

@@ -62,7 +62,7 @@ export const getPublicProfileByUsername = async (
         _id: 1,
         username: 1,
         isVerified: 1,
-        "brandDetails.companyName": 1,
+        "brandProfile.companyName": 1,
       })
       .lean();
 
@@ -72,7 +72,7 @@ export const getPublicProfileByUsername = async (
     const collaborations = promotions.map((promo) => {
       const brand = brandMap.get(String(promo.brandId));
       return {
-        brandName: brand?.brandDetails?.companyName || brand?.username || "brand",
+        brandName: brand?.brandProfile?.companyName || brand?.username || "brand",
         isVerified: Boolean(brand?.isVerified),
         campaignTitle: promo.campaignTitle,
         date: promo.postAt || promo.createdAt,
@@ -88,7 +88,7 @@ export const getPublicProfileByUsername = async (
       .map((promo) => {
         const brand = brandMap.get(String(promo.brandId));
         return {
-          brandName: brand?.brandDetails?.companyName || brand?.username || "brand",
+          brandName: brand?.brandProfile?.companyName || brand?.username || "brand",
           rating: promo.brandRating?.score ?? 0, // renamed to rating if your frontend expects it
           score: promo.brandRating?.score ?? 0,
           review: promo.brandRating?.review?.trim() || "",

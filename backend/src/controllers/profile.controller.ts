@@ -228,27 +228,27 @@ export const updateBrandProfile = async (req: Request, res: Response) => {
       return res.status(403).json({ message: "Only brands can update this profile" })
     }
 
-    const { name, username, email, phone, brandDetails } = req.body
+    const { name, username, email, phone, brandProfile } = req.body
     if (typeof name === "string") user.name = name.trim()
     if (typeof username === "string") user.username = username.trim()
     if (typeof email === "string") user.email = email.trim().toLowerCase()
     if (phone) user.phone = Number(phone)
 
-    const existingDetails = user.brandDetails || {}
-    user.brandDetails = {
+    const existingDetails = user.brandProfile || {}
+    user.brandProfile = {
       ...existingDetails,
-      companyName: applyLocaleSafeString(brandDetails?.companyName) ?? existingDetails.companyName,
-      website: brandDetails?.website ?? existingDetails.website,
-      brandCategory: applyLocaleSafeString(brandDetails?.brandCategory) ?? existingDetails.brandCategory,
-      summary: applyLocaleSafeString(brandDetails?.summary) ?? existingDetails.summary,
+      companyName: applyLocaleSafeString(brandProfile?.companyName) ?? existingDetails.companyName,
+      website: brandProfile?.website ?? existingDetails.website,
+      brandCategory: applyLocaleSafeString(brandProfile?.brandCategory) ?? existingDetails.brandCategory,
+      summary: applyLocaleSafeString(brandProfile?.summary) ?? existingDetails.summary,
       collaborations: existingDetails.collaborations,
-      activeCampaigns: Number(brandDetails?.activeCampaigns) || existingDetails.activeCampaigns,
-      pointsOfContact: Number(brandDetails?.pointsOfContact) || existingDetails.pointsOfContact,
-      contactRole: applyLocaleSafeString(brandDetails?.contactRole) ?? existingDetails.contactRole,
+      activeCampaigns: Number(brandProfile?.activeCampaigns) || existingDetails.activeCampaigns,
+      pointsOfContact: Number(brandProfile?.pointsOfContact) || existingDetails.pointsOfContact,
+      contactRole: applyLocaleSafeString(brandProfile?.contactRole) ?? existingDetails.contactRole,
       collaborationDefaults: {
-        usageRights: applyLocaleSafeString(brandDetails?.collaborationDefaults?.usageRights) ?? existingDetails.collaborationDefaults?.usageRights,
-        revisions: Number(brandDetails?.collaborationDefaults?.revisions) || existingDetails.collaborationDefaults?.revisions,
-        exclusivityPeriod: Number(brandDetails?.collaborationDefaults?.exclusivityPeriod) || existingDetails.collaborationDefaults?.exclusivityPeriod,
+        usageRights: applyLocaleSafeString(brandProfile?.collaborationDefaults?.usageRights) ?? existingDetails.collaborationDefaults?.usageRights,
+        revisions: Number(brandProfile?.collaborationDefaults?.revisions) || existingDetails.collaborationDefaults?.revisions,
+        exclusivityPeriod: Number(brandProfile?.collaborationDefaults?.exclusivityPeriod) || existingDetails.collaborationDefaults?.exclusivityPeriod,
       }
     }
 

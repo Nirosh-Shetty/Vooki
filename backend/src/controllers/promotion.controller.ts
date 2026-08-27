@@ -161,12 +161,12 @@ export const createPromotion = async (
 
     const normalizedDeliverables = Array.isArray(deliverables)
       ? deliverables
-          .map((item: any) => ({
-            platform: String(item?.platform || "").trim(),
-            format: String(item?.format || "").trim(),
-            quantity: Math.max(1, parseNumber(item?.quantity) ?? 1),
-          }))
-          .filter((item: any) => item.platform && item.format)
+        .map((item: any) => ({
+          platform: String(item?.platform || "").trim(),
+          format: String(item?.format || "").trim(),
+          quantity: Math.max(1, parseNumber(item?.quantity) ?? 1),
+        }))
+        .filter((item: any) => item.platform && item.format)
       : [];
 
     if (!normalizedDeliverables.length) {
@@ -290,14 +290,14 @@ export const listPromotions = async (
     const brandIds = Array.from(new Set(items.map((item: any) => String(item.brandId))));
     const brands = brandIds.length
       ? await UserModel.find(
-          { _id: { $in: brandIds } },
-          { name: 1, username: 1, "brandDetails.companyName": 1 }
-        ).lean()
+        { _id: { $in: brandIds } },
+        { name: 1, username: 1, "brandProfile.companyName": 1 }
+      ).lean()
       : [];
     const brandNameMap = new Map(
       brands.map((brand: any) => [
         String(brand._id),
-        brand?.brandDetails?.companyName || brand?.name || brand?.username || "Brand",
+        brand?.brandProfile?.companyName || brand?.name || brand?.username || "Brand",
       ])
     );
 
@@ -338,9 +338,9 @@ export const getPromotionById = async (
     }
 
     const brand = await UserModel.findById(promotion.brandId)
-      .select("name username brandDetails.companyName")
+      .select("name username brandProfile.companyName")
       .lean();
-    const brandName = brand?.brandDetails?.companyName || brand?.name || brand?.username || "Brand";
+    const brandName = brand?.brandProfile?.companyName || brand?.name || brand?.username || "Brand";
 
     return res.status(200).json({ promotion: formatPromotion(promotion, brandName) });
   } catch (error) {
@@ -815,7 +815,7 @@ export const confirmPaymentReceived = async (
     if (!promotion || !canAccessPromotion(promotion, requester)) {
       return res.status(404).json({ message: "Promotion not found" });
     }
-    
+
     if (promotion.status !== "payment_pending" || promotion.paymentStatus !== "paid") {
       return res.status(409).json({ message: "Payment must be marked as paid by the brand before it can be confirmed." });
     }

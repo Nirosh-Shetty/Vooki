@@ -111,7 +111,7 @@ export interface IUser extends Document {
   rating: number;
   totalReviews: number;
   influencerProfile?: InfluencerProfile;
-  brandDetails?: BrandProfile;
+  brandProfile?: BrandProfile;
   managerProfile?: ManagerProfile;
   isVerified: boolean;
   reservationExpiresAt?: Date;

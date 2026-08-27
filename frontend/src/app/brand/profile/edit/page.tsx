@@ -36,9 +36,9 @@ export default function BrandProfileEditPage() {
     if (user) {
       setProfileData({
         brandName: user.name || "",
-        industry: (user as any).brandDetails?.brandCategory || "",
-        website: (user as any).brandDetails?.website || "",
-        summary: (user as any).brandDetails?.summary || "",
+        industry: (user as any).brandProfile?.brandCategory || "",
+        website: (user as any).brandProfile?.website || "",
+        summary: (user as any).brandProfile?.summary || "",
         logoUrl: user.profilePicture || "/images/defaults/brand.svg"
       })
     }
@@ -59,7 +59,7 @@ export default function BrandProfileEditPage() {
         credentials: "include",
         body: JSON.stringify({
           name: profileData.brandName,
-          brandDetails: {
+          brandProfile: {
             companyName: profileData.brandName,
             brandCategory: profileData.industry,
             website: profileData.website,

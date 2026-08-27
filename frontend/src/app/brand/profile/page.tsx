@@ -16,7 +16,7 @@ type BrandProfilePayload = {
   profilePicture?: string
   rating?: number
   totalReviews?: number
-  brandDetails?: {
+  brandProfile?: {
     companyName?: string
     website?: string
     brandCategory?: string
@@ -65,9 +65,9 @@ export default function BrandProfilePage() {
     return () => controller.abort()
   }, [])
 
-  const totalCollaborations = useMemo(() => profile?.brandDetails?.collaborations ?? 0, [profile])
-  const activeCampaigns = useMemo(() => profile?.brandDetails?.activeCampaigns ?? 0, [profile])
-  const invites = Math.max(0, (profile?.brandDetails?.collaborations ?? 0) * 2)
+  const totalCollaborations = useMemo(() => profile?.brandProfile?.collaborations ?? 0, [profile])
+  const activeCampaigns = useMemo(() => profile?.brandProfile?.activeCampaigns ?? 0, [profile])
+  const invites = Math.max(0, (profile?.brandProfile?.collaborations ?? 0) * 2)
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
@@ -100,9 +100,9 @@ export default function BrandProfilePage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="text-3xl font-semibold tracking-tight">{profile.name}</h1>
                   <Badge className="border-0 bg-white/80 text-slate-900">Brand account</Badge>
-                  {profile.brandDetails?.brandCategory && (
+                  {profile.brandProfile?.brandCategory && (
                     <Badge className="border-0 bg-slate-900/10 text-slate-900">
-                      {profile.brandDetails.brandCategory}
+                      {profile.brandProfile.brandCategory}
                     </Badge>
                   )}
                 </div>
@@ -153,15 +153,15 @@ export default function BrandProfilePage() {
                   <div className="grid gap-4 sm:grid-cols-3">
                     <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-700">
                       <p className="text-xs text-slate-500">Company</p>
-                      <p className="text-base font-semibold text-slate-900">{profile.brandDetails?.companyName || "Not set"}</p>
+                      <p className="text-base font-semibold text-slate-900">{profile.brandProfile?.companyName || "Not set"}</p>
                     </div>
                     <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-700">
                       <p className="text-xs text-slate-500">Website</p>
-                      <p className="text-base font-semibold text-slate-900">{profile.brandDetails?.website || "Not set"}</p>
+                      <p className="text-base font-semibold text-slate-900">{profile.brandProfile?.website || "Not set"}</p>
                     </div>
                     <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-700">
                       <p className="text-xs text-slate-500">Category</p>
-                      <p className="text-base font-semibold text-slate-900">{profile.brandDetails?.brandCategory || "General"}</p>
+                      <p className="text-base font-semibold text-slate-900">{profile.brandProfile?.brandCategory || "General"}</p>
                     </div>
                   </div>
                   <div className="space-y-3 text-sm text-slate-700">
