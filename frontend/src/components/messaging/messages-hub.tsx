@@ -750,13 +750,6 @@ export function MessagesHub({
                     >
                       <Paperclip className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9 rounded-full text-[color:var(--vooki-app-text-muted)] hover:bg-[color:var(--vooki-app-surface-hover)] hover:text-[color:var(--vooki-app-text-strong)]"
-                    >
-                      <Smile className="h-4 w-4" />
-                    </Button>
                     <Input
                       placeholder={composerPlaceholder}
                       value={draft}
