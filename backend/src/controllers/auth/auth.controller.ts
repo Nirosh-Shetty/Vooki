@@ -588,7 +588,7 @@ export const getCurrentUser = async (
         role: user.role,
         avatar: user.avatar,
         brandDetails: user.brandDetails,
-        InfluencerProfile: user.InfluencerProfile,
+        influencerProfile: user.influencerProfile,
         rating: user.rating,
         totalReviews: user.totalReviews,
         notificationPreferences: user.notificationPreferences,

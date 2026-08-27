@@ -41,7 +41,7 @@ type PublicProfile = {
   followers: number
   rating?: number
   totalReviews?: number
-  InfluencerProfile?: {
+  influencerProfile?: {
     statsConnection?: {
       instagram?: { followers: number; engagementRate?: number }
       youtube?: { subscribers: number; engagementRate?: number }
@@ -409,7 +409,7 @@ export default function DiscoverProfilePage() {
                       </div>
                     </div>
                     <span className="text-lg font-black tracking-tight text-[color:var(--vooki-app-text-strong)] shrink-0">
-                      {formatCompact(profile.InfluencerProfile?.statsConnection?.instagram?.followers || profile.followers || 0)}
+                      {formatCompact(profile.influencerProfile?.statsConnection?.instagram?.followers || profile.followers || 0)}
                     </span>
                   </a>
 
@@ -425,7 +425,7 @@ export default function DiscoverProfilePage() {
                       </div>
                     </div>
                     <span className="text-lg font-black tracking-tight text-[color:var(--vooki-app-text-strong)] shrink-0">
-                      {formatCompact(profile.InfluencerProfile?.statsConnection?.youtube?.subscribers || 0)}
+                      {formatCompact(profile.influencerProfile?.statsConnection?.youtube?.subscribers || 0)}
                     </span>
                   </a>
                 </div>

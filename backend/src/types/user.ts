@@ -110,7 +110,7 @@ export interface IUser extends Document {
   oauthProviders?: OAuthProvider[];
   rating: number;
   totalReviews: number;
-  InfluencerProfile?: InfluencerProfile;
+  influencerProfile?: InfluencerProfile;
   brandDetails?: BrandProfile;
   managerProfile?: ManagerProfile;
   isVerified: boolean;

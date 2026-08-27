@@ -73,7 +73,7 @@ type ShowcaseItem = {
   url: string;
 };
 
-type InfluencerProfile = {
+type influencerProfile = {
   _id: string;
   role: "influencer";
   name: string;
@@ -82,7 +82,7 @@ type InfluencerProfile = {
   profilePicture?: string;
   rating?: number;
   totalReviews?: number;
-  InfluencerProfile?: {
+  influencerProfile?: {
     niche?: string;
     location?: string;
     languages?: string[];
@@ -129,7 +129,7 @@ const formatHistoryDate = (value?: string) => {
 
 export function ProfileContent() {
   const [disconnecting, setDisconnecting] = useState<PlatformKey | null>(null);
-  const [profile, setProfile] = useState<InfluencerProfile | null>(null);
+  const [profile, setProfile] = useState<influencerProfile | null>(null);
   const [publicData, setPublicData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -164,8 +164,8 @@ export function ProfileContent() {
         return updated;
       });
 
-      if (profile?.InfluencerProfile?.socialConnection) {
-        delete profile.InfluencerProfile.socialConnection[platform];
+      if (profile?.influencerProfile?.socialConnection) {
+        delete profile.influencerProfile.socialConnection[platform];
       }
     } catch (err: unknown) {
       setConnectError(err instanceof Error ? err.message : "Failed to disconnect");
@@ -214,7 +214,7 @@ export function ProfileContent() {
         });
 
         if (!response.ok) throw new Error("Unable to load profile");
-        const data: InfluencerProfile = await response.json();
+        const data: influencerProfile = await response.json();
         if (data.role !== "influencer") throw new Error("Expected an influencer account");
 
         setProfile(data);
@@ -256,10 +256,10 @@ export function ProfileContent() {
 
   const connections: Record<string, SocialConnectionEntry> = useMemo(() => {
     return {
-      ...(profile?.InfluencerProfile?.socialConnection ?? {}),
+      ...(profile?.influencerProfile?.socialConnection ?? {}),
       ...socialConnection,
     };
-  }, [profile?.InfluencerProfile?.socialConnection, socialConnection]);
+  }, [profile?.influencerProfile?.socialConnection, socialConnection]);
 
   const connectedCount = SOCIAL_PLATFORMS.filter((platform) =>
     Boolean(connections[platform])
@@ -294,7 +294,7 @@ export function ProfileContent() {
       return publicData.profile.collaborations;
     }
     return (
-      profile?.InfluencerProfile?.pastCollaborations?.map((collab: any) => ({
+      profile?.influencerProfile?.pastCollaborations?.map((collab: any) => ({
         brandName: collab.brand || collab.brandName,
         campaignTitle: collab.campaign || collab.campaignTitle,
         date: collab.date,
@@ -308,7 +308,7 @@ export function ProfileContent() {
       return publicData.profile.reviews;
     }
     return (
-      profile?.InfluencerProfile?.reviews?.map((r: any) => ({
+      profile?.influencerProfile?.reviews?.map((r: any) => ({
         brandName: r.brandName || r.author,
         rating: r.rating ?? r.score,
         score: r.score ?? r.rating,
@@ -376,8 +376,8 @@ export function ProfileContent() {
         <div className="mt-2.5 flex items-center gap-3">
           <div
             className={`flex items-center gap-1 text-xs font-semibold ${platformFollowers.youtube !== null
-                ? "text-[color:var(--vooki-app-text-strong)]"
-                : "text-[color:var(--vooki-app-text-soft)]/50"
+              ? "text-[color:var(--vooki-app-text-strong)]"
+              : "text-[color:var(--vooki-app-text-soft)]/50"
               }`}
             title="YouTube Subscribers"
           >
@@ -389,8 +389,8 @@ export function ProfileContent() {
 
           <div
             className={`flex items-center gap-1 text-xs font-semibold ${platformFollowers.instagram !== null
-                ? "text-[color:var(--vooki-app-text-strong)]"
-                : "text-[color:var(--vooki-app-text-soft)]/50"
+              ? "text-[color:var(--vooki-app-text-strong)]"
+              : "text-[color:var(--vooki-app-text-soft)]/50"
               }`}
             title="Instagram Followers"
           >
@@ -404,8 +404,8 @@ export function ProfileContent() {
 
           <div
             className={`flex items-center gap-1 text-xs font-semibold ${platformFollowers.facebook !== null
-                ? "text-[color:var(--vooki-app-text-strong)]"
-                : "text-[color:var(--vooki-app-text-soft)]/50"
+              ? "text-[color:var(--vooki-app-text-strong)]"
+              : "text-[color:var(--vooki-app-text-soft)]/50"
               }`}
             title="Facebook Followers"
           >
@@ -417,8 +417,8 @@ export function ProfileContent() {
 
           <div
             className={`flex items-center gap-1 text-xs font-semibold ${platformFollowers.twitter !== null
-                ? "text-[color:var(--vooki-app-text-strong)]"
-                : "text-[color:var(--vooki-app-text-soft)]/50"
+              ? "text-[color:var(--vooki-app-text-strong)]"
+              : "text-[color:var(--vooki-app-text-soft)]/50"
               }`}
             title="X (Twitter) Followers"
           >
@@ -435,8 +435,8 @@ export function ProfileContent() {
     {
       icon: TrendingUp,
       label: "Engagement",
-      value: profile?.InfluencerProfile?.engagement
-        ? `${profile.InfluencerProfile.engagement.toFixed(1)}%`
+      value: profile?.influencerProfile?.engagement
+        ? `${profile.influencerProfile.engagement.toFixed(1)}%`
         : "-",
     },
     {
@@ -556,17 +556,17 @@ export function ProfileContent() {
                     @{profile.username || "creator"}
                   </span>
 
-                  {profile.InfluencerProfile?.location && (
+                  {profile.influencerProfile?.location && (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[color:var(--vooki-app-surface-strong)] border border-[color:var(--vooki-app-border-strong)] backdrop-blur-sm">
                       <MapPin className="h-3.5 w-3.5 text-[color:var(--vooki-app-active-icon)]" />
-                      {profile.InfluencerProfile.location}
+                      {profile.influencerProfile.location}
                     </span>
                   )}
 
-                  {profile.InfluencerProfile?.niche && (
+                  {profile.influencerProfile?.niche && (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[color:var(--vooki-app-active-bg)]/40 border border-[color:var(--vooki-app-active-border)] text-[color:var(--vooki-app-text-strong)] font-semibold backdrop-blur-sm">
                       <Award className="h-3.5 w-3.5 text-[color:var(--vooki-app-active-icon)]" />
-                      {profile.InfluencerProfile.niche}
+                      {profile.influencerProfile.niche}
                     </span>
                   )}
                 </div>
@@ -639,8 +639,8 @@ export function ProfileContent() {
           type="button"
           onClick={() => setActiveSection("overview")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${activeSection === "overview"
-              ? "bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] shadow-xs"
-              : "text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]"
+            ? "bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] shadow-xs"
+            : "text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]"
             }`}
         >
           <LayoutGrid className="w-4 h-4" />
@@ -651,8 +651,8 @@ export function ProfileContent() {
           type="button"
           onClick={() => setActiveSection("analytics")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${activeSection === "analytics"
-              ? "bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] shadow-xs"
-              : "text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]"
+            ? "bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] shadow-xs"
+            : "text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]"
             }`}
         >
           <BarChart3 className="w-4 h-4" />
@@ -668,15 +668,15 @@ export function ProfileContent() {
           type="button"
           onClick={() => setActiveSection("portfolio")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${activeSection === "portfolio"
-              ? "bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] shadow-xs"
-              : "text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]"
+            ? "bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] shadow-xs"
+            : "text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]"
             }`}
         >
           <Layers className="w-4 h-4" />
           <span>Featured Media</span>
-          {(profile.InfluencerProfile?.featuredContent?.length ?? 0) > 0 && (
+          {(profile.influencerProfile?.featuredContent?.length ?? 0) > 0 && (
             <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border-strong)]">
-              {profile.InfluencerProfile?.featuredContent?.length}
+              {profile.influencerProfile?.featuredContent?.length}
             </span>
           )}
         </button>
@@ -685,8 +685,8 @@ export function ProfileContent() {
           type="button"
           onClick={() => setActiveSection("partnerships")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${activeSection === "partnerships"
-              ? "bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] shadow-xs"
-              : "text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]"
+            ? "bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] shadow-xs"
+            : "text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]"
             }`}
         >
           <Handshake className="w-4 h-4" />
@@ -703,11 +703,11 @@ export function ProfileContent() {
       {activeSection === "overview" && (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
           <AboutCard
-            summary={profile.InfluencerProfile?.summary}
-            highlight={profile.InfluencerProfile?.highlight}
-            audience={profile.InfluencerProfile?.audience}
-            languages={profile.InfluencerProfile?.languages}
-            location={profile.InfluencerProfile?.location}
+            summary={profile.influencerProfile?.summary}
+            highlight={profile.influencerProfile?.highlight}
+            audience={profile.influencerProfile?.audience}
+            languages={profile.influencerProfile?.languages}
+            location={profile.influencerProfile?.location}
           />
         </div>
       )}
@@ -730,14 +730,14 @@ export function ProfileContent() {
       {activeSection === "portfolio" && (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
           <Portfolio
-            initialItems={profile.InfluencerProfile?.featuredContent || []}
+            initialItems={profile.influencerProfile?.featuredContent || []}
             onUpdate={(items) => {
               setProfile((prev) => {
                 if (!prev) return prev;
                 return {
                   ...prev,
-                  InfluencerProfile: {
-                    ...prev.InfluencerProfile,
+                  influencerProfile: {
+                    ...prev.influencerProfile,
                     featuredContent: items,
                   },
                 };

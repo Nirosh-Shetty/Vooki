@@ -238,7 +238,7 @@ export const getBrandInvites = async (
     const invitesWithInfluencerInfo = await Promise.all(
       invites.map(async (invite: any) => {
         const influencer = await UserModel.findById(invite.influencerId).select(
-          "_id name username InfluencerProfile.niche avatar"
+          "_id name username influencerProfile.niche avatar"
         );
 
         return {
@@ -246,7 +246,7 @@ export const getBrandInvites = async (
           influencerId: invite.influencerId,
           influencerName: influencer?.name || "",
           influencerHandle: influencer?.username || "",
-          influencerNiche: influencer?.InfluencerProfile?.niche || "",
+          influencerNiche: influencer?.influencerProfile?.niche || "",
           campaignId: invite.campaignId,
           campaignLabel: invite.campaignTitle,
           note: invite.brandMessage || "",

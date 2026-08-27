@@ -28,7 +28,7 @@ export const getPublicProfileByUsername = async (
         isVerified: 1,
         rating: 1,
         totalReviews: 1,
-        InfluencerProfile: 1,
+        influencerProfile: 1,
       })
       .lean();
 
@@ -98,7 +98,7 @@ export const getPublicProfileByUsername = async (
 
 
     // 7. Strip OAuth tokens from statsConnection
-    const rawStats = user.InfluencerProfile?.statsConnection || {};
+    const rawStats = user.influencerProfile?.statsConnection || {};
     const sanitizedStats: Record<string, any> = {};
 
     Object.entries(rawStats).forEach(([platform, data]: [string, any]) => {
@@ -121,16 +121,16 @@ export const getPublicProfileByUsername = async (
       rating: user.rating,
       totalReviews: user.totalReviews,
       profile: {
-        followers: user.InfluencerProfile?.followers || 0,
-        niche: user.InfluencerProfile?.niche || "General",
-        location: user.InfluencerProfile?.location || "",
-        summary: user.InfluencerProfile?.summary || "",
-        highlight: user.InfluencerProfile?.highlight || "",
-        audience: user.InfluencerProfile?.audience || "",
-        engagement: user.InfluencerProfile?.engagement || 0,
-        languages: user.InfluencerProfile?.languages || [],
-        socialLinks: user.InfluencerProfile?.socialLinks || {},
-        featuredContent: user.InfluencerProfile?.featuredContent || [],
+        followers: user.influencerProfile?.followers || 0,
+        niche: user.influencerProfile?.niche || "General",
+        location: user.influencerProfile?.location || "",
+        summary: user.influencerProfile?.summary || "",
+        highlight: user.influencerProfile?.highlight || "",
+        audience: user.influencerProfile?.audience || "",
+        engagement: user.influencerProfile?.engagement || 0,
+        languages: user.influencerProfile?.languages || [],
+        socialLinks: user.influencerProfile?.socialLinks || {},
+        featuredContent: user.influencerProfile?.featuredContent || [],
         stats: sanitizedStats,
         collaborations,
         reviews,

@@ -21,14 +21,14 @@ export const profile = async (req: Request, res: Response) => {
     }
 
     const socialConnections = normalizeSocialConnectionsRecord(
-      user?.statsConnection || user?.InfluencerProfile?.statsConnection
+      user?.statsConnection || user?.influencerProfile?.statsConnection
     );
 
     return res.status(200).json({
       ...user,
       avatar: user.avatar,
-      InfluencerProfile: {
-        ...(user.InfluencerProfile || {}),
+      influencerProfile: {
+        ...(user.influencerProfile || {}),
         statsConnection: socialConnections,
       },
     });
@@ -92,7 +92,7 @@ export const getPublicInfluencerProfile = async (req: Request, res: Response) =>
       role: "influencer",
     })
       .select(
-        "name username role avatar isVerified rating totalReviews InfluencerProfile.niche InfluencerProfile.followers InfluencerProfile.socialLinks InfluencerProfile.statsConnection"
+        "name username role avatar isVerified rating totalReviews influencerProfile.niche influencerProfile.followers influencerProfile.socialLinks influencerProfile.statsConnection"
       )
       .lean();
 
@@ -100,7 +100,7 @@ export const getPublicInfluencerProfile = async (req: Request, res: Response) =>
       return res.status(404).json({ message: "Influencer profile not found" });
     }
 
-    const followers = Number(user?.InfluencerProfile?.followers || 0);
+    const followers = Number(user?.influencerProfile?.followers || 0);
     const engagementRate = clamp(
       Number((3 + Math.log10(Math.max(followers, 10)) * 1.35).toFixed(1)),
       1.8,
@@ -118,8 +118,8 @@ export const getPublicInfluencerProfile = async (req: Request, res: Response) =>
       98
     );
 
-    const socialLinks = user?.InfluencerProfile?.socialLinks
-      ? Object.fromEntries(Object.entries(user.InfluencerProfile.socialLinks))
+    const socialLinks = user?.influencerProfile?.socialLinks
+      ? Object.fromEntries(Object.entries(user.influencerProfile.socialLinks))
       : {};
 
     return res.status(200).json({
@@ -129,7 +129,7 @@ export const getPublicInfluencerProfile = async (req: Request, res: Response) =>
       role: user.role,
       avatar: user.avatar || "",
       verified: Boolean(user.isVerified),
-      niche: user?.InfluencerProfile?.niche || "General",
+      niche: user?.influencerProfile?.niche || "General",
       followers,
       rating: Number(user.rating || 0),
       totalReviews: Number(user.totalReviews || 0),
@@ -170,34 +170,34 @@ export const updateInfluencerProfile = async (req: Request, res: Response) => {
       return res.status(403).json({ message: "Only influencers can update this profile" })
     }
 
-    const { name, username, email, phone, InfluencerProfile } = req.body
+    const { name, username, email, phone, influencerProfile } = req.body
     if (typeof name === "string") user.name = name.trim()
     if (typeof username === "string") user.username = username.trim()
     if (typeof email === "string") user.email = email.trim().toLowerCase()
     if (phone) user.phone = Number(phone)
 
-    const existingDetails = user.InfluencerProfile || {}
+    const existingDetails = user.influencerProfile || {}
 
     const links = sanitizeSocialLinks(existingDetails.socialLinks)
-    if (InfluencerProfile?.socialLinks) {
-      const incoming = sanitizeSocialLinks(InfluencerProfile.socialLinks)
+    if (influencerProfile?.socialLinks) {
+      const incoming = sanitizeSocialLinks(influencerProfile.socialLinks)
       for (const [key, value] of incoming.entries()) {
         links.set(key, value)
       }
     }
 
-    user.InfluencerProfile = {
+    user.influencerProfile = {
       ...existingDetails,
-      followers: InfluencerProfile?.followers ?? existingDetails.followers,
-      niche: applyLocaleSafeString(InfluencerProfile?.niche) ?? existingDetails.niche,
-      summary: applyLocaleSafeString(InfluencerProfile?.summary) ?? existingDetails.summary,
-      highlight: applyLocaleSafeString(InfluencerProfile?.highlight) ?? existingDetails.highlight,
-      audience: applyLocaleSafeString(InfluencerProfile?.audience) ?? existingDetails.audience,
-      engagement: Number(InfluencerProfile?.engagement) || existingDetails.engagement,
+      followers: influencerProfile?.followers ?? existingDetails.followers,
+      niche: applyLocaleSafeString(influencerProfile?.niche) ?? existingDetails.niche,
+      summary: applyLocaleSafeString(influencerProfile?.summary) ?? existingDetails.summary,
+      highlight: applyLocaleSafeString(influencerProfile?.highlight) ?? existingDetails.highlight,
+      audience: applyLocaleSafeString(influencerProfile?.audience) ?? existingDetails.audience,
+      engagement: Number(influencerProfile?.engagement) || existingDetails.engagement,
       socialLinks: links,
       statsConnection: existingDetails.statsConnection,
-      languages: Array.isArray(InfluencerProfile?.languages) ? InfluencerProfile.languages : existingDetails.languages,
-      location: applyLocaleSafeString(InfluencerProfile?.location) ?? existingDetails.location,
+      languages: Array.isArray(influencerProfile?.languages) ? influencerProfile.languages : existingDetails.languages,
+      location: applyLocaleSafeString(influencerProfile?.location) ?? existingDetails.location,
       preferences: existingDetails.preferences,
     }
 

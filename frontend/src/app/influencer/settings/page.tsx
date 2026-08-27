@@ -43,7 +43,7 @@ export default function InfluencerSettingsPage() {
 
   useEffect(() => {
     if (user) {
-      const details = (user as any).InfluencerProfile || {}
+      const details = (user as any).influencerProfile || {}
       const notifs = (user as any).notificationPreferences || {}
 
       setPreferences({
@@ -103,7 +103,7 @@ export default function InfluencerSettingsPage() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          InfluencerProfile: {
+          influencerProfile: {
             preferences: {
               minimumRate: { amount: preferences.minimumRate, currency: "INR" },
               contentBoundaries: preferences.contentBoundaries

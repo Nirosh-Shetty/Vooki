@@ -87,7 +87,7 @@
 * **current objective**: Simplify collaboration timelines (removed multi-date flow `postingStartDate`, `postingEndDate`, `draftDueDate`, `responseDeadline` in favor of a single `targetDate` and `postAt`) and clean up schema consistency.
 * **what was already completed**: 
   - Redesign of Finance page (`/brand/payments/page.tsx`) and Create Invite Modal (`CreateInviteModal.tsx`).
-  - Codebase standardization of `influencerDetails` -> `InfluencerProfile` sub-schema.
+  - Codebase standardization of `influencerDetails` -> `influencerProfile` sub-schema.
   - Simplified timeline schema in `DiscoverInvite.ts` and `Promotion.ts`.
   - Updated `collaborationInvite.controller.ts` and `promotion.controller.ts` to use simplified `targetDate` / `postAt`.
   - Updated frontend forms and dashboards (`CreateInviteModal.tsx`, `promotion-workspace.tsx`, `messages-hub.tsx`, `brand/dashboard/page.tsx`, `influencer/dashboard/page.tsx`).

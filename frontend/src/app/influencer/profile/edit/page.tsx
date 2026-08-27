@@ -121,7 +121,7 @@ export default function influencerDetailsEditPage() {
         const data = await response.json();
         if (data.role !== "influencer") throw new Error("Expected influencer account");
 
-        const details = data.InfluencerProfile ?? {};
+        const details = data.influencerProfile ?? {};
         const fetchedUsername = String(data.username ?? "");
 
         setInitialUsername(fetchedUsername);
@@ -253,7 +253,7 @@ export default function influencerDetailsEditPage() {
           .trim()
           .toLowerCase(),
         phone: String(form.phone ?? "").trim(),
-        InfluencerProfile: {
+        influencerProfile: {
           location: String(form.location ?? "").trim(),
           languages: String(form.languages ?? "")
             .split(",")
@@ -270,7 +270,7 @@ export default function influencerDetailsEditPage() {
         photo: photoData || undefined,
       };
 
-      const payload = { name: data.name, username: data.username, email: data.email, phone: data.phone, InfluencerProfile: data.InfluencerProfile, photo: data.photo }
+      const payload = { name: data.name, username: data.username, email: data.email, phone: data.phone, influencerProfile: data.influencerProfile, photo: data.photo }
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/profile/influencer`,

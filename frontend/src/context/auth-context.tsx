@@ -13,7 +13,7 @@ export interface AuthUser {
   profilePicture?: string;
   brandName?: string;
   brandDetails?: any;
-  InfluencerProfile?: any;
+  influencerProfile?: any;
   rating?: number;
   totalReviews?: number;
 }
