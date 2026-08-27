@@ -22,6 +22,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { getInitials } from "@/lib/utils";
+
 
 type InfluencerFormState = {
   name: string;
@@ -372,12 +374,9 @@ export default function influencerDetailsEditPage() {
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 rounded-2xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4">
               <div className="relative group mx-auto sm:mx-0">
                 <Avatar className="h-20 w-20 rounded-full border-2 border-background shadow-md">
-                  <AvatarImage src={photoPreview} className="object-cover" />
+                  <AvatarImage src={photoPreview?.trim() || undefined} alt={form.name} className="object-cover" />
                   <AvatarFallback className="font-bold text-lg bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)]">
-                    {String(form.name ?? "")
-                      .trim()
-                      .substring(0, 2)
-                      .toUpperCase() || "CR"}
+                    {getInitials(form.name)}
                   </AvatarFallback>
                 </Avatar>
               </div>

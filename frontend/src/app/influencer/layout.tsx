@@ -16,6 +16,8 @@ import {
 import { useRouteTitle } from "@/hooks/useRouteTitle";
 import { WorkspaceShell, type WorkspaceNavItem } from "@/components/workspace/workspace-shell";
 import { useAuth } from "@/context/auth-context";
+import { getInitials } from "@/lib/utils";
+
 
 const sidebarItems: WorkspaceNavItem[] = [
   { label: "Dashboard", href: "/influencer/dashboard", icon: HomeIcon },
@@ -63,14 +65,9 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
   ]);
 
   const name = user?.name || user?.username || "Creator";
-  const initials = name
-    .trim()
-    .split(/\s+/)
-    .map((n) => n[0])
-    .join("")
-    .substring(0, 2)
-    .toUpperCase();
+  const initials = getInitials(name, "CR");
   const meta = user?.username ? `@${user.username}` : user?.email || "@creator";
+  const avatar = user?.avatar?.trim() || user?.profilePicture?.trim() || undefined;
 
   return (
     <WorkspaceShell
@@ -81,8 +78,8 @@ export default function InfluencerLayout({ children }: { children: React.ReactNo
       brandIconAccent="var(--vooki-violet)"
       accountName={name}
       accountMeta={meta}
-      accountInitials={initials || "CR"}
-      accountAvatar={user?.avatar || "/images/defaults/creator.svg"}
+      accountInitials={initials}
+      accountAvatar={avatar}
       sidebarItems={sidebarItems}
       mobilePrimary={mobilePrimary}
       settingsHref="/influencer/settings"
