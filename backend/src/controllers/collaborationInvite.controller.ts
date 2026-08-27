@@ -384,6 +384,16 @@ export const acceptInvite = async (
       { $inc: { acceptedCreators: 1 } }
     );
 
+    // Increment totalCollaborations for both brand and influencer
+    await UserModel.updateOne(
+      { _id: String(invite.brandId) },
+      { $inc: { "brandProfile.totalCollaborations": 1 } }
+    );
+    await UserModel.updateOne(
+      { _id: userId },
+      { $inc: { "influencerProfile.totalCollaborations": 1 } }
+    );
+
     // Update invite & conversation
     invite.status = "accepted";
     invite.conversationId = String(conversation._id);
@@ -720,6 +730,16 @@ export const acceptCounterOffer = async (
     await CampaignModel.updateOne(
       { _id: String(invite.campaignId) },
       { $inc: { acceptedCreators: 1 } }
+    );
+
+    // Increment totalCollaborations for both brand and influencer
+    await UserModel.updateOne(
+      { _id: requester.id },
+      { $inc: { "brandProfile.totalCollaborations": 1 } }
+    );
+    await UserModel.updateOne(
+      { _id: String(invite.influencerId) },
+      { $inc: { "influencerProfile.totalCollaborations": 1 } }
     );
 
     // Update invite & conversation

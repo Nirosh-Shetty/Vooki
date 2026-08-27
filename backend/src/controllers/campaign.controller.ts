@@ -4,6 +4,7 @@ import CampaignModel, {
   CampaignPriority,
   CampaignStatus,
 } from "../models/Campaign";
+import UserModel from "../models/Users";
 
 const parseNumber = (value: unknown): number | undefined => {
   if (value === undefined || value === null || value === "") return undefined;
@@ -447,8 +448,22 @@ export const updateCampaignStatus = async (
       });
     }
 
+    const prevStatus = campaign.status;
     campaign.status = nextStatus;
     await campaign.save();
+
+    // Update activeCampaigns counter
+    if (prevStatus !== "active" && nextStatus === "active") {
+      await UserModel.updateOne(
+        { _id: requester.id },
+        { $inc: { "brandProfile.activeCampaigns": 1 } }
+      );
+    } else if (prevStatus === "active" && nextStatus !== "active") {
+      await UserModel.updateOne(
+        { _id: requester.id },
+        { $inc: { "brandProfile.activeCampaigns": -1 } }
+      );
+    }
 
     return res.status(200).json({
       message: "Campaign status updated",

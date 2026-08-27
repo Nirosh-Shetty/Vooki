@@ -27,11 +27,11 @@ export interface FeaturedContentItem {
 }
 
 export interface InfluencerProfile {
-  followers?: number;
+  // followers?: number;
   niche?: string;
   socialLinks?: Map<string, string> | Record<string, string>;
   statsConnection?: Map<string, StatsConnection> | Record<string, StatsConnection>;
-  collaborations?: Types.ObjectId[];
+  totalCollaborations?: number;
   summary?: string;
   highlight?: string;
   audience?: string;
@@ -64,10 +64,10 @@ export interface BrandProfile {
   companyName?: string;
   website?: string;
   brandCategory?: string;
-  collaborations?: Types.ObjectId[];
+  totalCollaborations?: number;
   summary?: string;
   activeCampaigns?: number;
-  pointsOfContact?: number;
+  // pointsOfContact?: number;
   contactRole?: string;
   collaborationDefaults?: {
     usageRights?: string;

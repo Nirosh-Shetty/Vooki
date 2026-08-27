@@ -55,7 +55,7 @@ const FeaturedContentSchema = new Schema(
 
 const InfluencerProfileSchema = new Schema(
   {
-    followers: { type: Number, default: 0 },
+    // followers: { type: Number, default: 0 },
     niche: { type: String, default: "General" },
     socialLinks: { type: Map, of: String },
     preferences: {
@@ -74,8 +74,8 @@ const InfluencerProfileSchema = new Schema(
     highlight: { type: String },
     audience: { type: String },
     engagement: { type: Number, default: 0 },
-    collaborations: [{ type: Schema.Types.ObjectId, ref: "Collaboration" }],
     languages: [{ type: String }],
+    totalCollaborations: { type: Number, default: 0 },
     featuredContent: {
       type: [FeaturedContentSchema],
       validate: {
@@ -95,9 +95,8 @@ const BrandProfileSchema = new Schema(
     website: { type: String },
     brandCategory: { type: String },
     summary: { type: String },
-    collaborations: [{ type: Schema.Types.ObjectId, ref: "Collaboration" }],
+    totalCollaborations: { type: Number, default: 0 },
     activeCampaigns: { type: Number, default: 0 },
-    pointsOfContact: { type: Number, default: 0 },
     contactRole: { type: String },
     collaborationDefaults: {
       usageRights: { type: String },
