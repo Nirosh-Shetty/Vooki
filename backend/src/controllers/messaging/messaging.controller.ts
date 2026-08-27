@@ -84,9 +84,6 @@ export const getConversations = async (
           lastMessage: conv.lastMessage || "",
           lastMessageAt: conv.lastMessageAt,
           status: conv.status,
-          isStoppedByBrand: Boolean(conv.isStoppedByBrand),
-          stoppedBy: conv.stoppedBy || null,
-          stoppedAt: conv.stoppedAt || null,
           unreadCount,
           otherUser,
           invites: formattedInvites,
@@ -104,7 +101,7 @@ export const getConversations = async (
       }),
     });
   } catch (error) {
-    console.error("Error fetching conversations:", error);
+    console.error("Error getting conversations:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -215,7 +212,7 @@ export const getMessages = async (
   }
 };
 
-// Get or create conversation with another user
+// Get or Create a conversation with a specific user
 export const getOrCreateConversation = async (
   req: Request,
   res: Response
@@ -226,25 +223,48 @@ export const getOrCreateConversation = async (
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const { otherUserId } = req.body;
+    const { otherUserId, campaignId, promotionId, campaignTitle } = req.body;
+
     if (!otherUserId) {
       return res.status(400).json({ message: "otherUserId is required" });
     }
 
-    // Role-based security check (Rules 1, 2, 3)
-    const auth = await canInitiateConversation(userId, String(otherUserId));
+    // Role-based validation (Rule 1 & 2)
+    const auth = await canInitiateConversation(userId, otherUserId);
     if (!auth.allowed) {
-      return res.status(403).json({ message: auth.reason || "Forbidden" });
+      return res.status(403).json({ message: auth.reason });
     }
 
-    await cleanupEmptyDirectConversations(userId);
+    let conversation;
 
-    const conversation = await findOrCreateDirectConversation(userId, String(otherUserId));
-    if (conversation.status !== "active") {
-      conversation.status = "active";
-      await conversation.save();
+    if (!campaignId && !promotionId) {
+      conversation = await findOrCreateDirectConversation(
+        userId,
+        otherUserId
+      );
+    } else {
+      conversation = await Conversation.findOne({
+        participants: { $all: [userId, otherUserId] },
+        threadType: promotionId ? "collaboration" : "campaign",
+        ...(campaignId ? { campaignId } : {}),
+        ...(promotionId ? { promotionId } : {}),
+      });
+
+      if (!conversation) {
+        conversation = new Conversation({
+          participants: [userId, otherUserId],
+          threadType: promotionId ? "collaboration" : "campaign",
+          campaignId: campaignId || "",
+          promotionId: promotionId || "",
+          campaignTitle: campaignTitle || "",
+          initiatedByRole: auth.requesterRole || "brand",
+          status: "active",
+        });
+        await conversation.save();
+      }
     }
 
+    // Fetch other user profile
     const otherUserDoc = await UserModel.findById(otherUserId, {
       name: 1,
       username: 1,
@@ -273,79 +293,12 @@ export const getOrCreateConversation = async (
         lastMessage: conversation.lastMessage || "",
         lastMessageAt: conversation.lastMessageAt,
         status: conversation.status,
-        isStoppedByBrand: Boolean(conversation.isStoppedByBrand),
-        stoppedBy: conversation.stoppedBy || null,
-        stoppedAt: conversation.stoppedAt || null,
         unreadCount,
         otherUser,
       },
     });
   } catch (error) {
     console.error("Error getting/creating conversation:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-// Toggle pausing/resuming creator messages in a conversation (Rule 4)
-export const toggleStopCreatorMessages = async (
-  req: Request,
-  res: Response
-): Promise<any> => {
-  try {
-    const userId = getRequestUserId(req);
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const { conversationId } = req.params;
-    const { stopped } = req.body; // optional explicit boolean
-
-    const conversation = await Conversation.findById(conversationId);
-    if (!conversation || !conversation.participants.includes(userId)) {
-      return res.status(403).json({ message: "Forbidden: Not a participant in this conversation." });
-    }
-
-    // Verify requester is a brand or manager
-    const requester = await UserModel.findById(userId, { role: 1 }).lean();
-    if (!requester || (requester.role !== "brand" && requester.role !== "manager")) {
-      return res.status(403).json({ message: "Only brands can pause or resume creator messages." });
-    }
-
-    const nextState = typeof stopped === "boolean" ? stopped : !conversation.isStoppedByBrand;
-    conversation.isStoppedByBrand = nextState;
-    conversation.stoppedBy = nextState ? userId : null;
-    conversation.stoppedAt = nextState ? new Date() : null;
-
-    await conversation.save();
-
-    // Broadcast update via socket to conversation room
-    const io = req.app.get("io");
-    if (io) {
-      const roomName = `conversation:${conversationId}`;
-      io.to(roomName).emit("conversation-status-updated", {
-        conversationId,
-        isStoppedByBrand: conversation.isStoppedByBrand,
-        stoppedBy: conversation.stoppedBy,
-        stoppedAt: conversation.stoppedAt,
-      });
-      io.to(roomName).emit("conversation-updated", {
-        conversationId,
-        isStoppedByBrand: conversation.isStoppedByBrand,
-        stoppedBy: conversation.stoppedBy,
-        stoppedAt: conversation.stoppedAt,
-      });
-    }
-
-    return res.status(200).json({
-      message: conversation.isStoppedByBrand
-        ? "Creator messages paused successfully"
-        : "Creator messages resumed successfully",
-      isStoppedByBrand: conversation.isStoppedByBrand,
-      stoppedBy: conversation.stoppedBy,
-      stoppedAt: conversation.stoppedAt,
-    });
-  } catch (error) {
-    console.error("Error toggling creator messages:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };

@@ -49,9 +49,6 @@ export interface Conversation {
   lastMessage: string;
   lastMessageAt?: Date;
   status: "active" | "archived" | "closed";
-  isStoppedByBrand?: boolean;
-  stoppedBy?: string | null;
-  stoppedAt?: string | Date | null;
   unreadCount: number;
   threadType: "direct" | "campaign" | "collaboration";
   campaignId?: string;

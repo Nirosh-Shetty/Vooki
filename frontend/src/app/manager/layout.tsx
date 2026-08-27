@@ -15,6 +15,8 @@ import {
 import { useRouteTitle } from "@/hooks/useRouteTitle";
 import { WorkspaceShell, type WorkspaceNavItem } from "@/components/workspace/workspace-shell";
 import { useAuth } from "@/context/auth-context";
+import { getInitials } from "@/lib/utils";
+
 
 const sidebarItems: WorkspaceNavItem[] = [
   { label: "Dashboard", href: "/manager/dashboard", icon: Home },
@@ -51,13 +53,8 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
   const pageTitle = useRouteTitle(routeTitle, "Manager Workspace");
 
   const name = user?.name || "Manager User";
-  const initials = name
-    .trim()
-    .split(/\s+/)
-    .map((n) => n[0])
-    .join("")
-    .substring(0, 2)
-    .toUpperCase();
+  const initials = getInitials(name, "MG");
+  const avatar = user?.profilePicture?.trim() || user?.avatar?.trim() || undefined;
 
   return (
     <WorkspaceShell
@@ -68,8 +65,8 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
       brandIconAccent="var(--vooki-blue)"
       accountName={name}
       accountMeta={user?.email || "Manager account"}
-      accountInitials={initials || "MG"}
-      accountAvatar={user?.profilePicture || "/images/defaults/creator.svg"}
+      accountInitials={initials}
+      accountAvatar={avatar}
       sidebarItems={sidebarItems}
       mobilePrimary={mobilePrimary}
       settingsHref="/manager/settings"

@@ -34,6 +34,9 @@ import {
   Layers,
   Handshake,
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getInitials } from "@/lib/utils";
+
 
 // ================= Interfaces ================= //
 
@@ -609,19 +612,12 @@ export default function CreatorPublicProfile() {
                 {/* Identity Details */}
                 <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 text-center sm:text-left">
                   <div className="relative shrink-0">
-                    <img
-                      src={data.avatar || "/placeholder-avatar.png"}
-                      alt={data.name}
-                      className="h-22 w-22 sm:h-24 sm:w-24 rounded-full object-cover border-4 border-[color:var(--vooki-app-surface)] shadow-xl bg-[color:var(--vooki-app-surface)] ring-1 ring-[color:var(--vooki-app-border-strong)] shrink-0"
-                    />
-                    {data.isVerified && (
-                      <div
-                        title="Verified Creator"
-                        className="absolute bottom-0.5 right-0.5 flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] ring-2 ring-[color:var(--vooki-app-surface)] shadow-xs"
-                      >
-                        <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                      </div>
-                    )}
+                    <Avatar className="h-22 w-22 sm:h-24 sm:w-24 rounded-full border-4 border-[color:var(--vooki-app-surface)] shadow-xl bg-[color:var(--vooki-app-surface)] shrink-0 ring-1 ring-[color:var(--vooki-app-border-strong)]">
+                      <AvatarImage src={data.avatar?.trim() || undefined} alt={data.name} className="object-cover" />
+                      <AvatarFallback className="font-bold text-xl sm:text-2xl bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)]">
+                        {getInitials(data.name)}
+                      </AvatarFallback>
+                    </Avatar>
                   </div>
 
                   <div className="space-y-1.5">
@@ -1027,18 +1023,20 @@ export default function CreatorPublicProfile() {
                   </div>
 
                   <div className="flex flex-wrap gap-2 pt-2">
-                    {profile.languages && profile.languages.length > 0 ? (
-                      profile.languages.map((lang, idx) => (
-                        <span
-                          key={idx}
-                          className="text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border-strong)] text-[color:var(--vooki-app-text-strong)] shadow-xs"
-                        >
-                          {lang.trim()}
-                        </span>
-                      ))
+                    {profile.languages && profile.languages.filter((lang) => lang && lang.trim()).length > 0 ? (
+                      profile.languages
+                        .filter((lang) => lang && lang.trim())
+                        .map((lang, idx) => (
+                          <span
+                            key={idx}
+                            className="text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border-strong)] text-[color:var(--vooki-app-text-strong)] shadow-xs"
+                          >
+                            {lang.trim()}
+                          </span>
+                        ))
                     ) : (
-                      <span className="text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border-strong)] text-[color:var(--vooki-app-text-strong)] shadow-xs">
-                        English
+                      <span className="text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border-strong)] text-[color:var(--vooki-app-text-muted)] shadow-xs">
+                        No languages available
                       </span>
                     )}
                   </div>
@@ -1268,7 +1266,7 @@ export default function CreatorPublicProfile() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-xl bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border)] flex items-center justify-center font-bold text-xs text-[color:var(--vooki-app-text-strong)] shrink-0">
-                            {item.brandName.slice(0, 2).toUpperCase()}
+                            {getInitials(item.brandName, "BR")}
                           </div>
                           <div>
                             <div className="flex items-center gap-1.5">
