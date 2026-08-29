@@ -90,6 +90,8 @@ type influencerProfile = {
     languages?: string[];
     followers?: number;
     engagement?: number;
+    engagementRate?: number;
+    engagementBreakdown?: Record<string, number | null>;
     summary?: string;
     socialLinks?: Record<string, string>;
     highlight?: string;
@@ -222,10 +224,11 @@ export function ProfileContent() {
         setProfile(data);
 
         const tasks: Promise<any>[] = [loadConnections(controller.signal)];
-        if (data.username) {
+        const identifier = data._id || data.username;
+        if (identifier) {
           tasks.push(
             fetch(
-              `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/public/profile/${encodeURIComponent(data.username)}`,
+              `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/public/profile/${encodeURIComponent(identifier)}`,
               { cache: "no-store", signal: controller.signal }
             )
               .then((res) => (res.ok ? res.json() : null))
@@ -284,7 +287,50 @@ export function ProfileContent() {
     return { youtube, instagram, facebook, twitter };
   }, [connections]);
 
+  const platformEngagements = useMemo(() => {
+    const stats = publicData?.profile?.stats;
+    const breakdown = profile?.influencerProfile?.engagementBreakdown || publicData?.profile?.engagementBreakdown;
+
+    const youtubeRate = isYoutubeConnection(connections.youtube)
+      ? (connections.youtube.metrics?.engagementRate ?? connections.youtube.engagementRate ?? stats?.youtube?.metrics?.engagementRate ?? breakdown?.youtube ?? null)
+      : null;
+
+    const instagramRate = isInstagramConnection(connections.instagram)
+      ? (connections.instagram.metrics?.engagementRate ?? connections.instagram.engagementRate ?? stats?.instagram?.metrics?.engagementRate ?? breakdown?.instagram ?? null)
+      : null;
+
+    const facebookRate = isFacebookConnection(connections.facebook)
+      ? (connections.facebook.metrics?.engagementRate ?? connections.facebook.engagementRate ?? stats?.facebook?.metrics?.engagementRate ?? breakdown?.facebook ?? null)
+      : null;
+
+    const twitterRate = isTwitterConnection(connections.twitter)
+      ? (connections.twitter.metrics?.engagementRate ?? connections.twitter.engagementRate ?? stats?.twitter?.metrics?.engagementRate ?? breakdown?.twitter ?? null)
+      : null;
+
+    return {
+      youtube: youtubeRate,
+      instagram: instagramRate,
+      facebook: facebookRate,
+      twitter: twitterRate,
+    };
+  }, [connections, publicData?.profile?.stats, profile?.influencerProfile?.engagementBreakdown, publicData?.profile?.engagementBreakdown]);
+
+  const overallEngagement = useMemo(() => {
+    const { youtube, instagram, facebook, twitter } = platformEngagements;
+    const valid = [youtube, instagram, facebook, twitter].filter(
+      (r): r is number => typeof r === "number" && !isNaN(r) && r > 0
+    );
+    if (valid.length > 0) {
+      const sum = valid.reduce((acc, curr) => acc + curr, 0);
+      return Number((sum / valid.length).toFixed(1));
+    }
+    const fallback =
+      profile?.influencerProfile?.engagement ?? publicData?.profile?.engagement;
+    return typeof fallback === "number" && fallback > 0 ? Number(fallback.toFixed(1)) : null;
+  }, [platformEngagements, profile?.influencerProfile?.engagement, publicData?.profile?.engagement]);
+
   const totalFollowers = useMemo(() => {
+
     const { youtube, instagram, facebook, twitter } = platformFollowers;
     const total = (youtube ?? 0) + (instagram ?? 0) + (facebook ?? 0) + (twitter ?? 0);
     if (total === 0 && connectedCount === 0) return undefined;
@@ -437,10 +483,78 @@ export function ProfileContent() {
     {
       icon: TrendingUp,
       label: "Engagement",
-      value: profile?.influencerProfile?.engagement
-        ? `${profile.influencerProfile.engagement.toFixed(1)}%`
-        : "-",
+      value: overallEngagement !== null ? `${overallEngagement.toFixed(1)}%` : "-",
+      customBreakdown: (
+        <div className="mt-2.5 flex items-center gap-3">
+          <div
+            className={`flex items-center gap-1 text-xs font-semibold ${
+              platformEngagements.youtube !== null
+                ? "text-[color:var(--vooki-app-text-strong)]"
+                : "text-[color:var(--vooki-app-text-soft)]/50"
+            }`}
+            title="YouTube Engagement Rate"
+          >
+            <Youtube className="h-3.5 w-3.5 text-red-500 shrink-0" />
+            <span>
+              {platformEngagements.youtube !== null
+                ? `${platformEngagements.youtube.toFixed(1)}%`
+                : "-"}
+            </span>
+          </div>
+
+          <div
+            className={`flex items-center gap-1 text-xs font-semibold ${
+              platformEngagements.instagram !== null
+                ? "text-[color:var(--vooki-app-text-strong)]"
+                : "text-[color:var(--vooki-app-text-soft)]/50"
+            }`}
+            title="Instagram Engagement Rate"
+          >
+            <Instagram className="h-3.5 w-3.5 text-pink-500 shrink-0" />
+            <span>
+              {platformEngagements.instagram !== null
+                ? `${platformEngagements.instagram.toFixed(1)}%`
+                : "-"}
+            </span>
+          </div>
+
+          <div
+            className={`flex items-center gap-1 text-xs font-semibold ${
+              platformEngagements.facebook !== null
+                ? "text-[color:var(--vooki-app-text-strong)]"
+                : "text-[color:var(--vooki-app-text-soft)]/50"
+            }`}
+            title="Facebook Engagement Rate"
+          >
+            <Facebook className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+            <span>
+              {platformEngagements.facebook !== null
+                ? `${platformEngagements.facebook.toFixed(1)}%`
+                : "-"}
+            </span>
+          </div>
+
+          <div
+            className={`flex items-center gap-1 text-xs font-semibold ${
+              platformEngagements.twitter !== null
+                ? "text-[color:var(--vooki-app-text-strong)]"
+                : "text-[color:var(--vooki-app-text-soft)]/50"
+            }`}
+            title="X (Twitter) Engagement Rate"
+          >
+            <svg className="h-3.5 w-3.5 fill-current shrink-0" viewBox="0 0 24 24">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+            </svg>
+            <span>
+              {platformEngagements.twitter !== null
+                ? `${platformEngagements.twitter.toFixed(1)}%`
+                : "-"}
+            </span>
+          </div>
+        </div>
+      ),
     },
+
     {
       icon: Star,
       label: "Rating",
@@ -544,9 +658,6 @@ export function ProfileContent() {
                   <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[color:var(--vooki-app-text-strong)]">
                     {profile.name}
                   </h1>
-                  <Badge className="bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] border border-[color:var(--vooki-app-active-border)]/50 hover:bg-[color:var(--vooki-app-active-bg)] text-xs font-semibold px-2.5 py-0.5 rounded-full shadow-none backdrop-blur-xs">
-                    Creator
-                  </Badge>
                 </div>
 
                 {/* Metadata Badges */}
@@ -583,7 +694,7 @@ export function ProfileContent() {
               </Button>
               <Button
                 className="flex-1 sm:flex-none rounded-xl border border-[color:var(--vooki-app-active-border)] bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] hover:bg-[color:var(--vooki-app-active-border)] text-xs sm:text-sm font-semibold h-10 px-5 shadow-xs transition-all cursor-pointer"
-                onClick={() => window.open(`/creator/${profile.username}`)}
+                onClick={() => window.open(`/creator/${profile._id || profile.username}`)}
               >
                 <ExternalLink className="mr-2 h-4 w-4" /> Preview
               </Button>

@@ -1,36 +1,62 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import UserModel from "../../models/Users";
 import PromotionModel from "../../models/Promotion";
+import { calculateEngagementRateForMetrics } from "../../utils/socialConnections";
 
-export const getPublicProfileByUsername = async (
+
+export const getPublicProfileByIdentifier = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
   try {
-    const { username } = req.params;
+    const identifier = req.params.identifier || req.params.id || req.params.username;
 
-    // 1. Regex check
-    if (!username || !/^[a-zA-Z0-9._-]{3,30}$/.test(username)) {
-      return res.status(404).json({ success: false, message: "Profile not found" });
+    if (!identifier) {
+      return res.status(400).json({ success: false, message: "Profile identifier is required" });
     }
 
-    // 2. Query influencer
-    const user = await UserModel.findOne({
-      username: username.toLowerCase(),
-      role: "influencer",
-      isTempAccount: false,
-    })
-      .select({
-        _id: 1,
-        name: 1,
-        username: 1,
-        avatar: 1,
-        isVerified: 1,
-        rating: 1,
-        totalReviews: 1,
-        influencerProfile: 1,
+    let user: any = null;
+
+    // 1. Try querying by _id if it's a valid MongoDB ObjectId
+    if (mongoose.isValidObjectId(identifier)) {
+      user = await UserModel.findOne({
+        _id: identifier,
+        role: "influencer",
+        isTempAccount: false,
       })
-      .lean();
+        .select({
+          _id: 1,
+          name: 1,
+          username: 1,
+          avatar: 1,
+          isVerified: 1,
+          rating: 1,
+          totalReviews: 1,
+          influencerProfile: 1,
+        })
+        .lean();
+    }
+
+    // 2. If not found by _id, query by username
+    if (!user && /^[a-zA-Z0-9._-]{3,30}$/.test(identifier)) {
+      user = await UserModel.findOne({
+        username: identifier.toLowerCase(),
+        role: "influencer",
+        isTempAccount: false,
+      })
+        .select({
+          _id: 1,
+          name: 1,
+          username: 1,
+          avatar: 1,
+          isVerified: 1,
+          rating: 1,
+          totalReviews: 1,
+          influencerProfile: 1,
+        })
+        .lean();
+    }
 
     if (!user) {
       return res.status(404).json({ success: false, message: "Profile not found" });
@@ -97,23 +123,53 @@ export const getPublicProfileByUsername = async (
       });
 
 
-    // 7. Strip OAuth tokens from statsConnection
+    // 7. Strip OAuth tokens and calculate platform engagement rates
     const rawStats = user.influencerProfile?.statsConnection || {};
     const sanitizedStats: Record<string, any> = {};
+    const engagementRates: number[] = [];
+    const engagementBreakdown: Record<string, number | null> = {
+      youtube: null,
+      instagram: null,
+      facebook: null,
+      twitter: null,
+    };
 
     Object.entries(rawStats).forEach(([platform, data]: [string, any]) => {
       if (data) {
+        const platformRate = calculateEngagementRateForMetrics(platform, (data.metrics || {}) as any);
+        if (typeof platformRate === "number") {
+          engagementRates.push(platformRate);
+        }
+        const pKey = platform.toLowerCase() === "x" ? "twitter" : platform.toLowerCase();
+        engagementBreakdown[pKey] = platformRate;
+
         sanitizedStats[platform] = {
           platform: data.platform,
           lastSynced: data.lastSynced,
           profile: data.profile,
-          metrics: data.metrics,
+          metrics: {
+            ...(data.metrics || {}),
+            engagementRate: platformRate ?? undefined,
+          },
+          engagementRate: platformRate ?? undefined,
         };
       }
     });
 
+    const calculatedAvgEngagement =
+      engagementRates.length > 0
+        ? Number(
+            (
+              engagementRates.reduce((acc, curr) => acc + curr, 0) /
+              engagementRates.length
+            ).toFixed(1)
+          )
+        : Number(user.influencerProfile?.engagement || 0);
+
     // 8. Final clean payload
     const publicProfile = {
+      _id: String(user._id),
+      id: String(user._id),
       name: user.name,
       username: user.username,
       avatar: user.avatar,
@@ -127,7 +183,9 @@ export const getPublicProfileByUsername = async (
         summary: user.influencerProfile?.summary || "",
         highlight: user.influencerProfile?.highlight || "",
         audience: user.influencerProfile?.audience || "",
-        engagement: user.influencerProfile?.engagement || 0,
+        engagement: calculatedAvgEngagement,
+        engagementRate: calculatedAvgEngagement,
+        engagementBreakdown,
         languages: user.influencerProfile?.languages || [],
         socialLinks: user.influencerProfile?.socialLinks || {},
         featuredContent: user.influencerProfile?.featuredContent || [],
@@ -136,6 +194,7 @@ export const getPublicProfileByUsername = async (
         reviews,
       },
     };
+
 
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     return res.status(200).json({
@@ -147,3 +206,6 @@ export const getPublicProfileByUsername = async (
     return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+
+export const getPublicProfileByUsername = getPublicProfileByIdentifier;
+

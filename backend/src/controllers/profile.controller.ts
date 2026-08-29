@@ -24,14 +24,47 @@ export const profile = async (req: Request, res: Response) => {
       user?.statsConnection || user?.influencerProfile?.statsConnection
     );
 
+    const engagementRates: number[] = [];
+    const engagementBreakdown: Record<string, number | null> = {
+      youtube: null,
+      instagram: null,
+      facebook: null,
+      twitter: null,
+    };
+
+    Object.entries(socialConnections).forEach(([platform, data]: [string, any]) => {
+      if (data) {
+        const rate = (data.metrics?.engagementRate ?? data.engagementRate) || 0;
+        if (rate > 0) {
+          engagementRates.push(rate);
+        }
+        const pKey = platform.toLowerCase() === "x" ? "twitter" : platform.toLowerCase();
+        engagementBreakdown[pKey] = rate > 0 ? rate : null;
+      }
+    });
+
+    const calculatedAvgEngagement =
+      engagementRates.length > 0
+        ? Number(
+            (
+              engagementRates.reduce((acc, curr) => acc + curr, 0) /
+              engagementRates.length
+            ).toFixed(1)
+          )
+        : Number(user?.influencerProfile?.engagement || 0);
+
     return res.status(200).json({
       ...user,
       avatar: user.avatar,
       influencerProfile: {
         ...(user.influencerProfile || {}),
+        engagement: calculatedAvgEngagement,
+        engagementRate: calculatedAvgEngagement,
+        engagementBreakdown,
         statsConnection: socialConnections,
       },
     });
+
   } catch (error) {
     console.error("Error fetching profile:", error);
     return res.status(500).json({ message: "Server error" });
@@ -188,7 +221,6 @@ export const updateInfluencerProfile = async (req: Request, res: Response) => {
 
     user.influencerProfile = {
       ...existingDetails,
-      followers: influencerProfile?.followers ?? existingDetails.followers,
       niche: applyLocaleSafeString(influencerProfile?.niche) ?? existingDetails.niche,
       summary: applyLocaleSafeString(influencerProfile?.summary) ?? existingDetails.summary,
       highlight: applyLocaleSafeString(influencerProfile?.highlight) ?? existingDetails.highlight,

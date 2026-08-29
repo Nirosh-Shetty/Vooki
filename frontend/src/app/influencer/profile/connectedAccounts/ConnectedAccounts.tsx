@@ -25,7 +25,9 @@ export type YoutubeConnectionEntry = {
     likes?: number;
     comments?: number;
     hiddenSubscriberCount?: boolean;
+    engagementRate?: number;
   };
+  engagementRate?: number;
   lastSynced?: string;
 };
 
@@ -45,7 +47,9 @@ export type InstagramConnectionEntry = {
     impressions?: number;
     likes?: number;
     comments?: number;
+    engagementRate?: number;
   };
+  engagementRate?: number;
   lastSynced?: string;
 };
 
@@ -61,7 +65,9 @@ export type FacebookConnectionEntry = {
     likes?: number;
     comments?: number;
     engagement?: number;
+    engagementRate?: number;
   };
+  engagementRate?: number;
   lastSynced?: string;
 };
 
@@ -78,9 +84,12 @@ export type TwitterConnectionEntry = {
     following?: number;
     tweets?: number;
     likes?: number;
+    engagementRate?: number;
   };
+  engagementRate?: number;
   lastSynced?: string;
 };
+
 
 export type GenericSocialConnectionEntry = {
   platform?: string;
