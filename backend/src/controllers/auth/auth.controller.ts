@@ -196,10 +196,11 @@ export const signIn = async (req: Request, res: Response): Promise<any> => {
 
     res.cookie("auth_token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      domain: process.env.COOKIE_DOMAIN,
+      secure: process.env.COOKIE_SECURE === "true",
       maxAge:
         Number(process.env.JWT_AUTH_TOKEN_MAXAGE) || 5 * 24 * 60 * 60 * 1000,
-      sameSite: "strict",
+      sameSite: (process.env.COOKIE_SAMESITE || "lax") as "lax" | "strict" | "none",
     });
 
     return res.json({
@@ -338,9 +339,10 @@ export const verifyOtp = async (req: Request, res: Response): Promise<any> => {
     const token = generateToken(user._id.toString(), user.role, user?.username);
     res.cookie("auth_token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      domain: process.env.COOKIE_DOMAIN,
+      secure: process.env.COOKIE_SECURE === "true",
       maxAge: 5 * 24 * 60 * 60 * 1000, // 5 days
-      sameSite: "lax",
+      sameSite: (process.env.COOKIE_SAMESITE || "lax") as "lax" | "strict" | "none",
     });
     return res.status(201).json({ message: "Verified Successfully" });
   } catch (error) {
@@ -476,9 +478,10 @@ export const completeSocialAuth = async (
     });
     res.cookie("auth_token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      domain: process.env.COOKIE_DOMAIN,
+      secure: process.env.COOKIE_SECURE === "true",
       maxAge: 5 * 24 * 60 * 60 * 1000, // 5 days in milliseconds
-      sameSite: "strict",
+      sameSite: (process.env.COOKIE_SAMESITE || "lax") as "lax" | "strict" | "none",
     });
     res.status(201).json({ message: "Signup successful" });
   } catch (error) {
@@ -491,8 +494,9 @@ export const signout = (req: Request, res: Response): any => {
   try {
     res.clearCookie("auth_token", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      domain: process.env.COOKIE_DOMAIN,
+      secure: process.env.COOKIE_SECURE === "true",
+      sameSite: (process.env.COOKIE_SAMESITE || "lax") as "lax" | "strict" | "none",
       path: "/",
     });
     return res.status(200).json({ message: "Logged out" });
