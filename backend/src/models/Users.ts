@@ -96,7 +96,9 @@ const BrandProfileSchema = new Schema(
     brandCategory: { type: String },
     summary: { type: String },
     totalCollaborations: { type: Number, default: 0 },
+    collaborations: { type: Schema.Types.Mixed },
     activeCampaigns: { type: Number, default: 0 },
+    pointsOfContact: { type: Number, default: 0 },
     contactRole: { type: String },
     collaborationDefaults: {
       usageRights: { type: String },

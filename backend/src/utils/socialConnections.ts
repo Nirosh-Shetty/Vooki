@@ -165,12 +165,102 @@ export const mergeSocialConnection = (
   };
 };
 
+// Define a clear interface for your metrics object
+export interface SocialMetrics {
+  likes?: number;
+  comments?: number;
+  shares?: number;
+  saves?: number;
+  reposts?: number; // Important for X/Twitter
+  followers?: number;
+  subscribers?: number;
+  totalViews?: number;
+  views?: number;
+  reach?: number;
+  impressions?: number;
+  engagementRate?: number;
+  engagement?: number;
+}
+
+export const calculateEngagementRateForMetrics = (
+  platform: string,
+  metrics: SocialMetrics = {}
+): number | null => {
+  // 1. Use explicitly provided rates if they exist and are valid
+  if (typeof metrics.engagementRate === "number" && metrics.engagementRate > 0) {
+    return Number(metrics.engagementRate.toFixed(1));
+  }
+  if (typeof metrics.engagement === "number" && metrics.engagement > 0) {
+    return Number(metrics.engagement.toFixed(1));
+  }
+
+  const p = platform.toLowerCase();
+
+  // 2. Broaden the definition of "Interactions"
+  const likes = Number(metrics.likes || 0);
+  const comments = Number(metrics.comments || 0);
+  const shares = Number(metrics.shares || 0);
+  const saves = Number(metrics.saves || 0);
+  const reposts = Number(metrics.reposts || 0);
+
+  const interactions = likes + comments + shares + saves + reposts;
+
+  // 3. Gather potential denominators
+  const followers = Number(metrics.followers || metrics.subscribers || 0);
+  const views = Number(metrics.totalViews || metrics.views || 0);
+  const reach = Number(metrics.reach || metrics.impressions || 0);
+
+  // 4. Determine the best denominator based on the platform
+  let denominator = 0;
+
+  if (p === "youtube") {
+    // For video platforms, Views are the true measure of audience size
+    denominator = views > 0 ? views : followers;
+  } else if (p === "instagram") {
+    // For IG, Reach is preferred over follower count if available
+    denominator = reach > 0 ? reach : followers;
+  } else {
+    // For Twitter, FB, or default fallback
+    denominator = followers > 0 ? followers : reach;
+  }
+
+  // 5. Calculate the true mathematical rate
+  if (denominator > 0) {
+    const rawRate = (interactions / denominator) * 100;
+
+    // Apply reasonable maximum bounds to prevent skewed data on viral posts 
+    // (e.g. 100 followers but 10,000 views)
+    let maxBound = 15.0;
+    if (p === "facebook") maxBound = 12.0;
+    if (p === "twitter" || p === "x") maxBound = 10.0;
+
+    // Notice we removed the Math.max(1.0) artificial floor. 
+    // If engagement is 0.1%, it should show 0.1%.
+    return Number(Math.min(maxBound, rawRate).toFixed(1));
+  }
+
+  // 6. Fallback if no audience data exists at all
+  // Returning null allows your frontend UI to cleanly display a "-" or "N/A"
+  return null; 
+};
+
 export const normalizeSocialConnectionsRecord = (input?: unknown) => {
   const connections = toSocialConnectionsMap(input);
   return Object.fromEntries(
-    Array.from(connections.entries()).map(([platform, value]) => [
-      platform,
-      normalizeSocialConnection(platform, value),
-    ])
+    Array.from(connections.entries()).map(([platform, value]) => {
+      const normalized = normalizeSocialConnection(platform, value);
+      const calculatedRate = calculateEngagementRateForMetrics(platform, (normalized.metrics || {}) as SocialMetrics);
+      return [
+        platform,
+        {
+          ...normalized,
+          metrics: {
+            ...(normalized.metrics || {}),
+            engagementRate: calculatedRate ?? undefined,
+          },
+          engagementRate: calculatedRate ?? undefined,
+        },
+      ];
+    })
   ) as Record<string, SocialConnection>;
 };

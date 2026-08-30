@@ -65,9 +65,10 @@ export interface BrandProfile {
   website?: string;
   brandCategory?: string;
   totalCollaborations?: number;
+  collaborations?: any;
   summary?: string;
   activeCampaigns?: number;
-  // pointsOfContact?: number;
+  pointsOfContact?: number;
   contactRole?: string;
   collaborationDefaults?: {
     usageRights?: string;
