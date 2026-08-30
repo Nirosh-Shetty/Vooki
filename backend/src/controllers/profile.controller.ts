@@ -188,7 +188,7 @@ export const updateInfluencerProfile = async (req: Request, res: Response) => {
 
     user.influencerProfile = {
       ...existingDetails,
-      followers: influencerProfile?.followers ?? existingDetails.followers,
+      // followers: influencerProfile?.followers ?? existingDetails.followers,
       niche: applyLocaleSafeString(influencerProfile?.niche) ?? existingDetails.niche,
       summary: applyLocaleSafeString(influencerProfile?.summary) ?? existingDetails.summary,
       highlight: applyLocaleSafeString(influencerProfile?.highlight) ?? existingDetails.highlight,
@@ -241,9 +241,9 @@ export const updateBrandProfile = async (req: Request, res: Response) => {
       website: brandProfile?.website ?? existingDetails.website,
       brandCategory: applyLocaleSafeString(brandProfile?.brandCategory) ?? existingDetails.brandCategory,
       summary: applyLocaleSafeString(brandProfile?.summary) ?? existingDetails.summary,
-      collaborations: existingDetails.collaborations,
+      totalCollaborations: existingDetails.totalCollaborations,
       activeCampaigns: Number(brandProfile?.activeCampaigns) || existingDetails.activeCampaigns,
-      pointsOfContact: Number(brandProfile?.pointsOfContact) || existingDetails.pointsOfContact,
+      // pointsOfContact: Number(brandProfile?.pointsOfContact) || existingDetails.pointsOfContact,
       contactRole: applyLocaleSafeString(brandProfile?.contactRole) ?? existingDetails.contactRole,
       collaborationDefaults: {
         usageRights: applyLocaleSafeString(brandProfile?.collaborationDefaults?.usageRights) ?? existingDetails.collaborationDefaults?.usageRights,

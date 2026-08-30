@@ -4,6 +4,7 @@ import {
   getConnectedAccounts,
   getSocialConnections,
   handleInstagramCallback,
+  handleInstagramDisconnect,
   handleYoutubeCallback,
   handleYoutubeDisconnect,
   startInstagramConnect,
@@ -21,6 +22,7 @@ socialRouter.delete("/connect/youtube", authMiddleware, requireRole("influencer"
 socialRouter.get("/connect/youtube/callback", handleYoutubeCallback);
 socialRouter.get("/connect/instagram", authMiddleware, requireRole("influencer"), startInstagramConnect);
 socialRouter.get("/connect/instagram/callback", handleInstagramCallback);
+socialRouter.delete("/connect/instagram", authMiddleware, requireRole("influencer"), handleInstagramDisconnect);
 socialRouter.patch("/metrics", authMiddleware, requireRole("influencer"), updateSocialMetrics);
 socialRouter.get("/connections", authMiddleware, requireRole("influencer"), getSocialConnections);
 socialRouter.get("/connections", authMiddleware, getConnectedAccounts);
