@@ -44,19 +44,27 @@ export default function DiscoverProfilePage() {
     return () => controller.abort();
   }, []);
 
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/brand/discover");
+    }
+  };
+
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-4 px-4 py-4 sm:px-6 lg:px-8">
-      <div className="flex items-center gap-3">
-        <Button
-          asChild
-          variant="outline"
-          className="h-9 rounded-full border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface)] text-[color:var(--vooki-app-text-strong)] hover:border-[color:var(--vooki-accent)] transition-all"
-        >
-          <Link href="/brand/discover">
+    <div className="w-full">
+      <div className="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 -mb-2 sm:-mb-4 relative z-10">
+        <div className="mx-auto w-full max-w-5xl">
+          <Button
+            onClick={handleBack}
+            variant="outline"
+            className="h-9 rounded-full border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface)] text-[color:var(--vooki-app-text-strong)] hover:border-[color:var(--vooki-accent)] transition-all shadow-sm cursor-pointer"
+          >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to discover
-          </Link>
-        </Button>
+          </Button>
+        </div>
       </div>
 
       <CreatorProfileView
@@ -64,7 +72,7 @@ export default function DiscoverProfilePage() {
         viewMode="brand"
         showNavbar={false}
         campaigns={campaigns}
-        onBack={() => router.push("/brand/discover")}
+        onBack={handleBack}
       />
     </div>
   );

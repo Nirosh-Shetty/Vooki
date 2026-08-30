@@ -6,6 +6,10 @@ import CampaignModel from "../models/Campaign";
 import PromotionModel from "../models/Promotion";
 import { getRequestUser } from "../utils/requestUser";
 import { findOrCreateDirectConversation } from "../utils/directConversation";
+import {
+  normalizeSocialConnectionsRecord,
+  calculateEngagementRateForMetrics,
+} from "../utils/socialConnections";
 
 const parseNumber = (value: unknown): number | undefined => {
   if (value === undefined || value === null || value === "") return undefined;
@@ -158,7 +162,7 @@ export const getDiscoverInfluencers = async (
     const [influencers, total] = await Promise.all([
       UserModel.find(query)
         .select(
-          "name username profilePicture isVerified influencerProfile.niche influencerProfile.followers"
+          "name username avatar isVerified rating totalReviews influencerProfile.niche influencerProfile.location influencerProfile.summary influencerProfile.pricing influencerProfile.languages influencerProfile.socialLinks influencerProfile.statsConnection"
         )
         .sort({ updatedAt: -1 })
         .skip(skip)
@@ -169,37 +173,128 @@ export const getDiscoverInfluencers = async (
 
     const formatted = influencers
       .map((influencer: any) => {
-        const followers = Number(influencer?.influencerProfile?.followers || 0);
-        const engagementRate = clamp(
-          3 + Math.log10(Math.max(followers, 10)) * 1.35,
-          1.8,
-          10.5
+        const statsMap = normalizeSocialConnectionsRecord(
+          influencer?.influencerProfile?.statsConnection
         );
 
-        if (engagementRate < minEngagementNum) return null;
+        const instagramStats = statsMap?.instagram;
+        const youtubeStats = statsMap?.youtube;
+        const facebookStats = statsMap?.facebook;
 
-        const avgViews = Math.round(followers * (engagementRate / 100) * 4.3);
-        const estCpv = avgViews > 0 ? (Math.max(0.02, 6.5 / avgViews)).toFixed(2) : "0.08";
+        const instagramFollowers = Number(instagramStats?.metrics?.followers || 0);
+        const youtubeSubscribers = Number(youtubeStats?.metrics?.subscribers || 0);
+        const facebookFollowers = Number(facebookStats?.metrics?.followers || 0);
+
+        const followers = instagramFollowers + youtubeSubscribers + facebookFollowers;
+
+        // Dynamic Engagement Rate calculation (matching Creator Profile / socialConnections reference)
+        const platformRates: number[] = [];
+        if (instagramStats?.metrics) {
+          const rate = calculateEngagementRateForMetrics("instagram", instagramStats.metrics as any);
+          if (typeof rate === "number" && rate > 0) platformRates.push(rate);
+        }
+        if (youtubeStats?.metrics) {
+          const rate = calculateEngagementRateForMetrics("youtube", youtubeStats.metrics as any);
+          if (typeof rate === "number" && rate > 0) platformRates.push(rate);
+        }
+        if (facebookStats?.metrics) {
+          const rate = calculateEngagementRateForMetrics("facebook", facebookStats.metrics as any);
+          if (typeof rate === "number" && rate > 0) platformRates.push(rate);
+        }
+
+        let engagementRate = 0;
+        if (platformRates.length > 0) {
+          engagementRate = Number(
+            (platformRates.reduce((acc, curr) => acc + curr, 0) / platformRates.length).toFixed(1)
+          );
+        } else if (Number(influencer?.influencerProfile?.engagement || 0) > 0) {
+          engagementRate = Number(Number(influencer.influencerProfile.engagement).toFixed(1));
+        }
+
+        if (minEngagementNum > 0 && engagementRate < minEngagementNum) return null;
+
+        // Dynamic Average Views calculation from connected platforms
+        let avgViews = 0;
+
+        if (youtubeStats?.metrics) {
+          const totalViews = Number(youtubeStats.metrics.totalViews || youtubeStats.metrics.views || 0);
+          const videoCount = Number(youtubeStats.metrics.videoCount || 0);
+          if (videoCount > 0 && totalViews > 0) {
+            avgViews += Math.round(totalViews / videoCount);
+          } else if (totalViews > 0) {
+            avgViews += totalViews;
+          }
+        }
+
+        if (instagramStats?.metrics) {
+          const reach = Number(instagramStats.metrics.reach || 0);
+          const impressions = Number(instagramStats.metrics.impressions || 0);
+          const mediaCount = Number(instagramStats.metrics.mediaCount || 0);
+          const igViews = reach || impressions;
+          if (mediaCount > 0 && igViews > 0) {
+            avgViews += Math.round(igViews / mediaCount);
+          } else if (igViews > 0) {
+            avgViews += igViews;
+          }
+        }
+
+        // If no views recorded but has audience and engagement, estimate based on engagement rate
+        if (avgViews === 0 && followers > 0 && engagementRate > 0) {
+          avgViews = Math.round(followers * (engagementRate / 100));
+        }
+
+        // Dynamic Est CPV (Cost Per View)
+        const pricingReel = Number(influencer?.influencerProfile?.pricing?.reel || 0);
+        const pricingYoutube = Number(influencer?.influencerProfile?.pricing?.youtubeIntegration || 0);
+        const pricingBase = pricingReel || pricingYoutube || 0;
+
+        let estCpv = 0;
+        if (avgViews > 0 && pricingBase > 0) {
+          estCpv = Number((pricingBase / avgViews).toFixed(2));
+        } else if (avgViews > 0) {
+          estCpv = Number((Math.max(0.02, 6.5 / Math.max(avgViews, 100))).toFixed(2));
+        }
+
         const fitScore = clamp(
           Math.round(55 + Math.min(30, engagementRate * 3.2) + (influencer.isVerified ? 7 : 0)),
           50,
           98
         );
 
+        const platforms: string[] = [];
+        if (statsMap?.instagram) platforms.push("instagram");
+        if (statsMap?.youtube) platforms.push("youtube");
+        if (statsMap?.facebook) platforms.push("facebook");
+
+        // Derive tags from niche and languages
+        const rawNiche = influencer?.influencerProfile?.niche || "General";
+        const tags = [
+          rawNiche,
+          ...(Array.isArray(influencer?.influencerProfile?.languages)
+            ? influencer.influencerProfile.languages.slice(0, 2)
+            : []),
+          "Campaign Ready",
+        ].filter(Boolean);
+
         return {
           id: String(influencer._id),
           name: influencer.name || "",
           handle: influencer.username ? `@${influencer.username}` : "",
-          niche: influencer?.influencerProfile?.niche || "General",
-          location: "Unknown",
+          niche: rawNiche,
+          location: influencer?.influencerProfile?.location || "Global",
+          summary: influencer?.influencerProfile?.summary || "",
           followers,
-          engagementRate: Number(engagementRate.toFixed(1)),
+          engagementRate,
           avgViews,
-          estCpv: Number(estCpv),
+          estCpv,
           fitScore,
           verified: Boolean(influencer.isVerified),
-          tags: ["Campaign Ready", "Fast Response", "ROI Trackable"],
-          profilePicture: influencer.profilePicture || "",
+          rating: Number(influencer.rating || 0),
+          totalReviews: Number(influencer.totalReviews || 0),
+          tags,
+          avatar: influencer.avatar || "",
+          platforms,
+          pricing: influencer?.influencerProfile?.pricing,
         };
       })
       .filter(Boolean);

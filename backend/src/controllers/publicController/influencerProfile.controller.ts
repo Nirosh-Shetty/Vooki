@@ -18,12 +18,13 @@ export const getPublicProfileByIdentifier = async (
 
     let user: any = null;
 
+    const cleanIdentifier = String(identifier).trim();
+
     // 1. Try querying by _id if it's a valid MongoDB ObjectId
-    if (mongoose.isValidObjectId(identifier)) {
+    if (mongoose.isValidObjectId(cleanIdentifier)) {
       user = await UserModel.findOne({
-        _id: identifier,
-        role: "influencer",
-        isTempAccount: false,
+        _id: cleanIdentifier,
+        $or: [{ isTempAccount: { $ne: true } }, { isVerified: true }, { isTempAccount: false }],
       })
         .select({
           _id: 1,
@@ -34,16 +35,16 @@ export const getPublicProfileByIdentifier = async (
           rating: 1,
           totalReviews: 1,
           influencerProfile: 1,
+          role: 1,
         })
         .lean();
     }
 
-    // 2. If not found by _id, query by username
-    if (!user && /^[a-zA-Z0-9._-]{3,30}$/.test(identifier)) {
+    // 2. If not found by _id, query by username (case-insensitive)
+    if (!user) {
       user = await UserModel.findOne({
-        username: identifier.toLowerCase(),
-        role: "influencer",
-        isTempAccount: false,
+        username: { $regex: new RegExp(`^${cleanIdentifier.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") },
+        $or: [{ isTempAccount: { $ne: true } }, { isVerified: true }, { isTempAccount: false }],
       })
         .select({
           _id: 1,
@@ -54,6 +55,24 @@ export const getPublicProfileByIdentifier = async (
           rating: 1,
           totalReviews: 1,
           influencerProfile: 1,
+          role: 1,
+        })
+        .lean();
+    }
+
+    // 3. Fallback: Query by _id directly if valid ObjectId
+    if (!user && mongoose.isValidObjectId(cleanIdentifier)) {
+      user = await UserModel.findOne({ _id: cleanIdentifier })
+        .select({
+          _id: 1,
+          name: 1,
+          username: 1,
+          avatar: 1,
+          isVerified: 1,
+          rating: 1,
+          totalReviews: 1,
+          influencerProfile: 1,
+          role: 1,
         })
         .lean();
     }
@@ -134,6 +153,8 @@ export const getPublicProfileByIdentifier = async (
       twitter: null,
     };
 
+    let totalCalculatedFollowers = 0;
+
     Object.entries(rawStats).forEach(([platform, data]: [string, any]) => {
       if (data) {
         const platformRate = calculateEngagementRateForMetrics(platform, (data.metrics || {}) as any);
@@ -142,6 +163,11 @@ export const getPublicProfileByIdentifier = async (
         }
         const pKey = platform.toLowerCase() === "x" ? "twitter" : platform.toLowerCase();
         engagementBreakdown[pKey] = platformRate;
+
+        const count = Number(data.metrics?.followers ?? data.metrics?.subscribers ?? 0);
+        if (count > 0) {
+          totalCalculatedFollowers += count;
+        }
 
         sanitizedStats[platform] = {
           platform: data.platform,
@@ -166,6 +192,11 @@ export const getPublicProfileByIdentifier = async (
           )
         : Number(user.influencerProfile?.engagement || 0);
 
+    const totalFollowers =
+      totalCalculatedFollowers > 0
+        ? totalCalculatedFollowers
+        : Number(user.influencerProfile?.followers || 0);
+
     // 8. Final clean payload
     const publicProfile = {
       _id: String(user._id),
@@ -177,7 +208,7 @@ export const getPublicProfileByIdentifier = async (
       rating: user.rating,
       totalReviews: user.totalReviews,
       profile: {
-        followers: user.influencerProfile?.followers || 0,
+        followers: totalFollowers,
         niche: user.influencerProfile?.niche || "General",
         location: user.influencerProfile?.location || "",
         summary: user.influencerProfile?.summary || "",

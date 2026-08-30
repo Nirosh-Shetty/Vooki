@@ -303,7 +303,7 @@ export function WorkspaceShell({
               </div>
             </header>
 
-            <main className="min-h-0 flex-1 overflow-auto pb-28 lg:pb-0">{children}</main>
+            <main id="workspace-main-content" className="min-h-0 flex-1 overflow-auto pb-28 lg:pb-0">{children}</main>
           </div>
         </div>
 

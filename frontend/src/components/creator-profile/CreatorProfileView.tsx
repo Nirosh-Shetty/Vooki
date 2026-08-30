@@ -2,11 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Script from "next/script";
-import {
-  CreatorProfileViewProps,
-  PublicProfileData,
-  SectionTab,
-} from "./types";
+import { CreatorProfileViewProps, PublicProfileData, SectionTab } from "./types";
 import { CreatorNavbar } from "./CreatorNavbar";
 import { CreatorHeader } from "./CreatorHeader";
 import { CreatorNavTabs } from "./CreatorNavTabs";
@@ -34,26 +30,32 @@ export function CreatorProfileView({
   const [isInquiryOpen, setIsInquiryOpen] = useState(false);
 
   const shouldShowNavbar = showNavbar !== undefined ? showNavbar : viewMode === "public";
-
+  
+  // Determine background class based on view mode
+  const bgClass = viewMode === "brand" ? "bg-transparent" : "bg-[color:var(--vooki-app-bg)]";
 
   // Fetch profile if creatorId is given and initialData was not
   useEffect(() => {
+    // 1. Handle pre-fetched data
     if (initialData) {
       setData(initialData);
       setLoading(false);
       return;
     }
 
+    // 2. Handle missing ID
     if (!creatorId) {
       setLoading(false);
       return;
     }
 
     const controller = new AbortController();
+    let isMounted = true;
 
     const fetchProfile = async () => {
       setLoading(true);
       setError(null);
+
       try {
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
         const res = await fetch(
@@ -64,6 +66,8 @@ export function CreatorProfileView({
           }
         );
 
+        if (!isMounted) return;
+
         if (!res.ok) {
           setData(null);
           setError("Creator profile not found");
@@ -71,6 +75,9 @@ export function CreatorProfileView({
         }
 
         const json = await res.json();
+
+        if (!isMounted) return;
+
         if (json.success && json.data) {
           setData(json.data);
         } else {
@@ -78,17 +85,27 @@ export function CreatorProfileView({
           setError(json.message || "Failed to load profile");
         }
       } catch (err: unknown) {
-        if (err instanceof DOMException && err.name === "AbortError") return;
+        if (!isMounted) return;
+
+        if (err instanceof DOMException && err.name === "AbortError") {
+          return;
+        }
         console.error("Failed to load creator profile:", err);
         setData(null);
         setError("Unable to load profile at this time");
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchProfile();
-    return () => controller.abort();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, [creatorId, initialData]);
 
   // Reprocess Instagram embeds on tab or data change
@@ -110,12 +127,11 @@ export function CreatorProfileView({
   }, [data]);
 
   const featuredCount = data?.profile?.featuredContent?.length || 0;
-  const collabsCount =
-    data?.profile?.collaborations?.length || data?.profile?.reviews?.length || 0;
+  const collabsCount = data?.profile?.collaborations?.length || data?.profile?.reviews?.length || 0;
 
   if (loading) {
     return (
-      <div className="min-h-[500px] bg-[color:var(--vooki-app-bg)] flex items-center justify-center py-24">
+      <div className={`min-h-[500px] ${bgClass} flex items-center justify-center py-24`}>
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 rounded-full border-2 border-[color:var(--vooki-app-active-border)] border-t-[color:var(--vooki-app-active-text)] animate-spin" />
           <span className="text-xs text-[color:var(--vooki-app-text-muted)] tracking-wider uppercase font-semibold">
@@ -128,7 +144,7 @@ export function CreatorProfileView({
 
   if (!data) {
     return (
-      <div className="min-h-[400px] flex flex-col items-center justify-center p-8 text-center bg-[color:var(--vooki-app-bg)]">
+      <div className={`min-h-[400px] flex flex-col items-center justify-center p-8 text-center ${bgClass}`}>
         <div className="rounded-3xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface)] p-8 max-w-md w-full shadow-sm space-y-4">
           <h2 className="text-xl font-bold text-[color:var(--vooki-app-text-strong)]">
             {error || "Creator Not Found"}
@@ -149,17 +165,13 @@ export function CreatorProfileView({
     );
   }
 
-  const hasInstagram = data.profile?.featuredContent?.some((i) =>
-    i.url.includes("instagram.com")
-  );
+  const hasInstagram = data.profile?.featuredContent?.some((i) => i.url.includes("instagram.com"));
 
   return (
     <div
-      className={`min-h-screen bg-[color:var(--vooki-app-bg)] text-[color:var(--vooki-app-text)] font-sans selection:bg-[color:var(--vooki-app-active-bg)] ${className}`}
+      className={`min-h-screen ${bgClass} text-[color:var(--vooki-app-text)] font-sans selection:bg-[color:var(--vooki-app-active-bg)] ${className}`}
     >
-      {hasInstagram && (
-        <Script src="https://www.instagram.com/embed.js" strategy="lazyOnload" />
-      )}
+      {hasInstagram && <Script src="https://www.instagram.com/embed.js" strategy="lazyOnload" />}
 
       {/* ================= FIXED TOP NAVBAR ================= */}
       {shouldShowNavbar && <CreatorNavbar />}
@@ -208,4 +220,3 @@ export function CreatorProfileView({
     </div>
   );
 }
-
