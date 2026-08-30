@@ -1,57 +1,52 @@
 "use client";
 
-import { Users, Globe, MapPin } from "lucide-react";
+import React from "react";
+import { Globe, MapPin, Sparkles, Users } from "lucide-react";
+import { PublicProfileData } from "./types";
 
-interface AboutCardProps {
-  summary?: string;
-  highlight?: string;
-  audience?: string;
-  languages?: string[];
-  location?: string;
+interface CreatorOverviewTabProps {
+  data: PublicProfileData;
+  className?: string;
 }
 
-export function AboutCard({
-  summary,
-  highlight,
-  audience,
-  languages,
-  location,
-}: AboutCardProps) {
-  const hasAudienceData = Boolean(audience);
+export function CreatorOverviewTab({ data, className = "" }: CreatorOverviewTabProps) {
+  const { profile } = data;
+  const hasAudienceData = Boolean(profile?.audience);
 
   return (
-    <section className="animate-in fade-in slide-in-from-bottom-2 duration-300 rounded-3xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface)] p-6 sm:p-8 space-y-6 shadow-xs">
-      {/* Creator Bio / Summary if present */}
-      {summary && (
-        <div className="rounded-2xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-5 space-y-1 shadow-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--vooki-app-text-subtle)]">
-            About
+    <section
+      className={`animate-in fade-in slide-in-from-bottom-2 duration-300 rounded-3xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface)] p-6 sm:p-8 space-y-6 shadow-xs ${className}`}
+    >
+      {/* Summary / Bio if provided */}
+      {profile?.summary && (
+        <div className="space-y-1 pb-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">
+            About {data.name.split(" ")[0]}
           </span>
-          <p className="text-xs sm:text-sm font-medium text-[color:var(--vooki-app-text-strong)] leading-relaxed">
-            {summary}
+          <p className="text-sm text-[color:var(--vooki-app-text-strong)] leading-relaxed font-medium">
+            {profile.summary}
           </p>
         </div>
       )}
 
       {/* Highlight Banner */}
-      <div className="rounded-2xl border border-[color:var(--vooki-app-active-border)] bg-[color:var(--vooki-app-active-bg)]/25 p-5 space-y-1">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--vooki-app-text-subtle)]">
-          Highlight
-        </span>
-        <p
-          className={`text-xs sm:text-sm font-medium leading-relaxed ${
-            highlight && highlight.trim()
-              ? "text-[color:var(--vooki-app-text-strong)]"
-              : "text-[color:var(--vooki-app-text-muted)]"
-          }`}
-        >
-          {highlight && highlight.trim()
-            ? highlight
-            : "Please add the highlight"}
-        </p>
-      </div>
+      {profile?.highlight && (
+        <div className="rounded-2xl border border-[color:var(--vooki-app-active-border)] bg-[color:var(--vooki-app-active-bg)]/25 p-5 flex items-start gap-4">
+          <div className="h-8 w-8 rounded-xl bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] flex items-center justify-center shrink-0 shadow-xs">
+            <Sparkles className="h-4 w-4" />
+          </div>
+          <div className="space-y-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--vooki-app-text-subtle)]">
+              Highlight
+            </span>
+            <p className="text-xs sm:text-sm font-medium text-[color:var(--vooki-app-text-strong)] leading-relaxed">
+              {profile.highlight}
+            </p>
+          </div>
+        </div>
+      )}
 
-      {/* Side-by-Side: Audience (with Gender Ratio) & Languages */}
+      {/* Side-by-Side: Audience Demographics & Languages */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
         {/* Dynamic Audience Breakdown Card */}
         <div className="rounded-2xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-5 sm:p-6 flex flex-col justify-between min-h-[260px] shadow-xs">
@@ -80,14 +75,8 @@ export function AboutCard({
                 </span>
 
                 <div className="h-3 w-full rounded-full overflow-hidden flex bg-zinc-200 dark:bg-zinc-800">
-                  <div
-                    style={{ width: "85%" }}
-                    className="bg-[#FF2E93] h-full rounded-l-full"
-                  />
-                  <div
-                    style={{ width: "15%" }}
-                    className="bg-[#2E7CF6] h-full rounded-r-full"
-                  />
+                  <div style={{ width: "85%" }} className="bg-[#FF2E93] h-full rounded-l-full" />
+                  <div style={{ width: "15%" }} className="bg-[#2E7CF6] h-full rounded-r-full" />
                 </div>
 
                 <div className="flex justify-between items-center text-xs font-black pt-0.5">
@@ -113,7 +102,7 @@ export function AboutCard({
                   </span>
                   <span className="text-xs sm:text-sm font-extrabold text-[color:var(--vooki-app-text-strong)] flex items-center gap-1">
                     <MapPin className="w-3.5 h-3.5 text-[color:var(--vooki-app-text-muted)]" />
-                    <span>{location || "Not specified"}</span>
+                    <span>{profile?.location || "Not specified"}</span>
                   </span>
                 </div>
               </div>
@@ -124,11 +113,11 @@ export function AboutCard({
                 <Users className="w-5 h-5" />
               </div>
               <p className="text-sm font-bold text-[color:var(--vooki-app-text-strong)]">
-                Demographics
+                Demographics Not Available
               </p>
               <p className="text-xs text-[color:var(--vooki-app-text-muted)] max-w-xs leading-relaxed">
-                Audience age, gender split, and geography insights have not been synced
-                for this profile.
+                Audience age, gender split, and geography insights have not been synced for this
+                profile.
               </p>
             </div>
           )}
@@ -147,8 +136,9 @@ export function AboutCard({
           </div>
 
           <div className="flex flex-wrap gap-2 pt-2">
-            {languages && languages.filter((lang) => lang && lang.trim()).length > 0 ? (
-              languages
+            {profile?.languages &&
+            profile.languages.filter((lang) => lang && lang.trim()).length > 0 ? (
+              profile.languages
                 .filter((lang) => lang && lang.trim())
                 .map((lang, idx) => (
                   <span
@@ -160,7 +150,7 @@ export function AboutCard({
                 ))
             ) : (
               <span className="text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border-strong)] text-[color:var(--vooki-app-text-muted)] shadow-xs">
-                No languages added
+                No languages specified
               </span>
             )}
           </div>
@@ -171,3 +161,4 @@ export function AboutCard({
     </section>
   );
 }
+

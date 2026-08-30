@@ -69,7 +69,7 @@ export function QuickLinks({ links = {}, onUpdate }: QuickLinksProps) {
   const handleSaveAPI = async (payloadLinks: Record<string, string>) => {
     setIsLoading(true);
     try {
-      const payload = { InfluencerProfile: { socialLinks: payloadLinks } };
+      const payload = { influencerProfile: { socialLinks: payloadLinks } };
 
       console.log("Saving links to backend:", payload);
 

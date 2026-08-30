@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { getInitials } from "@/lib/utils";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, ChevronDown, ThumbsUp, XCircle } from "lucide-react";
@@ -113,7 +115,7 @@ export function InviteCard({ invite, brand, onAction }: InviteCardProps) {
               <Avatar className="h-10 w-10 border border-[color:var(--vooki-app-border)]">
                 <AvatarImage src={brand.profilePicture} />
                 <AvatarFallback className="bg-[color:var(--vooki-violet-soft)] text-sm font-semibold text-[color:var(--vooki-violet)]">
-                  {(brand.brandName || brand.name || "B").slice(0, 2).toUpperCase()}
+                  {getInitials(brand.brandName || brand.name, "B")}
                 </AvatarFallback>
               </Avatar>
 

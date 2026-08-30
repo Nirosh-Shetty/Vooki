@@ -3,6 +3,8 @@
 import { MessageSquare, Star, Quote } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getInitials } from "@/lib/utils";
+
 
 export type ReviewType = {
   id: string;
@@ -50,7 +52,7 @@ export function ReviewsCard({ reviews, rating, totalReviews }: ReviewsCardProps)
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] text-[10px] font-bold">
-                      {review.author.substring(0, 2).toUpperCase()}
+                      {getInitials(review.author, "RV")}
                     </div>
                     <span className="font-semibold text-xs sm:text-sm text-[color:var(--vooki-app-text-strong)]">
                       {review.author}

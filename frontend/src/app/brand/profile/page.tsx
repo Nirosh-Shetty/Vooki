@@ -1,11 +1,11 @@
 "use client"
 
-import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
+import { Globe, Mail, Edit3, Loader2, ShieldCheck, Briefcase, Star, Target, CheckCircle2 } from "lucide-react"
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 type BrandProfilePayload = {
   id: string
@@ -13,21 +13,22 @@ type BrandProfilePayload = {
   name: string
   username?: string
   email?: string
+  phone?: string
   profilePicture?: string
   rating?: number
   totalReviews?: number
-  brandDetails?: {
+  brandProfile?: {
     companyName?: string
     website?: string
     brandCategory?: string
-    collaborations?: number
+    summary?: string
+    totalCollaborations?: number
     activeCampaigns?: number
-    pointsOfContact?: number
   }
 }
 
 const formatMetric = (value?: number) => {
-  if (!value) return "—"
+  if (!value) return "0"
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`
   if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`
   return `${value}`
@@ -41,205 +42,170 @@ export default function BrandProfilePage() {
   const heroAvatar = profile?.profilePicture || "/images/defaults/brand.svg"
 
   useEffect(() => {
-    const controller = new AbortController()
-    const load = async () => {
-      setLoading(true)
-      setError(null)
+    const fetchProfile = async () => {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/profile/me`, {
           credentials: "include",
-          signal: controller.signal,
         })
         if (!response.ok) throw new Error("Cannot load profile")
         const data: BrandProfilePayload = await response.json()
         if (data.role !== "brand") throw new Error("Not a brand account")
+        
         setProfile(data)
       } catch (err: unknown) {
-        if (err instanceof DOMException && err.name === "AbortError") return
         setError(err instanceof Error ? err.message : "Profile unavailable")
       } finally {
         setLoading(false)
       }
     }
-    load()
-    return () => controller.abort()
+    fetchProfile()
   }, [])
 
-  const totalCollaborations = useMemo(() => profile?.brandDetails?.collaborations ?? 0, [profile])
-  const activeCampaigns = useMemo(() => profile?.brandDetails?.activeCampaigns ?? 0, [profile])
-  const invites = Math.max(0, (profile?.brandDetails?.collaborations ?? 0) * 2)
+  const totalCollaborations = useMemo(() => profile?.brandProfile?.totalCollaborations ?? 0, [profile])
+  const activeCampaigns = useMemo(() => profile?.brandProfile?.activeCampaigns ?? 0, [profile])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-[color:var(--vooki-app-text-muted)]" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto w-full max-w-3xl px-4 py-8">
+        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-6 text-center text-sm font-medium text-rose-400">
+          {error}
+        </div>
+      </div>
+    )
+  }
+
+  if (!profile) return null
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
-      {loading && (
-        <Card className="border-slate-200 bg-white/90 shadow-sm">
-          <CardContent className="p-6 text-sm text-slate-600">Loading brand profile…</CardContent>
-        </Card>
-      )}
-      {error && (
-        <Card className="border-slate-200 bg-white/90 shadow-sm">
-          <CardContent className="p-6 text-sm text-rose-600">{error}</CardContent>
-        </Card>
-      )}
-
-      {profile && (
-        <>
-          <section className="rounded-[32px] border border-slate-200 bg-gradient-to-r from-amber-500 via-orange-500 to-cyan-500 p-6 shadow-2xl shadow-amber-300/40 text-slate-900">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              <Avatar className="h-20 w-20 border border-white/60 bg-slate-900/60 text-xl font-semibold uppercase text-white">
-                <AvatarImage src={heroAvatar} alt={profile.name} />
-                <AvatarFallback className="bg-slate-900/10 text-slate-900">
-                  {profile.name
-                    .split(" ")
-                    .map((part) => part[0])
-                    .join("")
-                    .slice(0, 2)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-3xl font-semibold tracking-tight">{profile.name}</h1>
-                  <Badge className="border-0 bg-white/80 text-slate-900">Brand account</Badge>
-                  {profile.brandDetails?.brandCategory && (
-                    <Badge className="border-0 bg-slate-900/10 text-slate-900">
-                      {profile.brandDetails.brandCategory}
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-sm text-slate-900/70">@{profile.username || "brand"}</p>
-                <p className="mt-2 max-w-2xl text-sm text-slate-900/80">
-                  Brand-ready collaboration flows, transparent milestones, and trust metrics built for modern campaigns.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button asChild variant="ghost" className="border border-slate-900/30 bg-white/80 text-slate-900 hover:bg-white">
-                  <Link href="/brand/campaigns">Create campaign</Link>
-                </Button>
-                <Button variant="outline" className="border-white/70 text-slate-900">
-                  Invite creator
-                </Button>
-                <Button asChild variant="secondary" className="text-slate-900/90">
-                  <Link href="/brand/profile/edit">Edit profile</Link>
-                </Button>
-              </div>
-            </div>
-            <div className="mt-6 grid gap-4 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/60 bg-white/50 px-4 py-3 text-sm text-slate-900">
-                <p className="text-xs uppercase tracking-widest text-slate-600">Collaborations</p>
-                <p className="text-2xl font-semibold">{formatMetric(totalCollaborations)}</p>
-                <p className="text-xs text-slate-600">Deals across the platform</p>
-              </div>
-              <div className="rounded-2xl border border-white/60 bg-white/50 px-4 py-3 text-sm text-slate-900">
-                <p className="text-xs uppercase tracking-widest text-slate-600">Active campaigns</p>
-                <p className="text-2xl font-semibold">{formatMetric(activeCampaigns)}</p>
-                <p className="text-xs text-slate-600">Currently tracked</p>
-              </div>
-              <div className="rounded-2xl border border-white/60 bg-white/50 px-4 py-3 text-sm text-slate-900">
-                <p className="text-xs uppercase tracking-widest text-slate-600">Pending invites</p>
-                <p className="text-2xl font-semibold">{formatMetric(invites)}</p>
-                <p className="text-xs text-slate-600">Recently sent</p>
-              </div>
-            </div>
-          </section>
-
-          <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
-            <div className="space-y-6">
-              <Card className="border-slate-200 bg-white/90 shadow-sm">
-                <CardHeader>
-                  <CardTitle>Brand identity</CardTitle>
-                  <CardDescription>How you show up when a creator opens your profile.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-5">
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-700">
-                      <p className="text-xs text-slate-500">Company</p>
-                      <p className="text-base font-semibold text-slate-900">{profile.brandDetails?.companyName || "Not set"}</p>
-                    </div>
-                    <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-700">
-                      <p className="text-xs text-slate-500">Website</p>
-                      <p className="text-base font-semibold text-slate-900">{profile.brandDetails?.website || "Not set"}</p>
-                    </div>
-                    <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-700">
-                      <p className="text-xs text-slate-500">Category</p>
-                      <p className="text-base font-semibold text-slate-900">{profile.brandDetails?.brandCategory || "General"}</p>
-                    </div>
-                  </div>
-                  <div className="space-y-3 text-sm text-slate-700">
-                    <p className="font-semibold text-slate-900">Trust signals</p>
-                    <p>A clear profile, vetted agreements, and fast payments make your invites feel professional.</p>
-                    <p className="text-xs text-slate-500">Pro tip: keep your website link and brand story filled to stand out.</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-slate-200 bg-white/90 shadow-sm">
-                <CardHeader>
-                  <CardTitle>Campaign rhythm</CardTitle>
-                  <CardDescription>Snapshot of where most energy is right now.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4 text-sm text-slate-700">
-                  <div className="flex items-center justify-between">
-                    <p>Live campaigns</p>
-                    <span className="font-semibold text-slate-900">{formatMetric(activeCampaigns)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <p>Negotiations</p>
-                    <span className="font-semibold text-slate-900">{formatMetric(totalCollaborations)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <p>Payments pending</p>
-                    <span className="font-semibold text-slate-900">3</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="space-y-6">
-              <Card className="border-slate-200 bg-white/90 shadow-sm">
-                <CardHeader>
-                  <CardTitle>Contact stack</CardTitle>
-                  <CardDescription>What creators see before accepting invites.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 text-sm text-slate-700">
-                    <div className="flex items-center justify-between">
-                      <p>Email</p>
-                      <span className="text-slate-900">{profile.email ?? "Not shared yet"}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <p>Handle</p>
-                      <span className="text-slate-900">@{profile.username || "brand"}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <p>Response time</p>
-                      <span className="text-slate-900">Within 24 hrs</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <p>Decision-maker</p>
-                      <span className="text-slate-900">In-house marketing</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-slate-200 bg-white/90 shadow-sm">
-                <CardHeader>
-                  <CardTitle>Next actions</CardTitle>
-                  <CardDescription>Keep the profile fresh.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm text-slate-700">
-                  <Button asChild variant="ghost" className="w-full justify-between border border-slate-200 text-slate-900">
-                    <Link href="/brand/influencers">Show active collabs</Link>
-                  </Button>
-                  <Button asChild variant="outline" className="w-full border border-slate-900 text-slate-900">
-                    <Link href="/brand/campaigns/new">Launch campaign</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
+    <div className="w-full min-h-screen bg-[color:var(--vooki-app-bg)] text-[color:var(--vooki-app-text)]">
+      <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 lg:px-8 py-12 pb-32">
+        
+        <div className="flex flex-col sm:flex-row gap-8 lg:gap-12">
+          
+          {/* AVATAR COLUMN */}
+          <div className="flex-shrink-0 flex flex-col items-center sm:items-start">
+            <Avatar className="h-32 w-32 sm:h-40 sm:w-40 rounded-full border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface)] text-3xl font-bold uppercase text-[color:var(--vooki-app-text-strong)] overflow-hidden">
+              <AvatarImage 
+                src={heroAvatar} 
+                alt={profile.name} 
+                className="object-cover bg-white dark:bg-zinc-100 p-2" 
+              />
+              <AvatarFallback className="bg-[color:var(--vooki-app-surface-hover)]">
+                {profile.name.substring(0, 2)}
+              </AvatarFallback>
+            </Avatar>
           </div>
-        </>
-      )}
+
+          {/* CONTENT COLUMN */}
+          <div className="flex-1 min-w-0">
+            
+            {/* Header Row: Name & Edit Button */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[color:var(--vooki-app-text-strong)] flex items-center gap-2">
+                  <span className="truncate">{profile.brandProfile?.companyName || profile.name}</span>
+                  <ShieldCheck className="h-6 w-6 text-[color:var(--vooki-accent)] flex-shrink-0" />
+                </h1>
+                <p className="text-base text-[color:var(--vooki-app-text-muted)] font-medium mt-1">@{profile.username}</p>
+              </div>
+              
+              <Button asChild className="w-full sm:w-auto bg-[color:var(--vooki-app-surface)] hover:bg-[color:var(--vooki-app-surface-hover)] border border-[color:var(--vooki-app-border-strong)] text-[color:var(--vooki-app-text-strong)] shadow-sm font-medium rounded-lg px-6 transition-colors">
+                <Link href="/brand/profile/edit">
+                  <Edit3 className="mr-2 h-4 w-4 opacity-70" />
+                  Edit Profile
+                </Link>
+              </Button>
+            </div>
+
+            {/* Badges / Meta Info */}
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm font-medium text-[color:var(--vooki-app-text-soft)] mb-8">
+              <div className="flex items-center gap-1.5">
+                <Briefcase className="h-4 w-4 opacity-70" />
+                {profile.brandProfile?.brandCategory || "Brand"}
+              </div>
+              {profile.brandProfile?.website && (
+                <a 
+                  href={`https://${profile.brandProfile.website.replace(/^https?:\/\//, '')}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="flex items-center gap-1.5 text-[color:var(--vooki-accent)] hover:underline"
+                >
+                  <Globe className="h-4 w-4 opacity-70" />
+                  {profile.brandProfile.website.replace(/^https?:\/\//, '')}
+                </a>
+              )}
+            </div>
+
+            {/* Stats Row */}
+            <div className="flex flex-wrap gap-4 sm:gap-8 mb-10 pb-10 border-b border-[color:var(--vooki-app-border)]">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)] flex items-center gap-1 mb-1">
+                  <Star className="h-3 w-3" /> Rating
+                </span>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-extrabold text-[color:var(--vooki-app-text-strong)]">{profile.rating?.toFixed(1) || "0.0"}</span>
+                  <span className="text-xs font-medium text-[color:var(--vooki-app-text-muted)]">({profile.totalReviews || 0})</span>
+                </div>
+              </div>
+
+              <div className="w-px bg-[color:var(--vooki-app-border)] hidden sm:block"></div>
+
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)] flex items-center gap-1 mb-1">
+                  <Target className="h-3 w-3" /> Active Campaigns
+                </span>
+                <span className="text-2xl font-extrabold text-[color:var(--vooki-app-text-strong)]">
+                  {formatMetric(activeCampaigns)}
+                </span>
+              </div>
+
+              <div className="w-px bg-[color:var(--vooki-app-border)] hidden sm:block"></div>
+
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--vooki-app-text-muted)] flex items-center gap-1 mb-1">
+                  <CheckCircle2 className="h-3 w-3" /> Total Collabs
+                </span>
+                <span className="text-2xl font-extrabold text-[color:var(--vooki-app-text-strong)]">
+                  {formatMetric(totalCollaborations)}
+                </span>
+              </div>
+            </div>
+
+            {/* Bio Section */}
+            <div className="mb-10">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-[color:var(--vooki-app-text-muted)] mb-4">About the Brand</h2>
+              {profile.brandProfile?.summary ? (
+                <div className="text-base leading-relaxed text-[color:var(--vooki-app-text-soft)] whitespace-pre-wrap">
+                  {profile.brandProfile.summary}
+                </div>
+              ) : (
+                <div className="text-base text-[color:var(--vooki-app-text-muted)] italic">
+                  No bio provided. Tell creators about your brand.
+                </div>
+              )}
+            </div>
+
+            {/* Contact Section */}
+            <div>
+              <h2 className="text-sm font-bold uppercase tracking-widest text-[color:var(--vooki-app-text-muted)] mb-4">Contact</h2>
+              <div className="inline-flex items-center gap-3 bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border)] rounded-xl px-4 py-3">
+                <Mail className="h-5 w-5 text-[color:var(--vooki-app-text-muted)]" />
+                <span className="text-sm font-semibold text-[color:var(--vooki-app-text-strong)]">{profile.email}</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
     </div>
   )
 }

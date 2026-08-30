@@ -22,6 +22,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { getInitials } from "@/lib/utils";
+
 
 type InfluencerFormState = {
   name: string;
@@ -121,7 +123,7 @@ export default function influencerDetailsEditPage() {
         const data = await response.json();
         if (data.role !== "influencer") throw new Error("Expected influencer account");
 
-        const details = data.InfluencerProfile ?? {};
+        const details = data.influencerProfile ?? {};
         const fetchedUsername = String(data.username ?? "");
 
         setInitialUsername(fetchedUsername);
@@ -253,7 +255,7 @@ export default function influencerDetailsEditPage() {
           .trim()
           .toLowerCase(),
         phone: String(form.phone ?? "").trim(),
-        InfluencerProfile: {
+        influencerProfile: {
           location: String(form.location ?? "").trim(),
           languages: String(form.languages ?? "")
             .split(",")
@@ -270,7 +272,7 @@ export default function influencerDetailsEditPage() {
         photo: photoData || undefined,
       };
 
-      const payload = { name: data.name, username: data.username, email: data.email, phone: data.phone, InfluencerProfile: data.InfluencerProfile, photo: data.photo }
+      const payload = { name: data.name, username: data.username, email: data.email, phone: data.phone, influencerProfile: data.influencerProfile, photo: data.photo }
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/profile/influencer`,
@@ -372,12 +374,9 @@ export default function influencerDetailsEditPage() {
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 rounded-2xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4">
               <div className="relative group mx-auto sm:mx-0">
                 <Avatar className="h-20 w-20 rounded-full border-2 border-background shadow-md">
-                  <AvatarImage src={photoPreview} className="object-cover" />
+                  <AvatarImage src={photoPreview?.trim() || undefined} alt={form.name} className="object-cover" />
                   <AvatarFallback className="font-bold text-lg bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)]">
-                    {String(form.name ?? "")
-                      .trim()
-                      .substring(0, 2)
-                      .toUpperCase() || "CR"}
+                    {getInitials(form.name)}
                   </AvatarFallback>
                 </Avatar>
               </div>

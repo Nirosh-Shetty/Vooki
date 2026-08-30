@@ -21,17 +21,50 @@ export const profile = async (req: Request, res: Response) => {
     }
 
     const socialConnections = normalizeSocialConnectionsRecord(
-      user?.statsConnection || user?.InfluencerProfile?.statsConnection
+      user?.statsConnection || user?.influencerProfile?.statsConnection
     );
+
+    const engagementRates: number[] = [];
+    const engagementBreakdown: Record<string, number | null> = {
+      youtube: null,
+      instagram: null,
+      facebook: null,
+      twitter: null,
+    };
+
+    Object.entries(socialConnections).forEach(([platform, data]: [string, any]) => {
+      if (data) {
+        const rate = (data.metrics?.engagementRate ?? data.engagementRate) || 0;
+        if (rate > 0) {
+          engagementRates.push(rate);
+        }
+        const pKey = platform.toLowerCase() === "x" ? "twitter" : platform.toLowerCase();
+        engagementBreakdown[pKey] = rate > 0 ? rate : null;
+      }
+    });
+
+    const calculatedAvgEngagement =
+      engagementRates.length > 0
+        ? Number(
+            (
+              engagementRates.reduce((acc, curr) => acc + curr, 0) /
+              engagementRates.length
+            ).toFixed(1)
+          )
+        : Number(user?.influencerProfile?.engagement || 0);
 
     return res.status(200).json({
       ...user,
       avatar: user.avatar,
-      InfluencerProfile: {
-        ...(user.InfluencerProfile || {}),
+      influencerProfile: {
+        ...(user.influencerProfile || {}),
+        engagement: calculatedAvgEngagement,
+        engagementRate: calculatedAvgEngagement,
+        engagementBreakdown,
         statsConnection: socialConnections,
       },
     });
+
   } catch (error) {
     console.error("Error fetching profile:", error);
     return res.status(500).json({ message: "Server error" });
@@ -92,7 +125,7 @@ export const getPublicInfluencerProfile = async (req: Request, res: Response) =>
       role: "influencer",
     })
       .select(
-        "name username role avatar isVerified rating totalReviews InfluencerProfile.niche InfluencerProfile.followers InfluencerProfile.socialLinks InfluencerProfile.statsConnection"
+        "name username role avatar isVerified rating totalReviews influencerProfile.niche influencerProfile.followers influencerProfile.socialLinks influencerProfile.statsConnection"
       )
       .lean();
 
@@ -100,7 +133,7 @@ export const getPublicInfluencerProfile = async (req: Request, res: Response) =>
       return res.status(404).json({ message: "Influencer profile not found" });
     }
 
-    const followers = Number(user?.InfluencerProfile?.followers || 0);
+    const followers = Number(user?.influencerProfile?.followers || 0);
     const engagementRate = clamp(
       Number((3 + Math.log10(Math.max(followers, 10)) * 1.35).toFixed(1)),
       1.8,
@@ -118,8 +151,8 @@ export const getPublicInfluencerProfile = async (req: Request, res: Response) =>
       98
     );
 
-    const socialLinks = user?.InfluencerProfile?.socialLinks
-      ? Object.fromEntries(Object.entries(user.InfluencerProfile.socialLinks))
+    const socialLinks = user?.influencerProfile?.socialLinks
+      ? Object.fromEntries(Object.entries(user.influencerProfile.socialLinks))
       : {};
 
     return res.status(200).json({
@@ -129,7 +162,7 @@ export const getPublicInfluencerProfile = async (req: Request, res: Response) =>
       role: user.role,
       avatar: user.avatar || "",
       verified: Boolean(user.isVerified),
-      niche: user?.InfluencerProfile?.niche || "General",
+      niche: user?.influencerProfile?.niche || "General",
       followers,
       rating: Number(user.rating || 0),
       totalReviews: Number(user.totalReviews || 0),
@@ -170,34 +203,33 @@ export const updateInfluencerProfile = async (req: Request, res: Response) => {
       return res.status(403).json({ message: "Only influencers can update this profile" })
     }
 
-    const { name, username, email, phone, InfluencerProfile } = req.body
+    const { name, username, email, phone, influencerProfile } = req.body
     if (typeof name === "string") user.name = name.trim()
     if (typeof username === "string") user.username = username.trim()
     if (typeof email === "string") user.email = email.trim().toLowerCase()
     if (phone) user.phone = Number(phone)
 
-    const existingDetails = user.InfluencerProfile || {}
+    const existingDetails = user.influencerProfile || {}
 
     const links = sanitizeSocialLinks(existingDetails.socialLinks)
-    if (InfluencerProfile?.socialLinks) {
-      const incoming = sanitizeSocialLinks(InfluencerProfile.socialLinks)
+    if (influencerProfile?.socialLinks) {
+      const incoming = sanitizeSocialLinks(influencerProfile.socialLinks)
       for (const [key, value] of incoming.entries()) {
         links.set(key, value)
       }
     }
 
-    user.InfluencerProfile = {
+    user.influencerProfile = {
       ...existingDetails,
-      followers: InfluencerProfile?.followers ?? existingDetails.followers,
-      niche: applyLocaleSafeString(InfluencerProfile?.niche) ?? existingDetails.niche,
-      summary: applyLocaleSafeString(InfluencerProfile?.summary) ?? existingDetails.summary,
-      highlight: applyLocaleSafeString(InfluencerProfile?.highlight) ?? existingDetails.highlight,
-      audience: applyLocaleSafeString(InfluencerProfile?.audience) ?? existingDetails.audience,
-      engagement: Number(InfluencerProfile?.engagement) || existingDetails.engagement,
+      niche: applyLocaleSafeString(influencerProfile?.niche) ?? existingDetails.niche,
+      summary: applyLocaleSafeString(influencerProfile?.summary) ?? existingDetails.summary,
+      highlight: applyLocaleSafeString(influencerProfile?.highlight) ?? existingDetails.highlight,
+      audience: applyLocaleSafeString(influencerProfile?.audience) ?? existingDetails.audience,
+      engagement: Number(influencerProfile?.engagement) || existingDetails.engagement,
       socialLinks: links,
       statsConnection: existingDetails.statsConnection,
-      languages: Array.isArray(InfluencerProfile?.languages) ? InfluencerProfile.languages : existingDetails.languages,
-      location: applyLocaleSafeString(InfluencerProfile?.location) ?? existingDetails.location,
+      languages: Array.isArray(influencerProfile?.languages) ? influencerProfile.languages : existingDetails.languages,
+      location: applyLocaleSafeString(influencerProfile?.location) ?? existingDetails.location,
       preferences: existingDetails.preferences,
     }
 
@@ -228,27 +260,27 @@ export const updateBrandProfile = async (req: Request, res: Response) => {
       return res.status(403).json({ message: "Only brands can update this profile" })
     }
 
-    const { name, username, email, phone, brandDetails } = req.body
+    const { name, username, email, phone, brandProfile } = req.body
     if (typeof name === "string") user.name = name.trim()
     if (typeof username === "string") user.username = username.trim()
     if (typeof email === "string") user.email = email.trim().toLowerCase()
     if (phone) user.phone = Number(phone)
 
-    const existingDetails = user.brandDetails || {}
-    user.brandDetails = {
+    const existingDetails = user.brandProfile || {}
+    user.brandProfile = {
       ...existingDetails,
-      companyName: applyLocaleSafeString(brandDetails?.companyName) ?? existingDetails.companyName,
-      website: brandDetails?.website ?? existingDetails.website,
-      brandCategory: applyLocaleSafeString(brandDetails?.brandCategory) ?? existingDetails.brandCategory,
-      summary: applyLocaleSafeString(brandDetails?.summary) ?? existingDetails.summary,
+      companyName: applyLocaleSafeString(brandProfile?.companyName) ?? existingDetails.companyName,
+      website: brandProfile?.website ?? existingDetails.website,
+      brandCategory: applyLocaleSafeString(brandProfile?.brandCategory) ?? existingDetails.brandCategory,
+      summary: applyLocaleSafeString(brandProfile?.summary) ?? existingDetails.summary,
       collaborations: existingDetails.collaborations,
-      activeCampaigns: Number(brandDetails?.activeCampaigns) || existingDetails.activeCampaigns,
-      pointsOfContact: Number(brandDetails?.pointsOfContact) || existingDetails.pointsOfContact,
-      contactRole: applyLocaleSafeString(brandDetails?.contactRole) ?? existingDetails.contactRole,
+      activeCampaigns: Number(brandProfile?.activeCampaigns) || existingDetails.activeCampaigns,
+      pointsOfContact: Number(brandProfile?.pointsOfContact) || existingDetails.pointsOfContact,
+      contactRole: applyLocaleSafeString(brandProfile?.contactRole) ?? existingDetails.contactRole,
       collaborationDefaults: {
-        usageRights: applyLocaleSafeString(brandDetails?.collaborationDefaults?.usageRights) ?? existingDetails.collaborationDefaults?.usageRights,
-        revisions: Number(brandDetails?.collaborationDefaults?.revisions) || existingDetails.collaborationDefaults?.revisions,
-        exclusivityPeriod: Number(brandDetails?.collaborationDefaults?.exclusivityPeriod) || existingDetails.collaborationDefaults?.exclusivityPeriod,
+        usageRights: applyLocaleSafeString(brandProfile?.collaborationDefaults?.usageRights) ?? existingDetails.collaborationDefaults?.usageRights,
+        revisions: Number(brandProfile?.collaborationDefaults?.revisions) || existingDetails.collaborationDefaults?.revisions,
+        exclusivityPeriod: Number(brandProfile?.collaborationDefaults?.exclusivityPeriod) || existingDetails.collaborationDefaults?.exclusivityPeriod,
       }
     }
 

@@ -111,9 +111,6 @@ export function MessagesHubProvider({
       lastMessageAt?: string | Date;
       senderId?: string;
       unreadCount?: number;
-      isStoppedByBrand?: boolean;
-      stoppedBy?: string | null;
-      stoppedAt?: string | Date | null;
     }) => {
       const isCurrentOpen = selectedConversationIdRef.current === update.conversationId;
       if (isCurrentOpen && update.senderId !== userId) {
@@ -137,41 +134,16 @@ export function MessagesHubProvider({
           lastMessage: update.lastMessage !== undefined ? update.lastMessage : targetConversation.lastMessage,
           lastMessageAt: update.lastMessageAt ? new Date(update.lastMessageAt) : targetConversation.lastMessageAt,
           unreadCount: isCurrentOpen ? 0 : (update.unreadCount !== undefined && update.unreadCount > 0 ? update.unreadCount : nextUnreadCount),
-          isStoppedByBrand: update.isStoppedByBrand !== undefined ? update.isStoppedByBrand : targetConversation.isStoppedByBrand,
-          stoppedBy: update.stoppedBy !== undefined ? update.stoppedBy : targetConversation.stoppedBy,
-          stoppedAt: update.stoppedAt !== undefined ? (update.stoppedAt ? new Date(update.stoppedAt) : null) : targetConversation.stoppedAt,
         };
 
         return [updatedConversation, ...prevConversations.filter((conv) => conv.id !== update.conversationId)];
       });
     };
 
-    const handleStatusUpdated = (update: {
-      conversationId: string;
-      isStoppedByBrand: boolean;
-      stoppedBy?: string | null;
-      stoppedAt?: string | Date | null;
-    }) => {
-      setConversations((prevConversations) =>
-        prevConversations.map((conv) =>
-          conv.id === update.conversationId
-            ? {
-                ...conv,
-                isStoppedByBrand: update.isStoppedByBrand,
-                stoppedBy: update.stoppedBy || null,
-                stoppedAt: update.stoppedAt ? new Date(update.stoppedAt) : null,
-              }
-            : conv
-        )
-      );
-    };
-
     socket.on("conversation-updated", handleConversationUpdated);
-    socket.on("conversation-status-updated", handleStatusUpdated);
 
     return () => {
       socket.off("conversation-updated", handleConversationUpdated);
-      socket.off("conversation-status-updated", handleStatusUpdated);
     };
   }, [socket, setConversations, fetchConversations, userId, markAsRead]);
 
@@ -343,30 +315,6 @@ function formatMessageTime(dateInput?: string | Date | null): string {
     }),
   };
 
-  const handleToggleStopCreatorMessages = useCallback(
-    async (conversationId: string, stopped?: boolean) => {
-      try {
-        const data = await messagingAPI.toggleStopCreatorMessages(conversationId, stopped);
-        setConversations((prev) =>
-          prev.map((conv) =>
-            conv.id === conversationId
-              ? {
-                  ...conv,
-                  isStoppedByBrand: data.isStoppedByBrand,
-                  stoppedBy: data.stoppedBy,
-                  stoppedAt: data.stoppedAt,
-                }
-              : conv
-          )
-        );
-      } catch (error) {
-        console.error("Failed to toggle creator messages:", error);
-        throw error;
-      }
-    },
-    [setConversations]
-  );
-
   const transformedConversations: HubConversation[] = conversations.map((conv) => {
     const isSelected = conv.id === selectedConversationId;
     const profilePic =
@@ -393,9 +341,6 @@ function formatMessageTime(dateInput?: string | Date | null): string {
       lastMessageAt: formatWhatsAppTime(conv.lastMessageAt),
       unreadCount: isSelected ? 0 : conv.unreadCount,
       status: conv.status as "active" | "pending" | "closed",
-      isStoppedByBrand: Boolean(conv.isStoppedByBrand),
-      stoppedBy: conv.stoppedBy || null,
-      stoppedAt: conv.stoppedAt ? formatWhatsAppTime(conv.stoppedAt) : null,
       online: false,
     };
   });
@@ -457,7 +402,6 @@ function formatMessageTime(dateInput?: string | Date | null): string {
       }}
       onStructuredMessageAction={handleStructuredMessageAction}
       onCreateConversation={handleCreateConversation}
-      onToggleStopCreatorMessages={handleToggleStopCreatorMessages}
       isLoading={messagesLoading}
       initialDraft={initialDraft}
     />

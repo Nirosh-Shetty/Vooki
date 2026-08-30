@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Navbar } from "@/components/navbar";
+
 
 /* ─────────────────────────────────────────────
    Scroll-triggered fade-in wrapper
@@ -110,74 +112,8 @@ export default function LandingPage() {
       }}
     >
       {/* ─── NAVIGATION ─── */}
-      <nav
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 100,
-          padding: "0 24px",
-          height: 64,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          background: scrolled ? "var(--vooki-home-nav)" : "transparent",
-          backdropFilter: scrolled ? "blur(16px)" : "none",
-          borderBottom: scrolled ? "1px solid var(--vooki-home-border-soft)" : "1px solid transparent",
-          transition: "background 0.3s, backdrop-filter 0.3s, border-color 0.3s",
-        }}
-      >
-        {/* Logo */}
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-          <img src="/images/company_logo/Vooki_logo_bgRemovedSvg.svg" alt="Vooki Logo" style={{ height: 32, width: "auto" }} />
-          <span
-            style={{
-              fontSize: 18,
-              fontWeight: 700,
-              letterSpacing: "-0.02em",
-              color: "var(--vooki-home-text)",
-            }}
-          >
-            vooki
-          </span>
-        </Link>
+      <Navbar />
 
-        {/* Nav actions */}
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <Link
-            href="/signin"
-            style={{
-              fontSize: 14,
-              fontWeight: 500,
-              color: "var(--vooki-home-text-muted)",
-              textDecoration: "none",
-              transition: "color 0.2s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--vooki-home-text)")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--vooki-home-text-muted)")}
-          >
-            Log in
-          </Link>
-          <Link
-            href="/signin"
-            style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: "var(--vooki-accent-text)",
-              background: "var(--vooki-accent)",
-              padding: "8px 20px",
-              borderRadius: 8,
-              textDecoration: "none",
-              transition: "opacity 0.2s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.88")}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-          >
-            Get Started
-          </Link>
-        </div>
-      </nav>
 
       {/* ═══════════════════════════════════════
          SECTION 1 — HERO

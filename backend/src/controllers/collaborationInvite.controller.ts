@@ -238,7 +238,7 @@ export const getBrandInvites = async (
     const invitesWithInfluencerInfo = await Promise.all(
       invites.map(async (invite: any) => {
         const influencer = await UserModel.findById(invite.influencerId).select(
-          "_id name username InfluencerProfile.niche avatar"
+          "_id name username influencerProfile.niche avatar"
         );
 
         return {
@@ -246,7 +246,7 @@ export const getBrandInvites = async (
           influencerId: invite.influencerId,
           influencerName: influencer?.name || "",
           influencerHandle: influencer?.username || "",
-          influencerNiche: influencer?.InfluencerProfile?.niche || "",
+          influencerNiche: influencer?.influencerProfile?.niche || "",
           campaignId: invite.campaignId,
           campaignLabel: invite.campaignTitle,
           note: invite.brandMessage || "",
@@ -382,6 +382,16 @@ export const acceptInvite = async (
     await CampaignModel.updateOne(
       { _id: String(invite.campaignId) },
       { $inc: { acceptedCreators: 1 } }
+    );
+
+    // Increment totalCollaborations for both brand and influencer
+    await UserModel.updateOne(
+      { _id: String(invite.brandId) },
+      { $inc: { "brandProfile.totalCollaborations": 1 } }
+    );
+    await UserModel.updateOne(
+      { _id: userId },
+      { $inc: { "influencerProfile.totalCollaborations": 1 } }
     );
 
     // Update invite & conversation
@@ -720,6 +730,16 @@ export const acceptCounterOffer = async (
     await CampaignModel.updateOne(
       { _id: String(invite.campaignId) },
       { $inc: { acceptedCreators: 1 } }
+    );
+
+    // Increment totalCollaborations for both brand and influencer
+    await UserModel.updateOne(
+      { _id: requester.id },
+      { $inc: { "brandProfile.totalCollaborations": 1 } }
+    );
+    await UserModel.updateOne(
+      { _id: String(invite.influencerId) },
+      { $inc: { "influencerProfile.totalCollaborations": 1 } }
     );
 
     // Update invite & conversation

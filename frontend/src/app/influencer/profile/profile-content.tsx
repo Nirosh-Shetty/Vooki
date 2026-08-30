@@ -30,6 +30,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { getInitials } from "@/lib/utils";
+
 
 import {
   ConnectedAccounts,
@@ -73,7 +75,7 @@ type ShowcaseItem = {
   url: string;
 };
 
-type InfluencerProfile = {
+type influencerProfile = {
   _id: string;
   role: "influencer";
   name: string;
@@ -82,12 +84,14 @@ type InfluencerProfile = {
   profilePicture?: string;
   rating?: number;
   totalReviews?: number;
-  InfluencerProfile?: {
+  influencerProfile?: {
     niche?: string;
     location?: string;
     languages?: string[];
     followers?: number;
     engagement?: number;
+    engagementRate?: number;
+    engagementBreakdown?: Record<string, number | null>;
     summary?: string;
     socialLinks?: Record<string, string>;
     highlight?: string;
@@ -129,7 +133,7 @@ const formatHistoryDate = (value?: string) => {
 
 export function ProfileContent() {
   const [disconnecting, setDisconnecting] = useState<PlatformKey | null>(null);
-  const [profile, setProfile] = useState<InfluencerProfile | null>(null);
+  const [profile, setProfile] = useState<influencerProfile | null>(null);
   const [publicData, setPublicData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -164,8 +168,8 @@ export function ProfileContent() {
         return updated;
       });
 
-      if (profile?.InfluencerProfile?.socialConnection) {
-        delete profile.InfluencerProfile.socialConnection[platform];
+      if (profile?.influencerProfile?.socialConnection) {
+        delete profile.influencerProfile.socialConnection[platform];
       }
     } catch (err: unknown) {
       setConnectError(err instanceof Error ? err.message : "Failed to disconnect");
@@ -214,16 +218,17 @@ export function ProfileContent() {
         });
 
         if (!response.ok) throw new Error("Unable to load profile");
-        const data: InfluencerProfile = await response.json();
+        const data: influencerProfile = await response.json();
         if (data.role !== "influencer") throw new Error("Expected an influencer account");
 
         setProfile(data);
 
         const tasks: Promise<any>[] = [loadConnections(controller.signal)];
-        if (data.username) {
+        const identifier = data._id || data.username;
+        if (identifier) {
           tasks.push(
             fetch(
-              `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/public/profile/${encodeURIComponent(data.username)}`,
+              `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/public/profile/${encodeURIComponent(identifier)}`,
               { cache: "no-store", signal: controller.signal }
             )
               .then((res) => (res.ok ? res.json() : null))
@@ -256,10 +261,10 @@ export function ProfileContent() {
 
   const connections: Record<string, SocialConnectionEntry> = useMemo(() => {
     return {
-      ...(profile?.InfluencerProfile?.socialConnection ?? {}),
+      ...(profile?.influencerProfile?.socialConnection ?? {}),
       ...socialConnection,
     };
-  }, [profile?.InfluencerProfile?.socialConnection, socialConnection]);
+  }, [profile?.influencerProfile?.socialConnection, socialConnection]);
 
   const connectedCount = SOCIAL_PLATFORMS.filter((platform) =>
     Boolean(connections[platform])
@@ -282,7 +287,50 @@ export function ProfileContent() {
     return { youtube, instagram, facebook, twitter };
   }, [connections]);
 
+  const platformEngagements = useMemo(() => {
+    const stats = publicData?.profile?.stats;
+    const breakdown = profile?.influencerProfile?.engagementBreakdown || publicData?.profile?.engagementBreakdown;
+
+    const youtubeRate = isYoutubeConnection(connections.youtube)
+      ? (connections.youtube.metrics?.engagementRate ?? connections.youtube.engagementRate ?? stats?.youtube?.metrics?.engagementRate ?? breakdown?.youtube ?? null)
+      : null;
+
+    const instagramRate = isInstagramConnection(connections.instagram)
+      ? (connections.instagram.metrics?.engagementRate ?? connections.instagram.engagementRate ?? stats?.instagram?.metrics?.engagementRate ?? breakdown?.instagram ?? null)
+      : null;
+
+    const facebookRate = isFacebookConnection(connections.facebook)
+      ? (connections.facebook.metrics?.engagementRate ?? connections.facebook.engagementRate ?? stats?.facebook?.metrics?.engagementRate ?? breakdown?.facebook ?? null)
+      : null;
+
+    const twitterRate = isTwitterConnection(connections.twitter)
+      ? (connections.twitter.metrics?.engagementRate ?? connections.twitter.engagementRate ?? stats?.twitter?.metrics?.engagementRate ?? breakdown?.twitter ?? null)
+      : null;
+
+    return {
+      youtube: youtubeRate,
+      instagram: instagramRate,
+      facebook: facebookRate,
+      twitter: twitterRate,
+    };
+  }, [connections, publicData?.profile?.stats, profile?.influencerProfile?.engagementBreakdown, publicData?.profile?.engagementBreakdown]);
+
+  const overallEngagement = useMemo(() => {
+    const { youtube, instagram, facebook, twitter } = platformEngagements;
+    const valid = [youtube, instagram, facebook, twitter].filter(
+      (r): r is number => typeof r === "number" && !isNaN(r) && r > 0
+    );
+    if (valid.length > 0) {
+      const sum = valid.reduce((acc, curr) => acc + curr, 0);
+      return Number((sum / valid.length).toFixed(1));
+    }
+    const fallback =
+      profile?.influencerProfile?.engagement ?? publicData?.profile?.engagement;
+    return typeof fallback === "number" && fallback > 0 ? Number(fallback.toFixed(1)) : null;
+  }, [platformEngagements, profile?.influencerProfile?.engagement, publicData?.profile?.engagement]);
+
   const totalFollowers = useMemo(() => {
+
     const { youtube, instagram, facebook, twitter } = platformFollowers;
     const total = (youtube ?? 0) + (instagram ?? 0) + (facebook ?? 0) + (twitter ?? 0);
     if (total === 0 && connectedCount === 0) return undefined;
@@ -294,7 +342,7 @@ export function ProfileContent() {
       return publicData.profile.collaborations;
     }
     return (
-      profile?.InfluencerProfile?.pastCollaborations?.map((collab: any) => ({
+      profile?.influencerProfile?.pastCollaborations?.map((collab: any) => ({
         brandName: collab.brand || collab.brandName,
         campaignTitle: collab.campaign || collab.campaignTitle,
         date: collab.date,
@@ -308,7 +356,7 @@ export function ProfileContent() {
       return publicData.profile.reviews;
     }
     return (
-      profile?.InfluencerProfile?.reviews?.map((r: any) => ({
+      profile?.influencerProfile?.reviews?.map((r: any) => ({
         brandName: r.brandName || r.author,
         rating: r.rating ?? r.score,
         score: r.score ?? r.rating,
@@ -376,8 +424,8 @@ export function ProfileContent() {
         <div className="mt-2.5 flex items-center gap-3">
           <div
             className={`flex items-center gap-1 text-xs font-semibold ${platformFollowers.youtube !== null
-                ? "text-[color:var(--vooki-app-text-strong)]"
-                : "text-[color:var(--vooki-app-text-soft)]/50"
+              ? "text-[color:var(--vooki-app-text-strong)]"
+              : "text-[color:var(--vooki-app-text-soft)]/50"
               }`}
             title="YouTube Subscribers"
           >
@@ -389,8 +437,8 @@ export function ProfileContent() {
 
           <div
             className={`flex items-center gap-1 text-xs font-semibold ${platformFollowers.instagram !== null
-                ? "text-[color:var(--vooki-app-text-strong)]"
-                : "text-[color:var(--vooki-app-text-soft)]/50"
+              ? "text-[color:var(--vooki-app-text-strong)]"
+              : "text-[color:var(--vooki-app-text-soft)]/50"
               }`}
             title="Instagram Followers"
           >
@@ -404,8 +452,8 @@ export function ProfileContent() {
 
           <div
             className={`flex items-center gap-1 text-xs font-semibold ${platformFollowers.facebook !== null
-                ? "text-[color:var(--vooki-app-text-strong)]"
-                : "text-[color:var(--vooki-app-text-soft)]/50"
+              ? "text-[color:var(--vooki-app-text-strong)]"
+              : "text-[color:var(--vooki-app-text-soft)]/50"
               }`}
             title="Facebook Followers"
           >
@@ -417,8 +465,8 @@ export function ProfileContent() {
 
           <div
             className={`flex items-center gap-1 text-xs font-semibold ${platformFollowers.twitter !== null
-                ? "text-[color:var(--vooki-app-text-strong)]"
-                : "text-[color:var(--vooki-app-text-soft)]/50"
+              ? "text-[color:var(--vooki-app-text-strong)]"
+              : "text-[color:var(--vooki-app-text-soft)]/50"
               }`}
             title="X (Twitter) Followers"
           >
@@ -435,10 +483,78 @@ export function ProfileContent() {
     {
       icon: TrendingUp,
       label: "Engagement",
-      value: profile?.InfluencerProfile?.engagement
-        ? `${profile.InfluencerProfile.engagement.toFixed(1)}%`
-        : "-",
+      value: overallEngagement !== null ? `${overallEngagement.toFixed(1)}%` : "-",
+      customBreakdown: (
+        <div className="mt-2.5 flex items-center gap-3">
+          <div
+            className={`flex items-center gap-1 text-xs font-semibold ${
+              platformEngagements.youtube !== null
+                ? "text-[color:var(--vooki-app-text-strong)]"
+                : "text-[color:var(--vooki-app-text-soft)]/50"
+            }`}
+            title="YouTube Engagement Rate"
+          >
+            <Youtube className="h-3.5 w-3.5 text-red-500 shrink-0" />
+            <span>
+              {platformEngagements.youtube !== null
+                ? `${platformEngagements.youtube.toFixed(1)}%`
+                : "-"}
+            </span>
+          </div>
+
+          <div
+            className={`flex items-center gap-1 text-xs font-semibold ${
+              platformEngagements.instagram !== null
+                ? "text-[color:var(--vooki-app-text-strong)]"
+                : "text-[color:var(--vooki-app-text-soft)]/50"
+            }`}
+            title="Instagram Engagement Rate"
+          >
+            <Instagram className="h-3.5 w-3.5 text-pink-500 shrink-0" />
+            <span>
+              {platformEngagements.instagram !== null
+                ? `${platformEngagements.instagram.toFixed(1)}%`
+                : "-"}
+            </span>
+          </div>
+
+          <div
+            className={`flex items-center gap-1 text-xs font-semibold ${
+              platformEngagements.facebook !== null
+                ? "text-[color:var(--vooki-app-text-strong)]"
+                : "text-[color:var(--vooki-app-text-soft)]/50"
+            }`}
+            title="Facebook Engagement Rate"
+          >
+            <Facebook className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+            <span>
+              {platformEngagements.facebook !== null
+                ? `${platformEngagements.facebook.toFixed(1)}%`
+                : "-"}
+            </span>
+          </div>
+
+          <div
+            className={`flex items-center gap-1 text-xs font-semibold ${
+              platformEngagements.twitter !== null
+                ? "text-[color:var(--vooki-app-text-strong)]"
+                : "text-[color:var(--vooki-app-text-soft)]/50"
+            }`}
+            title="X (Twitter) Engagement Rate"
+          >
+            <svg className="h-3.5 w-3.5 fill-current shrink-0" viewBox="0 0 24 24">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+            </svg>
+            <span>
+              {platformEngagements.twitter !== null
+                ? `${platformEngagements.twitter.toFixed(1)}%`
+                : "-"}
+            </span>
+          </div>
+        </div>
+      ),
     },
+
     {
       icon: Star,
       label: "Rating",
@@ -456,7 +572,7 @@ export function ProfileContent() {
     },
   ];
 
-  const heroAvatar = profile?.avatar || "/images/defaults/creator.svg";
+  const heroAvatar = profile?.avatar?.trim() || undefined;
 
   const connectEndpoints: Record<PlatformKey, string> = {
     youtube: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/social/connect/youtube`,
@@ -529,14 +645,11 @@ export function ProfileContent() {
             <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-6 text-center sm:text-left">
               <div className="relative shrink-0">
                 <Avatar className="h-22 w-22 sm:h-24 sm:w-24 rounded-full border-4 border-[color:var(--vooki-app-surface)] shadow-xl bg-[color:var(--vooki-app-surface)] shrink-0 ring-1 ring-[color:var(--vooki-app-border-strong)]">
-                  <AvatarImage src={heroAvatar} className="object-cover" />
+                  <AvatarImage src={heroAvatar} alt={profile.name} className="object-cover" />
                   <AvatarFallback className="font-bold text-xl sm:text-2xl bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)]">
-                    {profile.name.substring(0, 2).toUpperCase()}
+                    {getInitials(profile.name)}
                   </AvatarFallback>
                 </Avatar>
-                <div className="absolute bottom-0.5 right-0.5 flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] ring-2 ring-[color:var(--vooki-app-surface)] shadow-xs">
-                  <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                </div>
               </div>
 
               {/* Creator Name & Tags */}
@@ -545,9 +658,6 @@ export function ProfileContent() {
                   <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[color:var(--vooki-app-text-strong)]">
                     {profile.name}
                   </h1>
-                  <Badge className="bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] border border-[color:var(--vooki-app-active-border)]/50 hover:bg-[color:var(--vooki-app-active-bg)] text-xs font-semibold px-2.5 py-0.5 rounded-full shadow-none backdrop-blur-xs">
-                    Creator
-                  </Badge>
                 </div>
 
                 {/* Metadata Badges */}
@@ -556,17 +666,17 @@ export function ProfileContent() {
                     @{profile.username || "creator"}
                   </span>
 
-                  {profile.InfluencerProfile?.location && (
+                  {profile.influencerProfile?.location && (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[color:var(--vooki-app-surface-strong)] border border-[color:var(--vooki-app-border-strong)] backdrop-blur-sm">
                       <MapPin className="h-3.5 w-3.5 text-[color:var(--vooki-app-active-icon)]" />
-                      {profile.InfluencerProfile.location}
+                      {profile.influencerProfile.location}
                     </span>
                   )}
 
-                  {profile.InfluencerProfile?.niche && (
+                  {profile.influencerProfile?.niche && (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[color:var(--vooki-app-active-bg)]/40 border border-[color:var(--vooki-app-active-border)] text-[color:var(--vooki-app-text-strong)] font-semibold backdrop-blur-sm">
                       <Award className="h-3.5 w-3.5 text-[color:var(--vooki-app-active-icon)]" />
-                      {profile.InfluencerProfile.niche}
+                      {profile.influencerProfile.niche}
                     </span>
                   )}
                 </div>
@@ -584,7 +694,7 @@ export function ProfileContent() {
               </Button>
               <Button
                 className="flex-1 sm:flex-none rounded-xl border border-[color:var(--vooki-app-active-border)] bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] hover:bg-[color:var(--vooki-app-active-border)] text-xs sm:text-sm font-semibold h-10 px-5 shadow-xs transition-all cursor-pointer"
-                onClick={() => window.open(`/creator/${profile.username}`)}
+                onClick={() => window.open(`/creator/${profile._id || profile.username}`)}
               >
                 <ExternalLink className="mr-2 h-4 w-4" /> Preview
               </Button>
@@ -639,8 +749,8 @@ export function ProfileContent() {
           type="button"
           onClick={() => setActiveSection("overview")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${activeSection === "overview"
-              ? "bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] shadow-xs"
-              : "text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]"
+            ? "bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] shadow-xs"
+            : "text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]"
             }`}
         >
           <LayoutGrid className="w-4 h-4" />
@@ -651,8 +761,8 @@ export function ProfileContent() {
           type="button"
           onClick={() => setActiveSection("analytics")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${activeSection === "analytics"
-              ? "bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] shadow-xs"
-              : "text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]"
+            ? "bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] shadow-xs"
+            : "text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]"
             }`}
         >
           <BarChart3 className="w-4 h-4" />
@@ -668,15 +778,15 @@ export function ProfileContent() {
           type="button"
           onClick={() => setActiveSection("portfolio")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${activeSection === "portfolio"
-              ? "bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] shadow-xs"
-              : "text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]"
+            ? "bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] shadow-xs"
+            : "text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]"
             }`}
         >
           <Layers className="w-4 h-4" />
           <span>Featured Media</span>
-          {(profile.InfluencerProfile?.featuredContent?.length ?? 0) > 0 && (
+          {(profile.influencerProfile?.featuredContent?.length ?? 0) > 0 && (
             <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[color:var(--vooki-app-surface)] border border-[color:var(--vooki-app-border-strong)]">
-              {profile.InfluencerProfile?.featuredContent?.length}
+              {profile.influencerProfile?.featuredContent?.length}
             </span>
           )}
         </button>
@@ -685,8 +795,8 @@ export function ProfileContent() {
           type="button"
           onClick={() => setActiveSection("partnerships")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${activeSection === "partnerships"
-              ? "bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] shadow-xs"
-              : "text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]"
+            ? "bg-[color:var(--vooki-app-active-bg)] text-[color:var(--vooki-app-active-text)] shadow-xs"
+            : "text-[color:var(--vooki-app-text-soft)] hover:text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-strong)]"
             }`}
         >
           <Handshake className="w-4 h-4" />
@@ -703,11 +813,11 @@ export function ProfileContent() {
       {activeSection === "overview" && (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
           <AboutCard
-            summary={profile.InfluencerProfile?.summary}
-            highlight={profile.InfluencerProfile?.highlight}
-            audience={profile.InfluencerProfile?.audience}
-            languages={profile.InfluencerProfile?.languages}
-            location={profile.InfluencerProfile?.location}
+            summary={profile.influencerProfile?.summary}
+            highlight={profile.influencerProfile?.highlight}
+            audience={profile.influencerProfile?.audience}
+            languages={profile.influencerProfile?.languages}
+            location={profile.influencerProfile?.location}
           />
         </div>
       )}
@@ -730,14 +840,14 @@ export function ProfileContent() {
       {activeSection === "portfolio" && (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
           <Portfolio
-            initialItems={profile.InfluencerProfile?.featuredContent || []}
+            initialItems={profile.influencerProfile?.featuredContent || []}
             onUpdate={(items) => {
               setProfile((prev) => {
                 if (!prev) return prev;
                 return {
                   ...prev,
-                  InfluencerProfile: {
-                    ...prev.InfluencerProfile,
+                  influencerProfile: {
+                    ...prev.influencerProfile,
                     featuredContent: items,
                   },
                 };

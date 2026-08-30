@@ -55,7 +55,7 @@ const FeaturedContentSchema = new Schema(
 
 const InfluencerProfileSchema = new Schema(
   {
-    followers: { type: Number, default: 0 },
+    // followers: { type: Number, default: 0 },
     niche: { type: String, default: "General" },
     socialLinks: { type: Map, of: String },
     preferences: {
@@ -74,8 +74,8 @@ const InfluencerProfileSchema = new Schema(
     highlight: { type: String },
     audience: { type: String },
     engagement: { type: Number, default: 0 },
-    collaborations: [{ type: Schema.Types.ObjectId, ref: "Collaboration" }],
     languages: [{ type: String }],
+    totalCollaborations: { type: Number, default: 0 },
     featuredContent: {
       type: [FeaturedContentSchema],
       validate: {
@@ -95,7 +95,8 @@ const BrandProfileSchema = new Schema(
     website: { type: String },
     brandCategory: { type: String },
     summary: { type: String },
-    collaborations: [{ type: Schema.Types.ObjectId, ref: "Collaboration" }],
+    totalCollaborations: { type: Number, default: 0 },
+    collaborations: { type: Schema.Types.Mixed },
     activeCampaigns: { type: Number, default: 0 },
     pointsOfContact: { type: Number, default: 0 },
     contactRole: { type: String },
@@ -159,8 +160,8 @@ const UserSchema = new Schema<IUser>(
     oauthProviders: [OAuthProviderSchema],
     rating: { type: Number, default: 0 },
     totalReviews: { type: Number, default: 0 },
-    InfluencerProfile: { type: InfluencerProfileSchema, default: () => ({}) },
-    brandDetails: { type: BrandProfileSchema, default: () => ({}) },
+    influencerProfile: { type: InfluencerProfileSchema, default: () => ({}) },
+    brandProfile: { type: BrandProfileSchema, default: () => ({}) },
     managerProfile: { type: ManagerProfileSchema, default: () => ({}) },
     isVerified: { type: Boolean, default: false },
     reservationExpiresAt: { type: Date, default: null },

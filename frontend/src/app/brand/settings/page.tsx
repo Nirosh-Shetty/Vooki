@@ -53,12 +53,12 @@ export default function BrandSettingsPage() {
     if (user) {
       setAccountData({
         contactName: user.name || "",
-        contactRole: (user as any).brandDetails?.contactRole || "",
+        contactRole: (user as any).brandProfile?.contactRole || "",
         email: user.email || "",
         phone: user.phone ? String(user.phone) : ""
       })
 
-      const userDefaults = (user as any).brandDetails?.collaborationDefaults;
+      const userDefaults = (user as any).brandProfile?.collaborationDefaults;
       if (userDefaults) {
         setDefaultsData({
           usageRights: userDefaults.usageRights || "Content can be reposted natively on brand's social media channels (Instagram) for up to 6 months with credit to the creator.",
@@ -93,7 +93,7 @@ export default function BrandSettingsPage() {
           name: accountData.contactName,
           email: accountData.email,
           phone: accountData.phone,
-          brandDetails: {
+          brandProfile: {
             contactRole: accountData.contactRole,
             collaborationDefaults: defaultsData
           }

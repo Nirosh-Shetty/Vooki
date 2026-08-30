@@ -97,7 +97,6 @@ export const canInitiateConversation = async (
  * Rules:
  * 1. User must be a participant.
  * 2. Creator-to-creator conversations cannot have messages.
- * 3. If brand has paused/stopped creator messages, creator cannot send messages.
  */
 export const canSendMessageInConversation = async (
   userId: string,
@@ -118,26 +117,14 @@ export const canSendMessageInConversation = async (
     { role: 1 }
   ).lean();
 
-  const isSenderCreator = users.some(
-    (u) => String(u._id) === String(userId) && u.role === "influencer"
-  );
   const areAllParticipantsCreators =
     users.length >= 2 && users.every((u) => u.role === "influencer");
 
-  // Rule 3: Prohibit creator-to-creator messaging
+  // Rule 2: Prohibit creator-to-creator messaging
   if (areAllParticipantsCreators) {
     return {
       allowed: false,
       reason: "Creator-to-creator messaging is prohibited on Vooki.",
-      conversation,
-    };
-  }
-
-  // Rule 4: Check if brand stopped creator messages
-  if (conversation.isStoppedByBrand && isSenderCreator) {
-    return {
-      allowed: false,
-      reason: "The brand has paused messages from the creator in this conversation.",
       conversation,
     };
   }
@@ -147,4 +134,5 @@ export const canSendMessageInConversation = async (
     conversation,
   };
 };
+
 
