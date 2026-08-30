@@ -14,7 +14,6 @@ import {
   Instagram,
   Mail,
   MapPin,
-  Megaphone,
   MessageSquare,
   Moon,
   Share2,
@@ -380,8 +379,8 @@ export function CreatorHeader({
           </div>
         </div>
 
-        {/* Top Level KPI Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-5">
+        {/* Top Level KPI Grid (3 Columns) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-5">
           <div className="rounded-2xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-3.5 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between text-[color:var(--vooki-app-text-muted)] text-[11px] font-bold uppercase tracking-wider">
@@ -553,37 +552,38 @@ export function CreatorHeader({
 
           <div className="rounded-2xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-3.5 flex flex-col justify-between">
             <div className="flex items-center justify-between text-[color:var(--vooki-app-text-muted)] text-[11px] font-bold uppercase tracking-wider">
-              <span>Collaborations</span>
-              <Megaphone className="h-3.5 w-3.5 text-[color:var(--vooki-app-active-icon)]" />
-            </div>
-            <p className="mt-2 text-xl font-extrabold text-[color:var(--vooki-app-text-strong)]">
-              {collabsCount > 0 ? collabsCount : "Available"}
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-3.5 flex flex-col justify-between">
-            <div className="flex items-center justify-between text-[color:var(--vooki-app-text-muted)] text-[11px] font-bold uppercase tracking-wider">
               <span>Brand Rating</span>
               <Award className="h-3.5 w-3.5 text-amber-500" />
             </div>
 
             <div className="mt-2 space-y-1">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xl font-extrabold tracking-tight text-[color:var(--vooki-app-text-strong)]">
-                  {averageRating !== null ? Number(averageRating).toFixed(1) : "5.0"}
-                </span>
-
-                <StarRating
-                  rating={averageRating !== null ? Number(averageRating) : 5.0}
-                  size="w-3.5 h-3.5"
-                />
-
-                {reviewCount > 0 && (
-                  <span className="text-xs text-[color:var(--vooki-app-text-muted)] font-normal">
-                    ({reviewCount.toLocaleString()})
+              {averageRating !== null && averageRating > 0 ? (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-xl font-extrabold tracking-tight text-[color:var(--vooki-app-text-strong)]">
+                    {Number(averageRating).toFixed(1)}
                   </span>
-                )}
-              </div>
+
+                  <StarRating
+                    rating={Number(averageRating)}
+                    size="w-3.5 h-3.5"
+                  />
+
+                  {reviewCount > 0 && (
+                    <span className="text-xs text-[color:var(--vooki-app-text-muted)] font-normal">
+                      ({reviewCount.toLocaleString()})
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-extrabold tracking-tight text-[color:var(--vooki-app-text-strong)]">
+                    -
+                  </span>
+                  <span className="text-xs text-[color:var(--vooki-app-text-muted)] font-normal">
+                    No reviews yet
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>

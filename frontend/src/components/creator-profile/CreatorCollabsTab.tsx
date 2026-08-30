@@ -80,33 +80,6 @@ export function CreatorCollabsTab({ data, className = "" }: CreatorCollabsTabPro
     <section
       className={`animate-in fade-in slide-in-from-bottom-2 duration-300 rounded-3xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface)] p-6 sm:p-8 space-y-6 shadow-xs ${className}`}
     >
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-bold text-[color:var(--vooki-app-text-strong)]">
-            Campaign History & Feedback
-          </h2>
-          <p className="text-xs text-[color:var(--vooki-app-text-muted)] mt-0.5">
-            Verified brand collaborations and client reviews.
-          </p>
-        </div>
-
-        {averageRating !== null && (
-          <div className="flex items-center gap-2 text-[color:var(--vooki-app-text-strong)] shrink-0">
-            <span className="text-lg sm:text-xl font-bold tracking-tight">
-              {Number(averageRating).toFixed(1)}
-            </span>
-
-            <StarRating rating={Number(averageRating)} size="w-4 h-4" />
-
-            {reviewCount > 0 && (
-              <span className="text-sm font-normal text-[color:var(--vooki-app-text-muted)]">
-                ({reviewCount.toLocaleString()})
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-
       {unifiedProof.length === 0 ? (
         <div className="rounded-2xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-10 text-center space-y-2">
           <Megaphone className="w-8 h-8 mx-auto text-[color:var(--vooki-app-text-muted)]" />
@@ -114,8 +87,7 @@ export function CreatorCollabsTab({ data, className = "" }: CreatorCollabsTabPro
             Open for Collaborations
           </p>
           <p className="text-xs text-[color:var(--vooki-app-text-muted)] max-w-sm mx-auto">
-            {data.name} is available for brand integrations, sponsored deliverables, and long-term
-            partnerships.
+            {data.name} is available for brand integrations and sponsored deliverables.
           </p>
         </div>
       ) : (
@@ -135,9 +107,7 @@ export function CreatorCollabsTab({ data, className = "" }: CreatorCollabsTabPro
                       <span className="font-bold text-sm text-[color:var(--vooki-app-text-strong)]">
                         {item.brandName}
                       </span>
-                      {item.isVerified && (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                      )}
+                      {item.isVerified && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
                     </div>
                     <p className="text-xs text-[color:var(--vooki-app-text-muted)] font-medium">
                       {item.campaignTitle}
@@ -163,14 +133,12 @@ export function CreatorCollabsTab({ data, className = "" }: CreatorCollabsTabPro
               <div className="flex items-center justify-between text-[11px] text-[color:var(--vooki-app-text-muted)] pt-2 border-t border-[color:var(--vooki-app-border-strong)]">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  {item.date ? (
-                    new Date(item.date).toLocaleDateString("en-US", {
-                      month: "short",
-                      year: "numeric",
-                    })
-                  ) : (
-                    "Recent"
-                  )}
+                  {item.date
+                    ? new Date(item.date).toLocaleDateString("en-US", {
+                        month: "short",
+                        year: "numeric",
+                      })
+                    : "Recent"}
                 </span>
                 <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                   Verified Deal
@@ -183,4 +151,3 @@ export function CreatorCollabsTab({ data, className = "" }: CreatorCollabsTabPro
     </section>
   );
 }
-
