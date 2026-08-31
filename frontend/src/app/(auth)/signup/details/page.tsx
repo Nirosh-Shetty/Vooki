@@ -258,9 +258,8 @@ export default function DetailsPage() {
                   placeholder="your@email.com"
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
-                  className={`bg-[color:var(--vooki-app-surface-strong)] border-[color:var(--vooki-app-border)] text-[color:var(--vooki-app-text-strong)] placeholder-[color:var(--vooki-app-text-muted)] ${
-                    errors.email ? "border-red-500" : isEmailValid && formData.email ? "border-green-500" : ""
-                  }`}
+                  className={`bg-[color:var(--vooki-app-surface-strong)] border-[color:var(--vooki-app-border)] text-[color:var(--vooki-app-text-strong)] placeholder-[color:var(--vooki-app-text-muted)] ${errors.email ? "border-red-500" : isEmailValid && formData.email ? "border-green-500" : ""
+                    }`}
                   required
                 />
                 {errors.email && (
@@ -287,7 +286,7 @@ export default function DetailsPage() {
                               Google
                             </Button>
                           )}
-                          {linkedAccounts.includes("facebook") && (
+                          {/* {linkedAccounts.includes("facebook") && (
                             <Button
                               type="button"
                               variant="outline"
@@ -300,7 +299,7 @@ export default function DetailsPage() {
                               </svg>
                               Facebook
                             </Button>
-                          )}
+                          )} */}
                         </div>
                       </div>
                     )}
@@ -319,15 +318,14 @@ export default function DetailsPage() {
                     placeholder="@username"
                     value={formData.username}
                     onChange={(e) => handleInputChange("username", e.target.value)}
-                    className={`bg-[color:var(--vooki-app-surface-strong)] border-[color:var(--vooki-app-border)] text-[color:var(--vooki-app-text-strong)] placeholder-[color:var(--vooki-app-text-muted)] pr-10 ${
-                      errors.username
+                    className={`bg-[color:var(--vooki-app-surface-strong)] border-[color:var(--vooki-app-border)] text-[color:var(--vooki-app-text-strong)] placeholder-[color:var(--vooki-app-text-muted)] pr-10 ${errors.username
                         ? "border-red-500"
                         : usernameStatus === "available"
                           ? "border-green-500"
                           : usernameStatus === "taken"
                             ? "border-red-500"
                             : ""
-                    }`}
+                      }`}
                     required
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -382,13 +380,12 @@ export default function DetailsPage() {
                     placeholder="Create a strong password"
                     value={formData.password}
                     onChange={(e) => handleInputChange("password", e.target.value)}
-                    className={`bg-[color:var(--vooki-app-surface-strong)] border-[color:var(--vooki-app-border)] text-[color:var(--vooki-app-text-strong)] placeholder-[color:var(--vooki-app-text-muted)] pr-10 ${
-                      errors.password
+                    className={`bg-[color:var(--vooki-app-surface-strong)] border-[color:var(--vooki-app-border)] text-[color:var(--vooki-app-text-strong)] placeholder-[color:var(--vooki-app-text-muted)] pr-10 ${errors.password
                         ? "border-red-500"
                         : isPasswordValid && formData.password
                           ? "border-green-500"
                           : ""
-                    }`}
+                      }`}
                     required
                   />
                   <button

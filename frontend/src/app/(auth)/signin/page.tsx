@@ -194,11 +194,11 @@ export default function Signin1Page() {
                         Google
                       </Button>
                     )}
-                    {linkedAccounts.includes("facebook") && (
+                    {/* {linkedAccounts.includes("facebook") && (
                       <Button type="button" variant="outline" size="sm" className="bg-white border-red-200 text-red-700 hover:bg-red-50 rounded-lg h-8" onClick={() => window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/facebook`}>
                         Facebook
                       </Button>
-                    )}
+                    )} */}
                   </div>
                 )}
               </div>
@@ -240,7 +240,7 @@ export default function Signin1Page() {
               </svg>
               Google
             </Button>
-            <Button
+            {/* <Button
               type="button"
               variant="outline"
               className="bg-white border-[color:var(--vooki-app-border-strong)] hover:bg-gray-50 text-[color:var(--vooki-app-text-strong)] font-semibold rounded-xl h-11 transition-all hover:shadow-sm"
@@ -251,7 +251,7 @@ export default function Signin1Page() {
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
               </svg>
               Facebook
-            </Button>
+            </Button> */}
           </div>
 
           <p className="text-center text-sm text-[color:var(--vooki-app-text-soft)]">

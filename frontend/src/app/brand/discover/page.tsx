@@ -417,7 +417,7 @@ export default function DiscoverPage() {
         if (Array.isArray(data.influencerIds)) {
           setShortlist(data.influencerIds.map((v: string) => String(v)));
         }
-      } catch {}
+      } catch { }
     };
     loadShortlist();
     return () => controller.abort();
@@ -441,7 +441,7 @@ export default function DiscoverPage() {
         if (!response.ok) return;
         const data: CampaignListResponse = await response.json();
         setCampaigns(Array.isArray(data.items) ? data.items : []);
-      } catch {}
+      } catch { }
     };
     loadCampaigns();
     return () => controller.abort();
@@ -925,11 +925,10 @@ export default function DiscoverPage() {
                       type="button"
                       onClick={() => toggleShortlist(creator.id)}
                       disabled={isSaving}
-                      className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer shrink-0 ${
-                        saved
+                      className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer shrink-0 ${saved
                           ? "bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] shadow-xs"
                           : "bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-soft)] border border-[color:var(--vooki-app-border)] hover:text-[color:var(--vooki-app-text-strong)]"
-                      }`}
+                        }`}
                       title={saved ? "Remove from saved" : "Save creator"}
                     >
                       {isSaving ? (
@@ -1131,11 +1130,10 @@ export default function DiscoverPage() {
                     type="button"
                     onClick={() => toggleShortlist(creator.id)}
                     disabled={isSaving}
-                    className={`h-9 w-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
-                      saved
+                    className={`h-9 w-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${saved
                         ? "bg-[color:var(--vooki-accent)] text-[color:var(--vooki-accent-text)] shadow-xs"
                         : "bg-[color:var(--vooki-app-surface-strong)] text-[color:var(--vooki-app-text-soft)] border border-[color:var(--vooki-app-border)] hover:text-[color:var(--vooki-app-text-strong)]"
-                    }`}
+                      }`}
                     title={saved ? "Remove from saved" : "Save creator"}
                   >
                     {isSaving ? (
