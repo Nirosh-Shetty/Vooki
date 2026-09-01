@@ -2,6 +2,7 @@ import express from "express";
 import {
   addToDiscoverShortlist,
   createDiscoverInvites,
+  getBrandNetwork,
   getDiscoverInfluencers,
   getDiscoverInvites,
   getDiscoverShortlist,
@@ -21,5 +22,6 @@ discoverRouter.delete("/shortlist/:influencerId", requireRole("brand", "manager"
 discoverRouter.post("/invites", requireRole("brand", "manager"), createDiscoverInvites);
 discoverRouter.get("/invites", requireRole("brand", "manager"), getDiscoverInvites);
 discoverRouter.patch("/invites/:inviteId/respond", requireRole("influencer"), respondToDiscoverInvite);
+discoverRouter.get("/network", requireRole("brand", "manager"), getBrandNetwork);
 
 export default discoverRouter;
