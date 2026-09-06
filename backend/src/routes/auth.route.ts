@@ -61,7 +61,7 @@ authRouter.get(
 
     res.cookie("auth_token", token, {
       httpOnly: true,
-domain: process.env.COOKIE_DOMAIN ,
+      domain: process.env.COOKIE_DOMAIN ,
       secure: process.env.COOKIE_SECURE === "true",
       maxAge: Number(process.env.JWT_AUTH_TOKEN_MAXAGE) || 5 * 24 * 60 * 60 * 1000, // 5 days in milliseconds
       sameSite: (process.env.COOKIE_SAMESITE || "lax") as "lax" | "strict" | "none",

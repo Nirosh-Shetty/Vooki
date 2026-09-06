@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,317 +12,363 @@ import {
   Share2,
   TrendingDown,
   TrendingUp,
+  Youtube,
+  Instagram,
+  RefreshCw,
+  Handshake,
+  DollarSign,
+  Users,
+  Activity,
+  CheckCircle2,
+  Clock,
+  ExternalLink
 } from "lucide-react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import Image from "next/image";
 
-const earningsData = [
-  { month: "Jan", earnings: 2400, collaborations: 3 },
-  { month: "Feb", earnings: 1800, collaborations: 2 },
-  { month: "Mar", earnings: 3200, collaborations: 4 },
-  { month: "Apr", earnings: 2800, collaborations: 3 },
-  { month: "May", earnings: 4100, collaborations: 5 },
-  { month: "Jun", earnings: 3600, collaborations: 4 },
-];
+// Format numbers nicely (e.g., 1500 -> 1.5K)
+const formatNumber = (num: number) => {
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+  if (num >= 1000) return (num / 1000).toFixed(1) + "K";
+  return num.toString();
+};
 
-const engagementData = [
-  { date: "Jan 02", views: 12000, likes: 980, comments: 45 },
-  { date: "Jan 09", views: 15000, likes: 1200, comments: 67 },
-  { date: "Jan 16", views: 18000, likes: 1450, comments: 89 },
-  { date: "Jan 23", views: 22000, likes: 1800, comments: 112 },
-  { date: "Jan 30", views: 24600, likes: 2140, comments: 141 },
-];
-
-const platformData = [
-  { name: "Instagram", value: 41, color: "var(--vooki-accent)" },
-  { name: "TikTok", value: 28, color: "var(--vooki-violet)" },
-  { name: "YouTube", value: 22, color: "var(--vooki-blue)" },
-  { name: "Pinterest", value: 9, color: "var(--vooki-warm)" },
-];
-
-const summaryCards = [
-  {
-    title: "Total earnings",
-    value: "$18,950",
-    delta: "+12.5%",
-    up: true,
-    tone: "bg-[color:var(--vooki-accent-soft)] text-[color:var(--vooki-accent-strong)]",
-  },
-  {
-    title: "Total reach",
-    value: "2.4M",
-    delta: "+8.2%",
-    up: true,
-    tone: "bg-[color:var(--vooki-violet-soft)] text-[color:var(--vooki-violet)]",
-  },
-  {
-    title: "Engagement rate",
-    value: "4.8%",
-    delta: "-0.3%",
-    up: false,
-    tone: "bg-[color:var(--vooki-warm-soft)] text-[color:var(--vooki-warm)]",
-  },
-  {
-    title: "Active campaigns",
-    value: "8",
-    delta: "+2 this week",
-    up: true,
-    tone: "bg-[color:var(--vooki-blue-soft)] text-[color:var(--vooki-blue)]",
-  },
-];
-
-const topContent = [
-  {
-    title: "Desk Setup Reel",
-    platform: "Instagram",
-    views: "45.2K",
-    likes: "3.8K",
-    comments: "234",
-    shares: "89",
-    growth: "+13%",
-  },
-  {
-    title: "Morning Wellness Routine",
-    platform: "YouTube",
-    views: "128K",
-    likes: "5.2K",
-    comments: "892",
-    shares: "234",
-    growth: "+9%",
-  },
-  {
-    title: "Quick Meal Prep",
-    platform: "TikTok",
-    views: "89.3K",
-    likes: "12.1K",
-    comments: "456",
-    shares: "1.2K",
-    growth: "+17%",
-  },
-];
-
-const tooltipStyle = {
-  backgroundColor: "var(--vooki-app-surface-card)",
-  border: "1px solid var(--vooki-app-border)",
-  borderRadius: "16px",
-  color: "var(--vooki-app-text-strong)",
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(amount);
 };
 
 export default function InfluencerAnalytics() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000"}/api/analytics/creator/me`, {
+          credentials: "include",
+        });
+        const json = await res.json();
+        if (json.success) {
+          setData(json.data);
+        } else {
+          setError(json.error || "Failed to load analytics");
+        }
+      } catch (err) {
+        setError("Error connecting to server");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAnalytics();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="flex flex-col items-center gap-4 text-[color:var(--vooki-app-text-muted)]">
+          <RefreshCw className="h-8 w-8 animate-spin text-[color:var(--vooki-accent)]" />
+          <p className="text-sm">Loading your analytics story...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="flex flex-col items-center gap-4 text-[color:var(--vooki-app-text-muted)]">
+          <p className="text-sm">{error || "No data available"}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { summary, platforms, collaborations, topCollaborations, earnings } = data;
+
+  const summaryCards = [
+    {
+      title: "Total Reach",
+      value: formatNumber(summary.totalReach),
+      icon: <Users className="h-4 w-4" />,
+      tone: "bg-[color:var(--vooki-violet-soft)] text-[color:var(--vooki-violet)] border-[color:var(--vooki-violet-soft)]",
+      glow: "var(--vooki-app-glow-violet)",
+    },
+    {
+      title: "Avg. Engagement",
+      value: `${summary.engagementRate}%`,
+      icon: <Activity className="h-4 w-4" />,
+      tone: "bg-[color:var(--vooki-accent-soft)] text-[color:var(--vooki-accent-strong)] border-[color:var(--vooki-accent-border)]",
+      glow: "var(--vooki-app-glow-green)",
+    },
+    {
+      title: "Total Earned",
+      value: formatCurrency(earnings.totalEarned),
+      icon: <DollarSign className="h-4 w-4" />,
+      tone: "bg-[color:var(--vooki-warm-soft)] text-[color:var(--vooki-warm)] border-[color:var(--vooki-warm-soft)]",
+      glow: "var(--vooki-app-glow-violet)",
+    },
+    {
+      title: "Completed Collabs",
+      value: summary.completedCollabs,
+      icon: <Handshake className="h-4 w-4" />,
+      tone: "bg-[color:var(--vooki-blue-soft)] text-[color:var(--vooki-blue)] border-[color:var(--vooki-blue-soft)]",
+      glow: "var(--vooki-app-glow-blue)",
+    },
+  ];
+
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:space-y-8 lg:px-8">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {summaryCards.map((item) => (
-          <Card
-            key={item.title}
-            className="rounded-[28px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app-soft)]"
-          >
-            <CardContent className="p-5">
+    <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+
+      {/* Hero Summary Section */}
+      <div className="space-y-4">
+        <h1 className="text-3xl font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)]">
+          Your Performance
+        </h1>
+        <p className="text-[color:var(--vooki-app-text-soft)]">
+          A high-level view of your momentum across all connected platforms and collaborations.
+        </p>
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 pt-4">
+          {summaryCards.map((item) => (
+            <Card
+              key={item.title}
+              className="relative overflow-hidden rounded-[28px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] shadow-[var(--vooki-shadow-app-soft)] transition-all hover:-translate-y-1 hover:shadow-md"
+            >
+              {/* Subtle background glow */}
               <div
-                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${item.tone}`}
-              >
-                {item.title}
-              </div>
-              <p className="mt-4 text-2xl font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)]">
-                {item.value}
-              </p>
-              <p
-                className={`mt-1 inline-flex items-center text-xs ${
-                  item.up
-                    ? "text-[color:var(--vooki-accent-strong)]"
-                    : "text-[color:var(--vooki-warm)]"
-                }`}
-              >
-                {item.up ? (
-                  <TrendingUp className="mr-1 h-3.5 w-3.5" />
-                ) : (
-                  <TrendingDown className="mr-1 h-3.5 w-3.5" />
-                )}
-                {item.delta}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+                className="absolute -right-10 -top-10 h-32 w-32 rounded-full blur-[40px] opacity-40 transition-opacity"
+                style={{ backgroundColor: item.glow }}
+              />
+
+              <CardContent className="relative p-6">
+                <div className="flex items-center justify-between">
+                  <div className={`inline-flex items-center justify-center rounded-xl border p-2.5 ${item.tone}`}>
+                    {item.icon}
+                  </div>
+                </div>
+                <div className="mt-6">
+                  <p className="text-sm font-medium text-[color:var(--vooki-app-text-muted)]">
+                    {item.title}
+                  </p>
+                  <p className="mt-1 text-3xl font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)]">
+                    {item.value}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
 
-      <Tabs defaultValue="engagement" className="w-full">
-        <TabsList className="grid h-auto w-full grid-cols-3 rounded-[20px] border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] p-1">
-          {["engagement", "earnings", "platforms"].map((tab) => (
-            <TabsTrigger
-              key={tab}
-              value={tab}
-              className="rounded-2xl text-xs capitalize text-[color:var(--vooki-app-text-soft)] data-[state=active]:bg-[color:var(--vooki-app-active-bg)] data-[state=active]:text-[color:var(--vooki-app-active-text)] sm:text-sm"
-            >
-              {tab}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      <div className="grid gap-8 lg:grid-cols-3">
+        {/* Left Column: Platform Breakdown */}
+        <div className="space-y-6 lg:col-span-1">
+          <h2 className="text-xl font-semibold text-[color:var(--vooki-app-text-strong)]">Audience</h2>
 
-        <TabsContent value="engagement" className="mt-4">
-          <ChartCard
-            title="Engagement trends"
-            description="Weekly performance across views, likes, and comments."
-          >
-            <ResponsiveContainer width="100%" height={360}>
-              <LineChart data={engagementData}>
-                <CartesianGrid stroke="var(--vooki-app-border)" strokeDasharray="4 4" />
-                <XAxis dataKey="date" stroke="var(--vooki-app-text-muted)" />
-                <YAxis stroke="var(--vooki-app-text-muted)" />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Line
-                  type="monotone"
-                  dataKey="views"
-                  stroke="var(--vooki-accent)"
-                  strokeWidth={2.5}
-                  dot={false}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="likes"
-                  stroke="var(--vooki-violet)"
-                  strokeWidth={2.5}
-                  dot={false}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="comments"
-                  stroke="var(--vooki-blue)"
-                  strokeWidth={2.5}
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </ChartCard>
-        </TabsContent>
+          {/* YouTube Card */}
+          {platforms?.youtube?.connected ? (
+            <PlatformCard
+              platform="YouTube"
+              icon={<Youtube className="h-5 w-5" />}
+              color="text-red-500"
+              bg="bg-red-500/10"
+              border="border-red-500/20"
+              data={[
+                { label: "Subscribers", value: formatNumber(platforms.youtube.metrics.subscribers) },
+                { label: "Total Views", value: formatNumber(platforms.youtube.metrics.totalViews) },
+                { label: "Avg Engagement", value: `${platforms.youtube.metrics.engagementRate}%` }
+              ]}
+              profile={platforms.youtube.profile}
+            />
+          ) : (
+            <EmptyPlatformCard platform="YouTube" icon={<Youtube className="h-5 w-5" />} />
+          )}
 
-        <TabsContent value="earnings" className="mt-4">
-          <ChartCard
-            title="Monthly revenue"
-            description="Income and collaborations trend over the last 6 months."
-          >
-            <ResponsiveContainer width="100%" height={360}>
-              <BarChart data={earningsData}>
-                <CartesianGrid stroke="var(--vooki-app-border)" strokeDasharray="4 4" />
-                <XAxis dataKey="month" stroke="var(--vooki-app-text-muted)" />
-                <YAxis stroke="var(--vooki-app-text-muted)" />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Bar dataKey="earnings" fill="var(--vooki-accent)" radius={[10, 10, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartCard>
-        </TabsContent>
+          {/* Instagram Card */}
+          {platforms?.instagram?.connected ? (
+            <PlatformCard
+              platform="Instagram"
+              icon={<Instagram className="h-5 w-5" />}
+              color="text-pink-500"
+              bg="bg-pink-500/10"
+              border="border-pink-500/20"
+              data={[
+                { label: "Followers", value: formatNumber(platforms.instagram.metrics.followers) },
+                { label: "Following", value: formatNumber(platforms.instagram.metrics.following) },
+                { label: "Posts", value: formatNumber(platforms.instagram.metrics.mediaCount) }
+              ]}
+              profile={platforms.instagram.profile}
+            />
+          ) : (
+            <EmptyPlatformCard platform="Instagram" icon={<Instagram className="h-5 w-5" />} />
+          )}
+        </div>
 
-        <TabsContent value="platforms" className="mt-4">
-          <div className="grid gap-4 lg:grid-cols-2">
-            <ChartCard title="Channel mix" description="Where your audience engagement comes from.">
-              <ResponsiveContainer width="100%" height={320}>
-                <PieChart>
-                  <Pie
-                    data={platformData}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={110}
-                    dataKey="value"
-                    label
-                  >
-                    {platformData.map((entry) => (
-                      <Cell key={entry.name} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={tooltipStyle} />
-                </PieChart>
-              </ResponsiveContainer>
-            </ChartCard>
+        {/* Right Column: Collaborations & Earnings */}
+        <div className="space-y-8 lg:col-span-2">
 
-            <Card className="rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
-              <CardContent className="p-6 sm:p-7">
-                <p className="text-sm uppercase tracking-[0.24em] text-[color:var(--vooki-app-text-muted)]">
-                  Top content
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)]">
-                  The posts carrying this month.
-                </h2>
-                <div className="mt-6 space-y-3">
-                  {topContent.map((content) => (
-                    <div
-                      key={content.title}
-                      className="rounded-[24px] border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-medium text-[color:var(--vooki-app-text-strong)]">
-                            {content.title}
-                          </p>
-                          <p className="text-sm text-[color:var(--vooki-app-text-soft)]">
-                            {content.platform}
-                          </p>
-                        </div>
-                        <Badge className="border-0 bg-[color:var(--vooki-accent-soft)] text-[color:var(--vooki-accent-strong)] hover:bg-[color:var(--vooki-accent-soft)]">
-                          <ArrowUpRight className="mr-1 h-3 w-3" /> {content.growth}
-                        </Badge>
-                      </div>
-                      <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-[color:var(--vooki-app-text-soft)] sm:grid-cols-4">
-                        <Metric icon={<Eye className="h-3.5 w-3.5" />} value={content.views} />
-                        <Metric icon={<Heart className="h-3.5 w-3.5" />} value={content.likes} />
-                        <Metric
-                          icon={<MessageCircle className="h-3.5 w-3.5" />}
-                          value={content.comments}
-                        />
-                        <Metric icon={<Share2 className="h-3.5 w-3.5" />} value={content.shares} />
-                      </div>
-                    </div>
-                  ))}
+          {/* Earnings Strip */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-[color:var(--vooki-app-text-strong)]">Earnings Overview</h2>
+            <Card className="rounded-[28px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app-soft)] backdrop-blur-md">
+              <CardContent className="p-6">
+                <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
+                  <div className="space-y-1">
+                    <p className="text-sm text-[color:var(--vooki-app-text-muted)]">Available to Pay</p>
+                    <p className="text-xl font-semibold text-[color:var(--vooki-accent-strong)]">{formatCurrency(earnings.readyForPayment)}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-[color:var(--vooki-app-text-muted)]">Pending (Escrow)</p>
+                    <p className="text-xl font-semibold text-[color:var(--vooki-blue)]">{formatCurrency(earnings.byMethod.escrow)}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-[color:var(--vooki-app-text-muted)]">Direct Payments</p>
+                    <p className="text-xl font-semibold text-[color:var(--vooki-app-text-strong)]">{formatCurrency(earnings.byMethod.direct)}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-[color:var(--vooki-app-text-muted)]">Total Collabs Paid</p>
+                    <p className="text-xl font-semibold text-[color:var(--vooki-app-text-strong)]">{earnings.totalTransactions}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-      </Tabs>
+
+          {/* Top Collaborations */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-[color:var(--vooki-app-text-strong)]">Top Collaborations</h2>
+              <Badge variant="outline" className="rounded-full border-[color:var(--vooki-app-border)] text-[color:var(--vooki-app-text-soft)]">
+                By Reach
+              </Badge>
+            </div>
+
+            <div className="space-y-3">
+              {topCollaborations.length > 0 ? (
+                topCollaborations.map((collab: any) => (
+                  <div
+                    key={collab.id}
+                    className="group relative flex flex-col justify-between gap-4 rounded-[24px] border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] p-5 transition-all hover:border-[color:var(--vooki-app-border-strong)] hover:shadow-md sm:flex-row sm:items-center"
+                  >
+                    <div className="flex items-center gap-4">
+                      {/* Brand Avatar */}
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[color:var(--vooki-app-surface-hover)] border border-[color:var(--vooki-app-border)] overflow-hidden">
+                        {collab.brandAvatar ? (
+                          <Image src={collab.brandAvatar} alt={collab.brandName} width={48} height={48} className="object-cover" />
+                        ) : (
+                          <span className="text-sm font-semibold text-[color:var(--vooki-app-text-muted)]">
+                            {collab.brandName.substring(0, 2).toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-[color:var(--vooki-app-text-strong)] group-hover:text-[color:var(--vooki-accent-strong)] transition-colors">
+                          {collab.campaignTitle}
+                        </h3>
+                        <p className="text-sm text-[color:var(--vooki-app-text-soft)]">
+                          with {collab.brandName}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-6 sm:justify-end">
+                      <div className="space-y-1 text-center sm:text-right">
+                        <p className="text-xs uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">Reach</p>
+                        <p className="font-medium text-[color:var(--vooki-app-text-strong)]">{formatNumber(collab.performance.reach)}</p>
+                      </div>
+                      <div className="space-y-1 text-center sm:text-right">
+                        <p className="text-xs uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">Engagement</p>
+                        <p className="font-medium text-[color:var(--vooki-app-text-strong)]">{formatNumber(collab.performance.engagement)}</p>
+                      </div>
+                      <div className="space-y-1 text-center sm:text-right">
+                        <p className="text-xs uppercase tracking-wider text-[color:var(--vooki-app-text-muted)]">Paid</p>
+                        <p className="font-medium text-[color:var(--vooki-accent-strong)]">{formatCurrency(collab.paymentAmount)}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <Card className="rounded-[24px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] border-dashed">
+                  <CardContent className="flex flex-col items-center justify-center p-10 text-center">
+                    <Handshake className="mb-4 h-10 w-10 text-[color:var(--vooki-app-text-muted)] opacity-50" />
+                    <p className="text-[color:var(--vooki-app-text-strong)] font-medium">No completed collaborations yet</p>
+                    <p className="text-sm text-[color:var(--vooki-app-text-soft)] mt-1">Your top performing campaigns will appear here.</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+
+        </div>
+      </div>
     </div>
   );
 }
 
-function ChartCard({
-  title,
-  description,
-  children,
+function PlatformCard({
+  platform,
+  icon,
+  color,
+  bg,
+  border,
+  data,
+  profile
 }: {
-  title: string;
-  description: string;
-  children: React.ReactNode;
+  platform: string;
+  icon: React.ReactNode;
+  color: string;
+  bg: string;
+  border: string;
+  data: { label: string, value: string }[];
+  profile: any;
 }) {
   return (
-    <Card className="rounded-[32px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)]">
-      <CardContent className="p-6 sm:p-7">
-        <p className="text-sm uppercase tracking-[0.24em] text-[color:var(--vooki-app-text-muted)]">
-          {title}
-        </p>
-        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[color:var(--vooki-app-text-strong)]">
-          {description}
-        </h2>
-        <div className="mt-6">{children}</div>
+    <Card className="relative overflow-hidden rounded-[28px] border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app-soft)] backdrop-blur-md">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between border-b border-[color:var(--vooki-app-border)] pb-4">
+          <div className="flex items-center gap-3">
+            <div className={`flex h-10 w-10 items-center justify-center rounded-full border ${bg} ${border} ${color}`}>
+              {icon}
+            </div>
+            <div>
+              <p className="font-medium text-[color:var(--vooki-app-text-strong)]">{platform}</p>
+              <p className="text-xs text-[color:var(--vooki-app-text-muted)]">
+                {profile.username || profile.customUrl || "Connected"}
+              </p>
+            </div>
+          </div>
+          <Badge variant="outline" className={`border-transparent ${bg} ${color} rounded-full px-2 py-0.5 text-xs font-medium`}>
+            Active
+          </Badge>
+        </div>
+
+        <div className="mt-5 space-y-4">
+          {data.map((item, i) => (
+            <div key={i} className="flex items-center justify-between">
+              <span className="text-sm text-[color:var(--vooki-app-text-soft)]">{item.label}</span>
+              <span className="font-semibold text-[color:var(--vooki-app-text-strong)]">{item.value}</span>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
 }
 
-function Metric({ icon, value }: { icon: React.ReactNode; value: string }) {
+function EmptyPlatformCard({ platform, icon }: { platform: string; icon: React.ReactNode }) {
   return (
-    <div className="inline-flex items-center gap-1.5">
-      <span className="text-[color:var(--vooki-app-text-muted)]">{icon}</span>
-      {value}
-    </div>
+    <Card className="relative overflow-hidden rounded-[28px] border-[color:var(--vooki-app-border)] border-dashed bg-transparent shadow-none">
+      <CardContent className="flex flex-col items-center justify-center p-8 text-center opacity-60 grayscale transition-all hover:opacity-100 hover:grayscale-0">
+        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--vooki-app-surface-hover)] text-[color:var(--vooki-app-text-muted)]">
+          {icon}
+        </div>
+        <p className="font-medium text-[color:var(--vooki-app-text-strong)]">{platform} Not Connected</p>
+        <p className="mt-1 text-xs text-[color:var(--vooki-app-text-soft)]">Connect in your profile settings to track audience growth.</p>
+      </CardContent>
+    </Card>
   );
 }

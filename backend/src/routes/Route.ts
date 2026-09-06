@@ -10,8 +10,10 @@ import socialRouter from "./social.route";
 import collaborationRouter from "./collaborationInvite.route";
 import influencerRouter from "./influencer/influencer.route";
 import settingsRouter from "./settings.route";
+import analyticsRouter from "./analytics.route";
 const router = express.Router();
 
+router.use("/analytics", analyticsRouter);
 router.use("/auth", authRouter);
 router.use("/campaigns", campaignRouter);
 router.use("/discover", discoverRouter);
