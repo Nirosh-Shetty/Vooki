@@ -5,7 +5,6 @@ import { Earning } from "../models/Earning";
 import { getRequestUser } from "../utils/requestUser";
 import { normalizeSocialConnectionsRecord } from "../utils/socialConnections";
 import CampaignModel from "../models/Campaign";
-// import { Payment } from "../models/Payment";
 import mongoose from "mongoose";
 /**
  * GET /api/analytics/creator/me
@@ -25,22 +24,29 @@ export const getCreatorAnalytics = async (req: Request, res: Response) => {
 
     const userId = String(requester.id);
 
+    const { range = "all" } = req.query;
+    let dateMatch: any = {};
+    if (range !== "all") {
+      const days = range === "7d" ? 7 : range === "30d" ? 30 : 90;
+      dateMatch = { createdAt: { $gte: new Date(Date.now() - days * 86400000) } };
+    }
+
     // Fetch user, promotions, and earnings in parallel
     const [user, promotions, earnings] = await Promise.all([
       UserModel.findById(userId)
         .select("name username avatar influencerProfile rating totalReviews isVerified createdAt")
         .lean(),
-      PromotionModel.find({ influencerId: userId })
+      PromotionModel.find({ influencerId: userId, ...dateMatch })
         .sort({ createdAt: -1 })
         .lean(),
-      Earning.find({ influencerId: userId }).lean(),
+      Earning.find({ influencerId: userId, ...dateMatch }).lean(),
     ]);
 
     if (!user) {
       return res.status(404).json({ success: false, error: "User not found" });
     }
 
-    // ── Social Platform Metrics ──
+    // â”€â”€ Social Platform Metrics â”€â”€
     const socialConnections = normalizeSocialConnectionsRecord(
       user?.influencerProfile?.statsConnection
     );
@@ -115,12 +121,12 @@ export const getCreatorAnalytics = async (req: Request, res: Response) => {
     if (!platforms.youtube) platforms.youtube = { connected: false };
     if (!platforms.instagram) platforms.instagram = { connected: false };
 
-    // ── Aggregate Engagement Rate ──
+    // â”€â”€ Aggregate Engagement Rate â”€â”€
     const avgEngagement = engagementRates.length > 0
       ? Number((engagementRates.reduce((a, b) => a + b, 0) / engagementRates.length).toFixed(2))
       : Number(user?.influencerProfile?.engagement || 0);
 
-    // ── Promotion / Collaboration Performance ──
+    // â”€â”€ Promotion / Collaboration Performance â”€â”€
     let totalReach = 0;
     let totalViews = 0;
     let totalEngagement = 0;
@@ -186,7 +192,7 @@ export const getCreatorAnalytics = async (req: Request, res: Response) => {
       .sort((a, b) => (b.performance.reach + b.performance.views) - (a.performance.reach + a.performance.views))
       .slice(0, 5);
 
-    // ── Earnings Summary ──
+    // â”€â”€ Earnings Summary â”€â”€
     const earningsSummary = {
       totalEarned: 0,
       pending: 0,
@@ -211,7 +217,54 @@ export const getCreatorAnalytics = async (req: Request, res: Response) => {
       if (earning.paymentMethod === "escrow") earningsSummary.byMethod.escrow += amount;
     });
 
-    // ── Response ──
+    // Trends for Creator Analytics
+    const creatorTrendsMap: Record<string, any> = {};
+    const parseMonthCreator = (dateString: string) => {
+      const d = new Date(dateString);
+      return d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+    };
+
+    enrichedCollabs.forEach(c => {
+      const month = parseMonthCreator(c.updatedAt || c.createdAt);
+      if (!creatorTrendsMap[month]) creatorTrendsMap[month] = { month, Earned: 0, Reach: 0, Engagement: 0 };
+      creatorTrendsMap[month].Reach += c.performance.reach;
+      creatorTrendsMap[month].Engagement += c.performance.engagement;
+    });
+
+    earnings.forEach((e: any) => {
+      if (e.status === "paid") {
+        const month = parseMonthCreator(e.updatedAt || e.createdAt);
+        if (!creatorTrendsMap[month]) creatorTrendsMap[month] = { month, Earned: 0, Reach: 0, Engagement: 0 };
+        creatorTrendsMap[month].Earned += Number(e.amount || 0);
+      }
+    });
+
+    const creatorTrends = Object.values(creatorTrendsMap).sort((a: any, b: any) => {
+      const [m1, y1] = a.month.split(" ");
+      const [m2, y2] = b.month.split(" ");
+      return y1 !== y2 ? Number(y1) - Number(y2) : new Date(a.month).getTime() - new Date(b.month).getTime();
+    });
+
+    // Performance by brand
+    const brandPerfMap: Record<string, any> = {};
+    enrichedCollabs.forEach(c => {
+      if (!brandPerfMap[c.brandId]) {
+        brandPerfMap[c.brandId] = {
+          brandId: c.brandId,
+          brandName: c.brandName,
+          brandAvatar: c.brandAvatar,
+          reach: 0,
+          earned: 0,
+          collabs: 0
+        };
+      }
+      brandPerfMap[c.brandId].reach += c.performance.reach;
+      brandPerfMap[c.brandId].collabs += 1;
+      if (c.paymentStatus === "paid") brandPerfMap[c.brandId].earned += c.paymentAmount;
+    });
+    const performanceByBrand = Object.values(brandPerfMap).sort((a: any, b: any) => b.reach - a.reach);
+
+    // Response
     return res.json({
       success: true,
       data: {
@@ -235,6 +288,8 @@ export const getCreatorAnalytics = async (req: Request, res: Response) => {
         topCollaborations: topCollabs,
         // Earnings overview
         earnings: earningsSummary,
+        trends: creatorTrends,
+        performanceByBrand
       },
     });
   } catch (error) {
@@ -261,7 +316,7 @@ export const getBrandAnalytics = async (req: Request, res: Response) => {
       return res.status(403).json({ success: false, error: "Only brands can access brand analytics" });
     }
 
-    const brandObjectId = new mongoose.Types.ObjectId(requester.id as string);
+    const brandIdStr = String(requester.id);
     const { range = "all" } = req.query;
 
     let dateMatch: any = {};
@@ -270,7 +325,7 @@ export const getBrandAnalytics = async (req: Request, res: Response) => {
       dateMatch = { createdAt: { $gte: new Date(Date.now() - days * 86400000) } };
     }
 
-    const matchStage = { $match: { brandId: brandObjectId, ...dateMatch } };
+    const matchStage = { $match: { brandId: brandIdStr, ...dateMatch } };
 
     // Execute aggregations concurrently for high performance
     const [
@@ -281,7 +336,8 @@ export const getBrandAnalytics = async (req: Request, res: Response) => {
       topCreatorsData,
       campaignPerfData,
       promoTrend,
-      campaignTrend
+      campaignTrend,
+      reachTrendData
     ] = await Promise.all([
       // 1. Campaign Hero Stats
       CampaignModel.aggregate([
@@ -319,7 +375,7 @@ export const getBrandAnalytics = async (req: Request, res: Response) => {
       ]),
       // 4. Budget Utilization Chart
       CampaignModel.aggregate([
-        { $match: { brandId: brandObjectId, status: { $in: ["active", "completed", "paused"] }, ...dateMatch } },
+        { $match: { brandId: brandIdStr, status: { $in: ["active", "completed", "paused"] }, ...dateMatch } },
         { $sort: { budgetTotal: -1 } },
         { $limit: 6 },
         { $project: { _id: 0, name: 1, Budget: "$budgetTotal", Spent: "$budgetSpent" } }
@@ -330,19 +386,39 @@ export const getBrandAnalytics = async (req: Request, res: Response) => {
         {
           $group: {
             _id: "$influencerId",
-            name: { $first: "$influencerName" },
-            handle: { $first: "$influencerHandle" },
             reach: { $sum: "$performance.reach" },
             views: { $sum: "$performance.views" },
             collabs: { $sum: 1 }
           }
         },
         { $sort: { reach: -1, views: -1 } },
-        { $limit: 5 }
+        { $limit: 5 },
+        {
+          $lookup: {
+            from: "users",
+            let: { infId: "$_id" },
+            pipeline: [
+              { $addFields: { idStr: { $toString: "$_id" } } },
+              { $match: { $expr: { $eq: ["$idStr", "$infId"] } } },
+              { $project: { name: 1, username: 1 } }
+            ],
+            as: "infUser"
+          }
+        },
+        { $unwind: { path: "$infUser", preserveNullAndEmptyArrays: true } },
+        {
+          $project: {
+            name: { $ifNull: ["$infUser.name", "Creator"] },
+            handle: { $ifNull: ["$infUser.username", ""] },
+            reach: 1,
+            views: 1,
+            collabs: 1
+          }
+        }
       ]),
       // 6. Campaign Performance with Lookups
       CampaignModel.aggregate([
-        { $match: { brandId: brandObjectId, status: { $ne: "draft" }, ...dateMatch } },
+        { $match: { brandId: brandIdStr, status: { $ne: "draft" }, ...dateMatch } },
         { $sort: { roi: -1, budgetSpent: -1 } },
         { $limit: 6 },
         {
@@ -369,7 +445,7 @@ export const getBrandAnalytics = async (req: Request, res: Response) => {
       ]),
       // 7. Trends (Promotions)
       PromotionModel.aggregate([
-        { $match: { brandId: brandObjectId, paymentStatus: "paid", ...dateMatch } },
+        { $match: { brandId: brandIdStr, paymentStatus: "paid", ...dateMatch } },
         {
           $group: {
             _id: { $dateToString: { format: "%Y-%m", date: "$updatedAt" } },
@@ -384,6 +460,18 @@ export const getBrandAnalytics = async (req: Request, res: Response) => {
           $group: {
             _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
             Budget: { $sum: "$budgetTotal" }
+          }
+        }
+      ]),
+      // 9. Reach Trend (Promotions)
+      PromotionModel.aggregate([
+        matchStage,
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m", date: "$updatedAt" } },
+            Reach: { $sum: "$performance.reach" },
+            Views: { $sum: "$performance.views" },
+            Engagement: { $sum: "$performance.engagement" }
           }
         }
       ])
@@ -447,6 +535,16 @@ export const getBrandAnalytics = async (req: Request, res: Response) => {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([, v]) => v);
 
+
+    const reachTrendMap: Record<string, any> = {};
+    reachTrendData.forEach(t => {
+      if (!t._id) return;
+      reachTrendMap[t._id] = { month: parseMonth(t._id), Reach: t.Reach, Views: t.Views, Engagement: t.Engagement };
+    });
+    const reachTrend = Object.entries(reachTrendMap)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([, v]) => v);
+
     // Format Top Creators
     const topCreators = topCreatorsData.map(c => ({
       id: String(c._id),
@@ -464,6 +562,7 @@ export const getBrandAnalytics = async (req: Request, res: Response) => {
         pipelineCounts,
         pipelineTotal,
         spendingTrend,
+        reachTrend,
         budgetChartData,
         topCreators,
         campaignPerf: campaignPerfData,

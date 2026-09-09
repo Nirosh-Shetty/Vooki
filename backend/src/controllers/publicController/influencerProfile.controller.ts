@@ -185,11 +185,11 @@ export const getPublicProfileByIdentifier = async (
     const calculatedAvgEngagement =
       engagementRates.length > 0
         ? Number(
-            (
-              engagementRates.reduce((acc, curr) => acc + curr, 0) /
-              engagementRates.length
-            ).toFixed(1)
-          )
+          (
+            engagementRates.reduce((acc, curr) => acc + curr, 0) /
+            engagementRates.length
+          ).toFixed(1)
+        )
         : Number(user.influencerProfile?.engagement || 0);
 
     const totalFollowers =
@@ -237,6 +237,4 @@ export const getPublicProfileByIdentifier = async (
     return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
-
-export const getPublicProfileByUsername = getPublicProfileByIdentifier;
 
