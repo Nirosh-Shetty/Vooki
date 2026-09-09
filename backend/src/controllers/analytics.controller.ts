@@ -4,7 +4,9 @@ import PromotionModel from "../models/Promotion";
 import { Earning } from "../models/Earning";
 import { getRequestUser } from "../utils/requestUser";
 import { normalizeSocialConnectionsRecord } from "../utils/socialConnections";
-
+import CampaignModel from "../models/Campaign";
+// import { Payment } from "../models/Payment";
+import mongoose from "mongoose";
 /**
  * GET /api/analytics/creator/me
  *
@@ -237,6 +239,239 @@ export const getCreatorAnalytics = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Error fetching creator analytics:", error);
+    return res.status(500).json({ success: false, error: "Failed to fetch analytics" });
+  }
+};
+
+/**
+ * GET /api/analytics/brand/me
+/**
+ * GET /api/analytics/brand/me
+ *
+ * Returns a comprehensive analytics payload for the authenticated brand,
+ * pre-calculated using MongoDB aggregation pipelines for optimal performance.
+ */
+export const getBrandAnalytics = async (req: Request, res: Response) => {
+  try {
+    const requester = getRequestUser(req);
+    if (!requester?.id) {
+      return res.status(401).json({ success: false, error: "Unauthorized" });
+    }
+    if (requester.role !== "brand") {
+      return res.status(403).json({ success: false, error: "Only brands can access brand analytics" });
+    }
+
+    const brandObjectId = new mongoose.Types.ObjectId(requester.id as string);
+    const { range = "all" } = req.query;
+
+    let dateMatch: any = {};
+    if (range !== "all") {
+      const days = range === "7d" ? 7 : range === "30d" ? 30 : 90;
+      dateMatch = { createdAt: { $gte: new Date(Date.now() - days * 86400000) } };
+    }
+
+    const matchStage = { $match: { brandId: brandObjectId, ...dateMatch } };
+
+    // Execute aggregations concurrently for high performance
+    const [
+      campaignStatsRes,
+      promoStatsRes,
+      pipelineData,
+      budgetChartData,
+      topCreatorsData,
+      campaignPerfData,
+      promoTrend,
+      campaignTrend
+    ] = await Promise.all([
+      // 1. Campaign Hero Stats
+      CampaignModel.aggregate([
+        matchStage,
+        {
+          $group: {
+            _id: null,
+            totalBudget: { $sum: "$budgetTotal" },
+            totalSpent: { $sum: "$budgetSpent" },
+            activeCampaigns: { $sum: { $cond: [{ $eq: ["$status", "active"] }, 1, 0] } },
+            totalRoi: { $sum: { $cond: [{ $gt: ["$roi", 0] }, "$roi", 0] } },
+            roiCount: { $sum: { $cond: [{ $gt: ["$roi", 0] }, 1, 0] } }
+          }
+        }
+      ]),
+      // 2. Promotion Hero Stats
+      PromotionModel.aggregate([
+        matchStage,
+        {
+          $group: {
+            _id: null,
+            totalReach: { $sum: "$performance.reach" },
+            totalViews: { $sum: "$performance.views" },
+            totalEngagement: { $sum: "$performance.engagement" },
+            liveCollabs: { $sum: { $cond: [{ $ne: ["$status", "completed"] }, 1, 0] } },
+            completedCollabs: { $sum: { $cond: [{ $eq: ["$status", "completed"] }, 1, 0] } },
+            uniqueCreators: { $addToSet: "$influencerId" }
+          }
+        }
+      ]),
+      // 3. Pipeline Counts
+      PromotionModel.aggregate([
+        matchStage,
+        { $group: { _id: "$status", count: { $sum: 1 } } }
+      ]),
+      // 4. Budget Utilization Chart
+      CampaignModel.aggregate([
+        { $match: { brandId: brandObjectId, status: { $in: ["active", "completed", "paused"] }, ...dateMatch } },
+        { $sort: { budgetTotal: -1 } },
+        { $limit: 6 },
+        { $project: { _id: 0, name: 1, Budget: "$budgetTotal", Spent: "$budgetSpent" } }
+      ]),
+      // 5. Top Creators
+      PromotionModel.aggregate([
+        matchStage,
+        {
+          $group: {
+            _id: "$influencerId",
+            name: { $first: "$influencerName" },
+            handle: { $first: "$influencerHandle" },
+            reach: { $sum: "$performance.reach" },
+            views: { $sum: "$performance.views" },
+            collabs: { $sum: 1 }
+          }
+        },
+        { $sort: { reach: -1, views: -1 } },
+        { $limit: 5 }
+      ]),
+      // 6. Campaign Performance with Lookups
+      CampaignModel.aggregate([
+        { $match: { brandId: brandObjectId, status: { $ne: "draft" }, ...dateMatch } },
+        { $sort: { roi: -1, budgetSpent: -1 } },
+        { $limit: 6 },
+        {
+          $lookup: {
+            from: "promotions",
+            localField: "_id",
+            foreignField: "campaignId",
+            as: "promos"
+          }
+        },
+        {
+          $project: {
+            id: "$_id",
+            name: 1,
+            niche: 1,
+            status: 1,
+            roi: 1,
+            budgetTotal: 1,
+            budgetSpent: 1,
+            promoCount: { $size: "$promos" },
+            reach: { $sum: "$promos.performance.reach" }
+          }
+        }
+      ]),
+      // 7. Trends (Promotions)
+      PromotionModel.aggregate([
+        { $match: { brandId: brandObjectId, paymentStatus: "paid", ...dateMatch } },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m", date: "$updatedAt" } },
+            Spent: { $sum: "$paymentAmount" }
+          }
+        }
+      ]),
+      // 8. Trends (Campaigns)
+      CampaignModel.aggregate([
+        matchStage,
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+            Budget: { $sum: "$budgetTotal" }
+          }
+        }
+      ])
+    ]);
+
+    // Format stats
+    const cStats = campaignStatsRes[0] || { totalBudget: 0, totalSpent: 0, activeCampaigns: 0, totalRoi: 0, roiCount: 0 };
+    const pStats = promoStatsRes[0] || { totalReach: 0, totalViews: 0, totalEngagement: 0, liveCollabs: 0, completedCollabs: 0, uniqueCreators: [] };
+
+    const avgRoi = cStats.roiCount > 0 ? cStats.totalRoi / cStats.roiCount : 0;
+    const cpv = pStats.totalViews > 0 ? cStats.totalSpent / pStats.totalViews : 0;
+    const cpe = pStats.totalEngagement > 0 ? cStats.totalSpent / pStats.totalEngagement : 0;
+
+    const stats = {
+      totalBudget: cStats.totalBudget,
+      totalSpent: cStats.totalSpent,
+      avgRoi,
+      totalReach: pStats.totalReach,
+      totalViews: pStats.totalViews,
+      totalEngagement: pStats.totalEngagement,
+      liveCollabs: pStats.liveCollabs,
+      completedCollabs: pStats.completedCollabs,
+      uniqueCreators: pStats.uniqueCreators.length,
+      activeCampaigns: cStats.activeCampaigns,
+      cpv,
+      cpe
+    };
+
+    // Format Pipeline
+    const pipelineCounts = {
+      requested: 0, negotiating: 0, accepted: 0, content_in_progress: 0,
+      posted: 0, metrics_submitted: 0, payment_pending: 0, completed: 0
+    };
+    let pipelineTotal = 0;
+    pipelineData.forEach(p => {
+      if (p._id in pipelineCounts) {
+        pipelineCounts[p._id as keyof typeof pipelineCounts] = p.count;
+        pipelineTotal += p.count;
+      }
+    });
+
+    // Merge Trends
+    const trendsMap: Record<string, { month: string; Spent: number; Budget: number }> = {};
+    const parseMonth = (ym: string) => {
+      const [year, m] = ym.split("-");
+      const d = new Date(Number(year), Number(m) - 1);
+      return d.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+    };
+
+    promoTrend.forEach(t => {
+      if (!t._id) return;
+      trendsMap[t._id] = { month: parseMonth(t._id), Spent: t.Spent, Budget: 0 };
+    });
+    campaignTrend.forEach(t => {
+      if (!t._id) return;
+      if (!trendsMap[t._id]) trendsMap[t._id] = { month: parseMonth(t._id), Spent: 0, Budget: 0 };
+      trendsMap[t._id].Budget = t.Budget;
+    });
+
+    const spendingTrend = Object.entries(trendsMap)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([, v]) => v);
+
+    // Format Top Creators
+    const topCreators = topCreatorsData.map(c => ({
+      id: String(c._id),
+      name: c.name || "Creator",
+      handle: c.handle || "",
+      reach: c.reach,
+      views: c.views,
+      collabs: c.collabs
+    }));
+
+    return res.json({
+      success: true,
+      data: {
+        stats,
+        pipelineCounts,
+        pipelineTotal,
+        spendingTrend,
+        budgetChartData,
+        topCreators,
+        campaignPerf: campaignPerfData,
+        hasData: cStats.totalBudget > 0 || pStats.totalReach > 0
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching brand analytics:", error);
     return res.status(500).json({ success: false, error: "Failed to fetch analytics" });
   }
 };
