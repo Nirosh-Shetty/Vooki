@@ -5,6 +5,8 @@ import CampaignModel, {
   CampaignStatus,
 } from "../models/Campaign";
 import UserModel from "../models/Users";
+import PromotionModel from "../models/Promotion";
+import mongoose from "mongoose";
 
 const parseNumber = (value: unknown): number | undefined => {
   if (value === undefined || value === null || value === "") return undefined;
@@ -73,9 +75,9 @@ export const createCampaign = async (
       niche = "General",
       priority = "medium",
       budgetTotal,
-      budgetSpent = 0,
+      
       currency = "USD",
-      roi = 0,
+      
       startDate,
       endDate,
       invitedCreators = 0,
@@ -87,8 +89,8 @@ export const createCampaign = async (
     const normalizedPriority = String(priority) as CampaignPriority;
     const normalizedNiche = String(niche || "General").trim() || "General";
     const totalBudget = parseNumber(budgetTotal);
-    const spentBudget = parseNumber(budgetSpent) ?? 0;
-    const parsedRoi = parseNumber(roi) ?? 0;
+    
+    
     const parsedInvitedCreators = Math.max(0, parseNumber(invitedCreators) ?? 0);
     const parsedAcceptedCreators = Math.max(0, parseNumber(acceptedCreators) ?? 0);
     const parsedStartDate = startDate ? new Date(startDate) : null;
@@ -128,9 +130,9 @@ export const createCampaign = async (
       status: "draft",
       priority: normalizedPriority,
       budgetTotal: totalBudget,
-      budgetSpent: spentBudget,
+      
       currency: String(currency || "USD").toUpperCase(),
-      roi: parsedRoi,
+      
       startDate: parsedStartDate,
       endDate: parsedEndDate,
       invitedCreators: parsedInvitedCreators,
