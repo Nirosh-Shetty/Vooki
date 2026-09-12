@@ -69,11 +69,21 @@ const CampaignSchema = new Schema<ICampaign>(
       required: true,
       min: 0,
     },
+    budgetSpent: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     currency: {
       type: String,
-      default: "USD",
       trim: true,
-      uppercase: true,
+      default: "USD",
+      maxlength: 8,
+    },
+    roi: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
     startDate: {
       type: Date,

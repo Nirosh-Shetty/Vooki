@@ -45,7 +45,13 @@ const formatCampaign = (campaign: any) => ({
   budgetTotal: Number(campaign.budgetTotal || 0),
   budgetSpent: Number(campaign.budgetSpent || 0),
   currency: campaign.currency || "USD",
-  roi: Number(campaign.roi || 0),
+  totalViews: Number(campaign.totalViews || 0),
+  totalClicks: Number(campaign.totalClicks || 0),
+  totalConversions: Number(campaign.totalConversions || 0),
+  totalEngagement: Number(campaign.totalEngagement || 0),
+  cpv: Number(campaign.cpv || 0),
+  cpe: Number(campaign.cpe || 0),
+  cpa: Number(campaign.cpa || 0),
   startDate: campaign.startDate,
   endDate: campaign.endDate,
   invitedCreators: Number(campaign.invitedCreators || 0),
@@ -115,8 +121,7 @@ export const createCampaign = async (
     if (!allowedPriority.includes(normalizedPriority)) {
       return res.status(400).json({ message: "priority must be low, medium, or high" });
     }
-    if (spentBudget < 0 || spentBudget > totalBudget) {
-      return res.status(400).json({ message: "budgetSpent must be between 0 and budgetTotal" });
+    );
     }
     if (parsedAcceptedCreators > parsedInvitedCreators) {
       return res.status(400).json({ message: "acceptedCreators cannot exceed invitedCreators" });
@@ -201,12 +206,56 @@ export const listCampaigns = async (req: Request, res: Response): Promise<any> =
         : "updatedAt";
     const sortOrder = String(order).toLowerCase() === "asc" ? 1 : -1;
 
+    
+    const pipeline: any[] = [
+      { $match: query },
+      { $sort: { [sortField]: sortOrder } },
+      { $skip: skip },
+      { $limit: limitNum },
+      {
+        $lookup: {
+          from: "promotions",
+          let: { cId: { $toString: "$_id" } },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$campaignId", "$cId"] } } }
+          ],
+          as: "promos"
+        }
+      },
+      {
+        $addFields: {
+          budgetSpent: {
+            $sum: {
+              $map: {
+                input: {
+                  $filter: {
+                    input: "$promos",
+                    as: "p",
+                    cond: { $in: ["$p.status", ["accepted", "content_in_progress", "posted", "metrics_submitted", "payment_pending", "completed"]] }
+                  }
+                },
+                as: "validP",
+                in: "$validP.paymentAmount"
+              }
+            }
+          },
+          totalViews: { $sum: "$promos.performance.views" },
+          totalClicks: { $sum: "$promos.performance.clicks" },
+          totalConversions: { $sum: "$promos.performance.conversions" },
+          totalEngagement: { $sum: "$promos.performance.engagement" }
+        }
+      },
+      {
+        $addFields: {
+          cpv: { $cond: [{ $gt: ["$totalViews", 0] }, { $divide: ["$budgetSpent", "$totalViews"] }, 0] },
+          cpe: { $cond: [{ $gt: ["$totalEngagement", 0] }, { $divide: ["$budgetSpent", "$totalEngagement"] }, 0] },
+          cpa: { $cond: [{ $gt: ["$totalConversions", 0] }, { $divide: ["$budgetSpent", "$totalConversions"] }, 0] }
+        }
+      }
+    ];
+
     const [items, total] = await Promise.all([
-      CampaignModel.find(query)
-        .sort({ [sortField]: sortOrder })
-        .skip(skip)
-        .limit(limitNum)
-        .lean(),
+      CampaignModel.aggregate(pipeline),
       CampaignModel.countDocuments(query),
     ]);
 
@@ -243,10 +292,53 @@ export const getCampaignById = async (
       return res.status(404).json({ message: "Campaign not found" });
     }
 
-    const campaign = await CampaignModel.findOne({
-      _id: campaignId,
-      brandId: requester.id,
-    }).lean();
+    
+    const pipeline: any[] = [
+      { $match: { _id: new mongoose.Types.ObjectId(campaignId), brandId: requester.id } },
+      {
+        $lookup: {
+          from: "promotions",
+          let: { cId: { $toString: "$_id" } },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$campaignId", "$cId"] } } }
+          ],
+          as: "promos"
+        }
+      },
+      {
+        $addFields: {
+          budgetSpent: {
+            $sum: {
+              $map: {
+                input: {
+                  $filter: {
+                    input: "$promos",
+                    as: "p",
+                    cond: { $in: ["$p.status", ["accepted", "content_in_progress", "posted", "metrics_submitted", "payment_pending", "completed"]] }
+                  }
+                },
+                as: "validP",
+                in: "$validP.paymentAmount"
+              }
+            }
+          },
+          totalViews: { $sum: "$promos.performance.views" },
+          totalClicks: { $sum: "$promos.performance.clicks" },
+          totalConversions: { $sum: "$promos.performance.conversions" },
+          totalEngagement: { $sum: "$promos.performance.engagement" }
+        }
+      },
+      {
+        $addFields: {
+          cpv: { $cond: [{ $gt: ["$totalViews", 0] }, { $divide: ["$budgetSpent", "$totalViews"] }, 0] },
+          cpe: { $cond: [{ $gt: ["$totalEngagement", 0] }, { $divide: ["$budgetSpent", "$totalEngagement"] }, 0] },
+          cpa: { $cond: [{ $gt: ["$totalConversions", 0] }, { $divide: ["$budgetSpent", "$totalConversions"] }, 0] }
+        }
+      }
+    ];
+
+    const result = await CampaignModel.aggregate(pipeline);
+    const campaign = result.length > 0 ? result[0] : null;
 
     if (!campaign) {
       return res.status(404).json({ message: "Campaign not found" });
@@ -292,7 +384,7 @@ export const updateCampaign = async (
       niche,
       priority,
       budgetTotal,
-      budgetSpent,
+      
       currency,
       roi,
       startDate,
@@ -328,13 +420,7 @@ export const updateCampaign = async (
       }
       updates.budgetTotal = value;
     }
-    if (budgetSpent !== undefined) {
-      const value = parseNumber(budgetSpent);
-      if (value === undefined || value < 0) {
-        return res.status(400).json({ message: "budgetSpent must be a non-negative number" });
-      }
-      updates.budgetSpent = value;
-    }
+    
     if (currency !== undefined) {
       updates.currency = String(currency).toUpperCase().trim();
     }
@@ -375,14 +461,7 @@ export const updateCampaign = async (
     }
 
     const nextBudgetTotal = updates.budgetTotal ?? campaign.budgetTotal;
-    const nextBudgetSpent = updates.budgetSpent ?? campaign.budgetSpent;
-    const nextStartDate = updates.startDate ?? campaign.startDate;
-    const nextEndDate = updates.endDate ?? campaign.endDate;
-    const nextInvitedCreators = updates.invitedCreators ?? campaign.invitedCreators;
-    const nextAcceptedCreators = updates.acceptedCreators ?? campaign.acceptedCreators;
-
-    if (nextBudgetSpent > nextBudgetTotal) {
-      return res.status(400).json({ message: "budgetSpent cannot exceed budgetTotal" });
+    );
     }
     if (nextEndDate < nextStartDate) {
       return res.status(400).json({ message: "endDate cannot be before startDate" });
