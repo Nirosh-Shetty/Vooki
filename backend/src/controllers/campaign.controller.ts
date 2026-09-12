@@ -81,9 +81,9 @@ export const createCampaign = async (
       niche = "General",
       priority = "medium",
       budgetTotal,
-      
+
       currency = "USD",
-      
+
       startDate,
       endDate,
       invitedCreators = 0,
@@ -95,8 +95,8 @@ export const createCampaign = async (
     const normalizedPriority = String(priority) as CampaignPriority;
     const normalizedNiche = String(niche || "General").trim() || "General";
     const totalBudget = parseNumber(budgetTotal);
-    
-    
+
+
     const parsedInvitedCreators = Math.max(0, parseNumber(invitedCreators) ?? 0);
     const parsedAcceptedCreators = Math.max(0, parseNumber(acceptedCreators) ?? 0);
     const parsedStartDate = startDate ? new Date(startDate) : null;
@@ -121,8 +121,6 @@ export const createCampaign = async (
     if (!allowedPriority.includes(normalizedPriority)) {
       return res.status(400).json({ message: "priority must be low, medium, or high" });
     }
-    );
-    }
     if (parsedAcceptedCreators > parsedInvitedCreators) {
       return res.status(400).json({ message: "acceptedCreators cannot exceed invitedCreators" });
     }
@@ -135,9 +133,9 @@ export const createCampaign = async (
       status: "draft",
       priority: normalizedPriority,
       budgetTotal: totalBudget,
-      
+
       currency: String(currency || "USD").toUpperCase(),
-      
+
       startDate: parsedStartDate,
       endDate: parsedEndDate,
       invitedCreators: parsedInvitedCreators,
@@ -206,7 +204,7 @@ export const listCampaigns = async (req: Request, res: Response): Promise<any> =
         : "updatedAt";
     const sortOrder = String(order).toLowerCase() === "asc" ? 1 : -1;
 
-    
+
     const pipeline: any[] = [
       { $match: query },
       { $sort: { [sortField]: sortOrder } },
@@ -292,7 +290,7 @@ export const getCampaignById = async (
       return res.status(404).json({ message: "Campaign not found" });
     }
 
-    
+
     const pipeline: any[] = [
       { $match: { _id: new mongoose.Types.ObjectId(campaignId), brandId: requester.id } },
       {
@@ -384,7 +382,7 @@ export const updateCampaign = async (
       niche,
       priority,
       budgetTotal,
-      
+
       currency,
       roi,
       startDate,
@@ -420,7 +418,7 @@ export const updateCampaign = async (
       }
       updates.budgetTotal = value;
     }
-    
+
     if (currency !== undefined) {
       updates.currency = String(currency).toUpperCase().trim();
     }
@@ -461,8 +459,10 @@ export const updateCampaign = async (
     }
 
     const nextBudgetTotal = updates.budgetTotal ?? campaign.budgetTotal;
-    );
-    }
+    const nextStartDate = updates.startDate ?? campaign.startDate;
+    const nextEndDate = updates.endDate ?? campaign.endDate;
+    const nextInvitedCreators = updates.invitedCreators ?? campaign.invitedCreators;
+    const nextAcceptedCreators = updates.acceptedCreators ?? campaign.acceptedCreators;
     if (nextEndDate < nextStartDate) {
       return res.status(400).json({ message: "endDate cannot be before startDate" });
     }
