@@ -327,7 +327,6 @@ export default function CampaignDetailPage() {
                         <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "var(--vooki-app-text-muted)" }} />
                         <Tooltip
                           cursor={{ fill: "var(--vooki-app-surface-hover)" }}
-                          contentStyle={{ borderRadius: "12px", border: "1px solid var(--vooki-app-border)", boxShadow: "var(--vooki-shadow-app-soft)", backgroundColor: "var(--vooki-app-surface-card)", color: "var(--vooki-app-text-strong)" }}
                           content={({ active, payload, label }: any) => {
                             if (active && payload && payload.length) {
                               return (

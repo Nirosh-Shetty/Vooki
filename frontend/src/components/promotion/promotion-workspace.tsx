@@ -729,7 +729,7 @@ export function PromotionWorkspace({ promotionId, role, backHref, backLabel }: {
                   <CardContent className="p-6 space-y-6">
                     <div className="p-5 bg-[color:var(--vooki-app-surface-strong)] rounded-2xl border border-[color:var(--vooki-app-border)]">
                       <Label className="text-[10px] uppercase tracking-wider font-semibold text-[color:var(--vooki-app-text-soft)] mb-2 block">URL</Label>
-                      <a href={promotion.deliverySubmission.proofUrl} target="_blank" rel="noreferrer" className="block text-base text-[color:var(--vooki-accent)] hover:underline truncate">
+                      <a href={promotion.deliverySubmission.proofUrl} target="_blank" rel="noreferrer" className="block text-base text-[color:var(--vooki-accent)] hover:underline break-all">
                         {promotion.deliverySubmission.proofUrl}
                       </a>
                     </div>
@@ -768,29 +768,36 @@ export function PromotionWorkspace({ promotionId, role, backHref, backLabel }: {
                   {promotion.status === "metrics_submitted" || promotion.status === "payment_pending" || promotion.status === "completed" ? (
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       <div className="p-4 sm:p-5 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-center shadow-sm min-w-0">
-                        <p className="text-[11px] font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest mb-2">Reach</p>
-                        <p className="text-xl sm:text-2xl font-bold tracking-tight whitespace-nowrap">{promotion.performance.reach.toLocaleString()}</p>
-                      </div>
-                      <div className="p-4 sm:p-5 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-center shadow-sm min-w-0">
-                        <p className="text-[11px] font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest mb-2">Views</p>
+                        <p className="text-[11px] font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest mb-2">Total Views</p>
                         <p className="text-xl sm:text-2xl font-bold tracking-tight whitespace-nowrap">{promotion.performance.views.toLocaleString()}</p>
                       </div>
                       <div className="p-4 sm:p-5 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-center shadow-sm min-w-0">
-                        <p className="text-[11px] font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest mb-2">Engagement</p>
-                        <p className="text-xl sm:text-2xl font-bold tracking-tight whitespace-nowrap">{promotion.performance.engagement}%</p>
+                        <p className="text-[11px] font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest mb-2">Total Reach</p>
+                        <p className="text-xl sm:text-2xl font-bold tracking-tight whitespace-nowrap">{promotion.performance.reach.toLocaleString()}</p>
                       </div>
-                      <div className="p-4 sm:p-5 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-center shadow-sm min-w-0">
-                        <p className="text-[11px] font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest mb-2">Clicks</p>
-                        <p className="text-xl sm:text-2xl font-bold tracking-tight whitespace-nowrap">{promotion.performance.clicks.toLocaleString()}</p>
+                      <div className="p-4 sm:p-5 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-center shadow-sm flex flex-col justify-center min-w-0">
+                        <p className="text-[11px] font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest mb-2">Engagement Rate</p>
+                        <p className="text-xl sm:text-2xl font-bold tracking-tight whitespace-nowrap">
+                          {promotion.performance.views > 0 ? ((promotion.performance.engagement / promotion.performance.views) * 100).toFixed(1) : "0.0"}%
+                        </p>
                       </div>
-                      <div className="p-4 sm:p-5 rounded-3xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] text-center shadow-sm min-w-0">
-                        <p className="text-[11px] font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest mb-2">Conversions</p>
-                        <p className="text-xl sm:text-2xl font-bold tracking-tight whitespace-nowrap">{promotion.performance.conversions.toLocaleString()}</p>
+
+                      <div className="p-4 sm:p-5 rounded-3xl border border-[color:var(--vooki-app-border-strong)] bg-gradient-to-br from-[color:var(--vooki-app-surface-strong)] to-[color:var(--vooki-app-surface)] text-center shadow-sm flex flex-col justify-center min-w-0">
+                        <p className="text-[11px] font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest mb-2">Cost per View</p>
+                        <p className="text-xl sm:text-2xl font-bold text-[color:var(--vooki-app-text-strong)] tracking-tight whitespace-nowrap">
+                          {promotion.performance.views > 0 ? `$${(promotion.paymentAmount / promotion.performance.views).toFixed(2)}` : "—"}
+                        </p>
+                      </div>
+                      <div className="p-4 sm:p-5 rounded-3xl border border-[color:var(--vooki-app-border-strong)] bg-gradient-to-br from-[color:var(--vooki-app-surface-strong)] to-[color:var(--vooki-app-surface)] text-center shadow-sm flex flex-col justify-center min-w-0">
+                        <p className="text-[11px] font-semibold text-[color:var(--vooki-app-text-soft)] uppercase tracking-widest mb-2">Cost per Eng.</p>
+                        <p className="text-xl sm:text-2xl font-bold text-[color:var(--vooki-app-text-strong)] tracking-tight whitespace-nowrap">
+                          {promotion.performance.engagement > 0 ? `$${(promotion.paymentAmount / promotion.performance.engagement).toFixed(2)}` : "—"}
+                        </p>
                       </div>
                       <div className="p-4 sm:p-5 rounded-3xl border border-emerald-200 bg-emerald-50 text-center shadow-sm flex flex-col justify-center min-w-0">
-                        <p className="text-[11px] font-semibold text-emerald-800/70 uppercase tracking-widest mb-2">Cost per View</p>
+                        <p className="text-[11px] font-semibold text-emerald-800/70 uppercase tracking-widest mb-2">Cost per Click</p>
                         <p className="text-xl sm:text-2xl font-bold text-emerald-700 tracking-tight whitespace-nowrap">
-                          {promotion.performance.views > 0 ? `$${(promotion.paymentAmount / promotion.performance.views).toFixed(2)}` : "—"}
+                          {promotion.performance.clicks > 0 ? `$${(promotion.paymentAmount / promotion.performance.clicks).toFixed(2)}` : "—"}
                         </p>
                       </div>
                     </div>
@@ -809,7 +816,7 @@ export function PromotionWorkspace({ promotionId, role, backHref, backLabel }: {
 
         {/* RIGHT COLUMN: ACTION CENTER */}
         <div className="w-full">
-          <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl overflow-hidden sticky top-6">
+          <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl overflow-hidden sticky top-6 lg:mt-[64px]">
             <div className="bg-[color:var(--vooki-app-surface-strong)] border-b border-[color:var(--vooki-app-border)] px-6 py-4">
               <h3 className="font-semibold text-[color:var(--vooki-app-text-strong)] flex items-center tracking-wide">
                 <LayoutDashboard className="mr-2 h-4 w-4 text-[color:var(--vooki-accent)]" /> ACTION CENTER
