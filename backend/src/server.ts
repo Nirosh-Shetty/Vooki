@@ -10,8 +10,6 @@ import session from "express-session";
 import "./config/passport"; // this should point to the config file above
 import initializeSocket from "./socket";
 import messagingRouter from "./routes/messaging.route";
-import earningsRouter from "./routes/earnings.route";
-import paymentsRouter from "./routes/payments.route";
 import publicRouter from "./routes/publicRoutes/public.route";
 
 const app = express();
@@ -50,8 +48,6 @@ const { httpServer } = initializeSocket(app);
 
 app.use("/api", router);
 app.use("/api/messaging", messagingRouter);
-app.use("/api/earnings", earningsRouter);
-app.use("/api/payments", paymentsRouter);
 app.use("/api/public", publicRouter);
 
 const PORT = process.env.PORT || 8000;

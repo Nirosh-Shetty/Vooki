@@ -3,28 +3,16 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import {
-  ArrowRight,
-  ArrowUpRight,
   AlertCircle,
+  ArrowRight,
   CalendarDays,
   ChevronRight,
   Clock,
   DollarSign,
   Eye,
   FileCheck,
-  Loader2,
-  MessageSquare,
   Megaphone,
+  MessageSquare,
   Plus,
   RefreshCw,
   Search,
@@ -33,13 +21,11 @@ import {
   TrendingUp,
   Users,
   Wallet,
-  Zap,
 } from "lucide-react";
 
 import { ProtectedRoute } from "@/components/protected-route";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 
 /* ------------------------------------------------------------------ */
@@ -149,7 +135,7 @@ const PIPELINE_STAGES: {
 ];
 
 /* ------------------------------------------------------------------ */
-/*  Skeleton loader                                                    */
+/*  Skeleton                                                           */
 /* ------------------------------------------------------------------ */
 
 function Pulse({ className = "" }: { className?: string }) {
@@ -164,32 +150,17 @@ function DashboardSkeleton() {
   return (
     <div className="mx-auto w-full max-w-[1380px] space-y-8 px-4 py-8 sm:px-6 lg:px-8">
       <Pulse className="h-28 w-full rounded-[28px]" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Pulse key={i} className="h-24 rounded-2xl" />
+        ))}
+      </div>
       <Pulse className="h-24 w-full rounded-[28px]" />
       <div className="grid gap-6 lg:grid-cols-2">
         <Pulse className="h-72 rounded-[28px]" />
         <Pulse className="h-72 rounded-[28px]" />
       </div>
-      <Pulse className="h-64 w-full rounded-[28px]" />
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Custom Tooltip for charts                                          */
-/* ------------------------------------------------------------------ */
-
-function ChartTooltip({ active, payload, label }: any) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="rounded-xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] px-4 py-3 shadow-lg">
-      <p className="text-xs font-medium text-[color:var(--vooki-app-text-muted)]">
-        {label}
-      </p>
-      {payload.map((entry: any) => (
-        <p key={entry.name} className="mt-1 text-sm font-semibold" style={{ color: entry.color }}>
-          {entry.name}: {money(entry.value)}
-        </p>
-      ))}
+      <Pulse className="h-48 w-full rounded-[28px]" />
     </div>
   );
 }
@@ -290,14 +261,8 @@ function BrandDashboardContent() {
   /* Pipeline counts */
   const pipelineCounts = useMemo(() => {
     const map: Record<PromotionStatus, number> = {
-      requested: 0,
-      negotiating: 0,
-      accepted: 0,
-      content_in_progress: 0,
-      posted: 0,
-      metrics_submitted: 0,
-      payment_pending: 0,
-      completed: 0,
+      requested: 0, negotiating: 0, accepted: 0, content_in_progress: 0,
+      posted: 0, metrics_submitted: 0, payment_pending: 0, completed: 0,
     };
     for (const p of promotions) map[p.status]++;
     return map;
@@ -305,60 +270,78 @@ function BrandDashboardContent() {
 
   const pipelineTotal = promotions.length;
 
-  /* Budget chart data — per active campaign */
-  const budgetChartData = useMemo(
-    () =>
-      campaigns
-        .filter((c) => c.status === "active" || c.status === "paused")
-        .sort((a, b) => b.budgetTotal - a.budgetTotal)
-        .slice(0, 6)
-        .map((c) => ({
-          name: c.name.length > 18 ? c.name.slice(0, 16) + "…" : c.name,
-          Budget: c.budgetTotal,
-          Spent: c.budgetSpent,
-        })),
-    [campaigns]
-  );
-
   /* Headline numbers */
   const stats = useMemo(() => {
     const active = campaigns.filter((c) => c.status === "active");
     const totalBudget = active.reduce((s, c) => s + c.budgetTotal, 0);
-    const totalSpent = active.reduce((s, c) => s + c.budgetSpent, 0);
     const avgRoi = active.length
       ? active.reduce((s, c) => s + c.roi, 0) / active.length
       : 0;
     const liveCollabs = promotions.filter((p) => p.status !== "completed").length;
-    const uniqueCreators = new Set(promotions.map((p) => p.influencerId)).size;
-    const totalReach = promotions.reduce((s, p) => s + p.performance.reach, 0);
-    const totalViews = promotions.reduce((s, p) => s + p.performance.views, 0);
-    const needsAction =
-      promotions.filter(
-        (p) =>
-          p.status === "payment_pending" ||
-          p.status === "metrics_submitted" ||
-          p.deliverySubmission?.reviewStatus === "pending"
-      ).length;
+    const needsAction = promotions.filter(
+      (p) =>
+        p.status === "payment_pending" ||
+        p.status === "metrics_submitted" ||
+        p.deliverySubmission?.reviewStatus === "pending",
+    ).length;
 
     return {
       activeCampaigns: active.length,
       totalBudget,
-      totalSpent,
       avgRoi,
       liveCollabs,
-      uniqueCreators,
-      totalReach,
-      totalViews,
       needsAction,
     };
   }, [campaigns, promotions]);
 
+  /* Action cards — items needing attention */
+  const actionCounts = useMemo(() => {
+    const now = Date.now();
+    const sevenDays = 7 * 86_400_000;
+
+    const pendingResponses = promotions.filter(
+      (p) => p.status === "requested" || p.status === "negotiating",
+    ).length;
+
+    const deliverablesToReview = promotions.filter(
+      (p) =>
+        p.status === "metrics_submitted" ||
+        p.deliverySubmission?.reviewStatus === "pending",
+    ).length;
+
+    const paymentsDue = promotions.filter(
+      (p) => p.status === "payment_pending",
+    );
+    const paymentsDueCount = paymentsDue.length;
+    const paymentsDueAmount = paymentsDue.reduce(
+      (s, p) => s + p.paymentAmount,
+      0,
+    );
+
+    const upcomingDeadlines = promotions.filter((p) => {
+      if (p.status !== "content_in_progress" && p.status !== "accepted")
+        return false;
+      const postTime = new Date(p.postAt).getTime();
+      return postTime > now && postTime - now <= sevenDays;
+    }).length;
+
+    return {
+      pendingResponses,
+      deliverablesToReview,
+      paymentsDueCount,
+      paymentsDueAmount,
+      upcomingDeadlines,
+    };
+  }, [promotions]);
+
   /* Activity feed — build from promotions sorted by updatedAt */
   const activityFeed = useMemo<ActivityEvent[]>(() => {
     const events: ActivityEvent[] = [];
-
     const sorted = [...promotions]
-      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .sort(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      )
       .slice(0, 8);
 
     for (const p of sorted) {
@@ -370,92 +353,59 @@ function BrandDashboardContent() {
 
       switch (p.status) {
         case "requested":
-          events.push({
-            ...base,
-            icon: <Send className="h-4 w-4" style={{ color: "#8da9d6" }} />,
-            title: "New collaboration request sent",
-            detail: `${p.campaignTitle} · ${p.product}`,
-            accent: "rgba(141,169,214,0.15)",
-          });
+          events.push({ ...base, icon: <Send className="h-4 w-4" style={{ color: "#8da9d6" }} />, title: "New collaboration request sent", detail: `${p.campaignTitle} \u00b7 ${p.product}`, accent: "rgba(141,169,214,0.15)" });
           break;
         case "negotiating":
-          events.push({
-            ...base,
-            icon: <MessageSquare className="h-4 w-4" style={{ color: "#b8a8e8" }} />,
-            title: "Negotiation in progress",
-            detail: `${p.campaignTitle} · ${money(p.paymentAmount)}`,
-            accent: "rgba(184,168,232,0.15)",
-          });
+          events.push({ ...base, icon: <MessageSquare className="h-4 w-4" style={{ color: "#b8a8e8" }} />, title: "Negotiation in progress", detail: `${p.campaignTitle} \u00b7 ${money(p.paymentAmount)}`, accent: "rgba(184,168,232,0.15)" });
           break;
         case "accepted":
-          events.push({
-            ...base,
-            icon: <Sparkles className="h-4 w-4" style={{ color: "#c7e27a" }} />,
-            title: "Collaboration accepted",
-            detail: `${p.campaignTitle} — creator confirmed`,
-            accent: "rgba(199,226,122,0.18)",
-          });
+          events.push({ ...base, icon: <Sparkles className="h-4 w-4" style={{ color: "#c7e27a" }} />, title: "Collaboration accepted", detail: `${p.campaignTitle} \u2014 creator confirmed`, accent: "rgba(199,226,122,0.18)" });
           break;
         case "content_in_progress":
-          events.push({
-            ...base,
-            icon: <Clock className="h-4 w-4" style={{ color: "#f0bb7a" }} />,
-            title: "Content being created",
-            detail: `${p.campaignTitle} · posting due ${new Date(p.postAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
-            accent: "rgba(240,187,122,0.18)",
-          });
+          events.push({ ...base, icon: <Clock className="h-4 w-4" style={{ color: "#f0bb7a" }} />, title: "Content being created", detail: `${p.campaignTitle} \u00b7 posting due ${new Date(p.postAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`, accent: "rgba(240,187,122,0.18)" });
           break;
         case "posted":
-          events.push({
-            ...base,
-            icon: <Megaphone className="h-4 w-4" style={{ color: "#8da9d6" }} />,
-            title: "Content published",
-            detail: `${p.campaignTitle} · live and tracking`,
-            accent: "rgba(141,169,214,0.15)",
-          });
+          events.push({ ...base, icon: <Megaphone className="h-4 w-4" style={{ color: "#8da9d6" }} />, title: "Content published", detail: `${p.campaignTitle} \u00b7 live and tracking`, accent: "rgba(141,169,214,0.15)" });
           break;
         case "metrics_submitted":
-          events.push({
-            ...base,
-            icon: <TrendingUp className="h-4 w-4" style={{ color: "#b8a8e8" }} />,
-            title: "Performance metrics submitted",
-            detail: `${p.campaignTitle} · ${compact(p.performance.reach)} reach`,
-            accent: "rgba(184,168,232,0.15)",
-          });
+          events.push({ ...base, icon: <TrendingUp className="h-4 w-4" style={{ color: "#b8a8e8" }} />, title: "Performance metrics submitted", detail: `${p.campaignTitle} \u00b7 ${compact(p.performance.reach)} reach`, accent: "rgba(184,168,232,0.15)" });
           break;
         case "payment_pending":
-          events.push({
-            ...base,
-            icon: <DollarSign className="h-4 w-4" style={{ color: "#f0bb7a" }} />,
-            title: "Payment pending your action",
-            detail: `${p.campaignTitle} · ${money(p.paymentAmount)}`,
-            accent: "rgba(240,187,122,0.18)",
-          });
+          events.push({ ...base, icon: <DollarSign className="h-4 w-4" style={{ color: "#f0bb7a" }} />, title: "Payment pending your action", detail: `${p.campaignTitle} \u00b7 ${money(p.paymentAmount)}`, accent: "rgba(240,187,122,0.18)" });
           break;
         case "completed":
-          events.push({
-            ...base,
-            icon: <FileCheck className="h-4 w-4" style={{ color: "#c7e27a" }} />,
-            title: "Collaboration completed",
-            detail: `${p.campaignTitle} · ${money(p.paymentAmount)} paid`,
-            accent: "rgba(199,226,122,0.18)",
-          });
+          events.push({ ...base, icon: <FileCheck className="h-4 w-4" style={{ color: "#c7e27a" }} />, title: "Collaboration completed", detail: `${p.campaignTitle} \u00b7 ${money(p.paymentAmount)} paid`, accent: "rgba(199,226,122,0.18)" });
           break;
       }
     }
-
     return events;
   }, [promotions]);
 
-  /* Top performing — completed promotions with best reach */
-  const topPerformers = useMemo(
-    () =>
-      promotions
-        .filter((p) => p.status === "completed" && p.performance.reach > 0)
-        .sort((a, b) => b.performance.reach - a.performance.reach)
-        .slice(0, 3),
-    [promotions]
-  );
+  /* Upcoming deadlines — posts due within 7 days */
+  const upcomingDeadlines = useMemo(() => {
+    const now = Date.now();
+    const sevenDays = 7 * 86_400_000;
+    return promotions
+      .filter((p) => {
+        if (p.status !== "content_in_progress" && p.status !== "accepted")
+          return false;
+        const postTime = new Date(p.postAt).getTime();
+        return postTime > now && postTime - now <= sevenDays;
+      })
+      .sort(
+        (a, b) =>
+          new Date(a.postAt).getTime() - new Date(b.postAt).getTime(),
+      )
+      .slice(0, 5);
+  }, [promotions]);
+
+  /* Performance snapshot — reach in last 30 days */
+  const recentReach = useMemo(() => {
+    const cutoff = Date.now() - 30 * 86_400_000;
+    return promotions
+      .filter((p) => new Date(p.updatedAt).getTime() >= cutoff)
+      .reduce((s, p) => s + p.performance.reach, 0);
+  }, [promotions]);
 
   /* ================================================================ */
   /*  Render                                                           */
@@ -503,7 +453,6 @@ function BrandDashboardContent() {
                 : "Everything is on track. Nice work."}
             </h1>
           </div>
-
           <div className="flex flex-wrap gap-3">
             <Button
               asChild
@@ -525,13 +474,13 @@ function BrandDashboardContent() {
           </div>
         </div>
 
-        {/* Floating headline stats */}
+        {/* Headline stats */}
         <div className="relative z-10 mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
             { label: "Active campaigns", value: String(stats.activeCampaigns) },
             { label: "Live collaborations", value: String(stats.liveCollabs) },
             { label: "Total budget", value: money(stats.totalBudget) },
-            { label: "Avg ROI", value: stats.avgRoi > 0 ? `${stats.avgRoi.toFixed(1)}x` : "—" },
+            { label: "Avg ROI", value: stats.avgRoi > 0 ? `${stats.avgRoi.toFixed(1)}x` : "\u2014" },
           ].map((s) => (
             <div
               key={s.label}
@@ -539,16 +488,87 @@ function BrandDashboardContent() {
               style={{ backdropFilter: "blur(12px)" }}
             >
               <p className="text-xs text-[color:var(--vooki-app-text-muted)]">{s.label}</p>
-              <p className="mt-1 text-xl font-semibold text-[color:var(--vooki-app-text-strong)]">
-                {s.value}
-              </p>
+              <p className="mt-1 text-xl font-semibold text-[color:var(--vooki-app-text-strong)]">{s.value}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* ============================================================ */}
-      {/*  2 · Collaboration Pipeline                                   */}
+      {/*  2 · Action cards — what needs your attention                  */}
+      {/* ============================================================ */}
+
+      {hasData && (
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            {
+              label: "Pending responses",
+              count: actionCounts.pendingResponses,
+              sub: "Creator invites awaiting reply",
+              icon: <Send className="h-5 w-5" />,
+              accent: "#8da9d6",
+              accentBg: "rgba(141,169,214,0.15)",
+              href: "/brand/campaigns",
+            },
+            {
+              label: "Deliverables to review",
+              count: actionCounts.deliverablesToReview,
+              sub: "Submissions need your approval",
+              icon: <FileCheck className="h-5 w-5" />,
+              accent: "#b8a8e8",
+              accentBg: "rgba(184,168,232,0.15)",
+              href: "/brand/campaigns",
+            },
+            {
+              label: "Payments due",
+              count: actionCounts.paymentsDueCount,
+              sub: actionCounts.paymentsDueAmount > 0 ? `${money(actionCounts.paymentsDueAmount)} outstanding` : "No payments pending",
+              icon: <DollarSign className="h-5 w-5" />,
+              accent: "#f0bb7a",
+              accentBg: "rgba(240,187,122,0.15)",
+              href: "/brand/payments",
+            },
+            {
+              label: "Upcoming deadlines",
+              count: actionCounts.upcomingDeadlines,
+              sub: "Posts due within 7 days",
+              icon: <CalendarDays className="h-5 w-5" />,
+              accent: "#c7e27a",
+              accentBg: "rgba(199,226,122,0.15)",
+              href: "/brand/campaigns",
+            },
+          ].map((card) => (
+            <Link
+              key={card.label}
+              href={card.href}
+              className={`group relative overflow-hidden rounded-2xl border bg-[color:var(--vooki-app-surface-card)] p-5 shadow-[var(--vooki-shadow-app-soft)] transition-all duration-300 hover:-translate-y-1 hover:shadow-md ${
+                card.count > 0
+                  ? "border-[color:var(--vooki-app-border-strong)]"
+                  : "border-[color:var(--vooki-app-border)]"
+              }`}
+            >
+              <div
+                className="flex h-11 w-11 items-center justify-center rounded-xl"
+                style={{ backgroundColor: card.accentBg, color: card.accent }}
+              >
+                {card.icon}
+              </div>
+              <p className="mt-3 text-2xl font-black text-[color:var(--vooki-app-text-strong)]">
+                {card.count}
+              </p>
+              <p className="mt-0.5 text-sm font-medium text-[color:var(--vooki-app-text-strong)]">
+                {card.label}
+              </p>
+              <p className="mt-0.5 text-xs text-[color:var(--vooki-app-text-muted)]">
+                {card.sub}
+              </p>
+            </Link>
+          ))}
+        </section>
+      )}
+
+      {/* ============================================================ */}
+      {/*  3 · Collaboration Pipeline                                   */}
       {/* ============================================================ */}
 
       {pipelineTotal > 0 && (
@@ -574,7 +594,6 @@ function BrandDashboardContent() {
             </Button>
           </div>
 
-          {/* Pipeline bar */}
           <div className="mt-5 flex h-3.5 overflow-hidden rounded-full bg-[color:var(--vooki-app-border)]">
             {PIPELINE_STAGES.map((stage) => {
               const count = pipelineCounts[stage.key];
@@ -595,23 +614,15 @@ function BrandDashboardContent() {
             })}
           </div>
 
-          {/* Stage labels */}
           <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
             {PIPELINE_STAGES.map((stage) => {
               const count = pipelineCounts[stage.key];
               if (count === 0) return null;
               return (
                 <div key={stage.key} className="flex items-center gap-2">
-                  <span
-                    className="h-2.5 w-2.5 rounded-full"
-                    style={{ backgroundColor: stage.color }}
-                  />
-                  <span className="text-xs text-[color:var(--vooki-app-text-muted)]">
-                    {stage.label}
-                  </span>
-                  <span className="text-xs font-semibold text-[color:var(--vooki-app-text-strong)]">
-                    {count}
-                  </span>
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: stage.color }} />
+                  <span className="text-xs text-[color:var(--vooki-app-text-muted)]">{stage.label}</span>
+                  <span className="text-xs font-semibold text-[color:var(--vooki-app-text-strong)]">{count}</span>
                 </div>
               );
             })}
@@ -620,69 +631,10 @@ function BrandDashboardContent() {
       )}
 
       {/* ============================================================ */}
-      {/*  3 · Budget chart + Activity feed                             */}
+      {/*  4 · Activity feed + Campaign health                          */}
       {/* ============================================================ */}
 
       <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        {/* Budget chart */}
-        <div className="rounded-[28px] border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-6 shadow-[var(--vooki-shadow-app-soft)] sm:p-7">
-          <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--vooki-app-text-muted)]">
-            Campaign budgets
-          </p>
-          <h2 className="mt-1.5 text-lg font-semibold text-[color:var(--vooki-app-text-strong)]">
-            {money(stats.totalSpent)} spent of {money(stats.totalBudget)}
-          </h2>
-
-          {budgetChartData.length > 0 ? (
-            <div className="mt-6 h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={budgetChartData}
-                  margin={{ top: 0, right: 0, bottom: 0, left: -20 }}
-                  barGap={4}
-                >
-                  <XAxis
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 11, fill: "var(--vooki-app-text-muted)" }}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 11, fill: "var(--vooki-app-text-muted)" }}
-                    tickFormatter={(v) => `$${compact(v)}`}
-                  />
-                  <Tooltip content={<ChartTooltip />} cursor={false} />
-                  <Bar dataKey="Budget" fill="#b8a8e8" radius={[6, 6, 0, 0]} maxBarSize={36} />
-                  <Bar dataKey="Spent" fill="#c7e27a" radius={[6, 6, 0, 0]} maxBarSize={36} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="mt-8 flex flex-col items-center py-10 text-center">
-              <DollarSign className="h-8 w-8 text-[color:var(--vooki-app-text-muted)]" />
-              <p className="mt-3 text-sm text-[color:var(--vooki-app-text-soft)]">
-                Budget data will appear once campaigns are active.
-              </p>
-            </div>
-          )}
-
-          {/* Legend */}
-          {budgetChartData.length > 0 && (
-            <div className="mt-4 flex gap-5 text-xs text-[color:var(--vooki-app-text-muted)]">
-              <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#b8a8e8" }} />
-                Budget
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#c7e27a" }} />
-                Spent
-              </span>
-            </div>
-          )}
-        </div>
-
         {/* Activity feed */}
         <div className="rounded-[28px] border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-6 shadow-[var(--vooki-shadow-app-soft)] sm:p-7">
           <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--vooki-app-text-muted)]">
@@ -707,67 +659,8 @@ function BrandDashboardContent() {
             </div>
           )}
         </div>
-      </section>
 
-      {/* ============================================================ */}
-      {/*  4 · Top performing + Campaign health                         */}
-      {/* ============================================================ */}
-
-      <section className="grid gap-6 lg:grid-cols-2">
-        {/* Top performing collaborations */}
-        <div className="rounded-[28px] border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-6 shadow-[var(--vooki-shadow-app-soft)] sm:p-7">
-          <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--vooki-app-text-muted)]">
-            Top performers
-          </p>
-          <h2 className="mt-1.5 text-lg font-semibold text-[color:var(--vooki-app-text-strong)]">
-            {topPerformers.length > 0 ? "Best-performing collaborations" : "Performance insights"}
-          </h2>
-
-          {topPerformers.length > 0 ? (
-            <div className="mt-5 space-y-3">
-              {topPerformers.map((p, i) => (
-                <Link
-                  key={p.id}
-                  href={`/brand/promotions/${p.id}`}
-                  className="flex items-center gap-4 rounded-2xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4 transition-colors hover:bg-[color:var(--vooki-app-surface-hover)]"
-                >
-                  <div
-                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sm font-bold"
-                    style={{
-                      backgroundColor: ["rgba(199,226,122,0.2)", "rgba(184,168,232,0.2)", "rgba(141,169,214,0.2)"][i],
-                      color: ["#c7e27a", "#b8a8e8", "#8da9d6"][i],
-                    }}
-                  >
-                    #{i + 1}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-[color:var(--vooki-app-text-strong)] truncate">
-                      {p.campaignTitle}
-                    </p>
-                    <p className="text-xs text-[color:var(--vooki-app-text-muted)]">
-                      {p.product}
-                    </p>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-sm font-semibold text-[color:var(--vooki-app-text-strong)]">
-                      {compact(p.performance.reach)}
-                    </p>
-                    <p className="text-xs text-[color:var(--vooki-app-text-muted)]">reach</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="mt-8 flex flex-col items-center py-10 text-center">
-              <TrendingUp className="h-8 w-8 text-[color:var(--vooki-app-text-muted)]" />
-              <p className="mt-3 text-sm text-[color:var(--vooki-app-text-soft)]">
-                Performance rankings appear after collaborations are completed.
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Campaign health overview */}
+        {/* Campaign health */}
         <div className="rounded-[28px] border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-6 shadow-[var(--vooki-shadow-app-soft)] sm:p-7">
           <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--vooki-app-text-muted)]">
             Campaign health
@@ -795,12 +688,11 @@ function BrandDashboardContent() {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-[color:var(--vooki-app-text-strong)] truncate">
+                          <p className="truncate text-sm font-medium text-[color:var(--vooki-app-text-strong)]">
                             {c.name}
                           </p>
                           <p className="mt-0.5 text-xs text-[color:var(--vooki-app-text-muted)]">
-                            {c.acceptedCreators} creator{c.acceptedCreators !== 1 ? "s" : ""} ·{" "}
-                            {c.niche}
+                            {c.acceptedCreators} creator{c.acceptedCreators !== 1 ? "s" : ""} &middot; {c.niche}
                           </p>
                         </div>
                         <span className="flex-shrink-0 text-sm font-semibold text-[color:var(--vooki-app-text-strong)]">
@@ -835,33 +727,128 @@ function BrandDashboardContent() {
       </section>
 
       {/* ============================================================ */}
-      {/*  5 · Aggregate performance strip                              */}
+      {/*  5 · Upcoming deadlines                                       */}
       {/* ============================================================ */}
 
-      {(stats.totalReach > 0 || stats.totalViews > 0) && (
-        <section className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {[
-            { label: "Total reach", value: compact(stats.totalReach), icon: <Eye className="h-4 w-4" /> },
-            { label: "Total views", value: compact(stats.totalViews), icon: <TrendingUp className="h-4 w-4" /> },
-            { label: "Creators worked with", value: String(stats.uniqueCreators), icon: <Users className="h-4 w-4" /> },
-            { label: "Total invested", value: money(stats.totalSpent), icon: <Wallet className="h-4 w-4" /> },
-          ].map((item) => (
-            <div
-              key={item.label}
-              className="rounded-2xl border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] px-5 py-4 shadow-[var(--vooki-shadow-app-soft)]"
-            >
-              <div className="text-[color:var(--vooki-app-text-muted)]">{item.icon}</div>
-              <p className="mt-3 text-xl font-semibold text-[color:var(--vooki-app-text-strong)]">
-                {item.value}
-              </p>
-              <p className="mt-0.5 text-xs text-[color:var(--vooki-app-text-muted)]">{item.label}</p>
+      <section className="rounded-[28px] border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] p-6 shadow-[var(--vooki-shadow-app-soft)] sm:p-7">
+        <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--vooki-app-text-muted)]">
+          Upcoming deadlines
+        </p>
+        <h2 className="mt-1.5 text-lg font-semibold text-[color:var(--vooki-app-text-strong)]">
+          Posts due this week
+        </h2>
+
+        {upcomingDeadlines.length > 0 ? (
+          <div className="mt-5 space-y-3">
+            {upcomingDeadlines.map((p) => {
+              const daysLeft = Math.ceil(
+                (new Date(p.postAt).getTime() - Date.now()) / 86_400_000,
+              );
+              return (
+                <Link
+                  key={p.id}
+                  href={`/brand/promotions/${p.id}`}
+                  className="flex items-center gap-4 rounded-2xl border border-[color:var(--vooki-app-border-strong)] bg-[color:var(--vooki-app-surface-strong)] p-4 transition-colors hover:bg-[color:var(--vooki-app-surface-hover)]"
+                >
+                  <div
+                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl"
+                    style={{
+                      backgroundColor:
+                        daysLeft <= 2
+                          ? "rgba(240,187,122,0.18)"
+                          : "rgba(141,169,214,0.15)",
+                      color: daysLeft <= 2 ? "#f0bb7a" : "#8da9d6",
+                    }}
+                  >
+                    <CalendarDays className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-[color:var(--vooki-app-text-strong)]">
+                      {p.campaignTitle}
+                    </p>
+                    <p className="text-xs text-[color:var(--vooki-app-text-muted)]">
+                      {p.product} &middot;{" "}
+                      {new Date(p.postAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </p>
+                  </div>
+                  <Badge
+                    className={`border-0 text-xs font-bold ${
+                      daysLeft <= 1
+                        ? "bg-red-500/15 text-red-400"
+                        : daysLeft <= 3
+                          ? "bg-amber-500/15 text-amber-400"
+                          : "bg-blue-500/15 text-blue-400"
+                    }`}
+                  >
+                    {daysLeft <= 0
+                      ? "Today"
+                      : daysLeft === 1
+                        ? "Tomorrow"
+                        : `${daysLeft} days`}
+                  </Badge>
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="mt-5 flex flex-col items-center py-8 text-center">
+            <CalendarDays className="h-7 w-7 text-[color:var(--vooki-app-text-muted)]" />
+            <p className="mt-2.5 text-sm text-[color:var(--vooki-app-text-soft)]">
+              No upcoming deadlines this week.
+            </p>
+          </div>
+        )}
+      </section>
+
+      {/* ============================================================ */}
+      {/*  6 · Performance snapshot + View analytics link                */}
+      {/* ============================================================ */}
+
+      {hasData && (
+        <section
+          className="rounded-[28px] border border-[color:var(--vooki-app-border)] p-6 sm:p-7"
+          style={{
+            background:
+              "linear-gradient(135deg, color-mix(in srgb, var(--vooki-blue-soft) 40%, transparent), color-mix(in srgb, var(--vooki-violet-soft) 30%, transparent))",
+          }}
+        >
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap gap-6">
+              <div>
+                <p className="text-xs text-[color:var(--vooki-app-text-muted)]">
+                  Total reach this month
+                </p>
+                <p className="mt-1 text-2xl font-semibold text-[color:var(--vooki-app-text-strong)]">
+                  {compact(recentReach)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-[color:var(--vooki-app-text-muted)]">
+                  Avg campaign ROI
+                </p>
+                <p className="mt-1 text-2xl font-semibold text-[color:var(--vooki-app-text-strong)]">
+                  {stats.avgRoi > 0 ? `${stats.avgRoi.toFixed(1)}x` : "\u2014"}
+                </p>
+              </div>
             </div>
-          ))}
+            <Button
+              asChild
+              variant="ghost"
+              className="rounded-full border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-strong)] px-5 text-sm font-medium text-[color:var(--vooki-app-text-strong)] hover:bg-[color:var(--vooki-app-surface-hover)]"
+            >
+              <Link href="/brand/analytics">
+                View full analytics <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
         </section>
       )}
 
       {/* ============================================================ */}
-      {/*  6 · Empty state for brand-new accounts                       */}
+      {/*  7 · Empty state for brand-new accounts                       */}
       {/* ============================================================ */}
 
       {!hasData && !error && (

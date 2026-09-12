@@ -4,6 +4,7 @@ import DiscoverShortlistModel from "../models/DiscoverShortlist";
 import DiscoverInviteModel from "../models/DiscoverInvite";
 import CampaignModel from "../models/Campaign";
 import PromotionModel from "../models/Promotion";
+import ConversationModel from "../models/Conversation";
 import { getRequestUser } from "../utils/requestUser";
 import { findOrCreateDirectConversation } from "../utils/directConversation";
 import {
@@ -751,3 +752,269 @@ export const respondToDiscoverInvite = async (
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const getBrandNetwork = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const requester = getRequestUser(req);
+    if (!requester?.id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    if (requester.role !== "brand" && requester.role !== "manager") {
+      return res
+        .status(403)
+        .json({ message: "Only brand and manager accounts can view network" });
+    }
+
+    const brandId = requester.id;
+
+    // 1. Fetch shortlists, invites, promotions, and conversations in parallel
+    const [shortlists, invites, promotions, conversations] = await Promise.all([
+      DiscoverShortlistModel.find({ brandId }).lean(),
+      DiscoverInviteModel.find({ brandId }).sort({ updatedAt: -1, createdAt: -1 }).lean(),
+      PromotionModel.find({ brandId }).sort({ updatedAt: -1, createdAt: -1 }).lean(),
+      ConversationModel.find({ participants: brandId }).sort({ updatedAt: -1 }).lean(),
+    ]);
+
+    const shortlistedInfluencerIds = new Set(
+      shortlists.map((s: any) => String(s.influencerId))
+    );
+
+    // Map of influencerId -> invites array
+    const influencerInvitesMap = new Map<string, any[]>();
+    invites.forEach((invite: any) => {
+      const infId = String(invite.influencerId);
+      if (!influencerInvitesMap.has(infId)) {
+        influencerInvitesMap.set(infId, []);
+      }
+      influencerInvitesMap.get(infId)!.push(invite);
+    });
+
+    // Map of influencerId -> promotions array
+    const influencerPromotionsMap = new Map<string, any[]>();
+    promotions.forEach((promotion: any) => {
+      const infId = String(promotion.influencerId);
+      if (!influencerPromotionsMap.has(infId)) {
+        influencerPromotionsMap.set(infId, []);
+      }
+      influencerPromotionsMap.get(infId)!.push(promotion);
+    });
+
+    // Map of influencerId -> conversation
+    const influencerConversationMap = new Map<string, any>();
+    conversations.forEach((conv: any) => {
+      const otherParticipant = conv.participants?.find(
+        (p: string) => String(p) !== String(brandId)
+      );
+      if (otherParticipant && !influencerConversationMap.has(String(otherParticipant))) {
+        influencerConversationMap.set(String(otherParticipant), conv);
+      }
+    });
+
+    // Collect all unique influencer IDs
+    const allInfluencerIds = Array.from(
+      new Set([
+        ...Array.from(shortlistedInfluencerIds),
+        ...Array.from(influencerInvitesMap.keys()),
+        ...Array.from(influencerPromotionsMap.keys()),
+      ])
+    );
+
+    if (allInfluencerIds.length === 0) {
+      return res.status(200).json({
+        items: [],
+        summary: {
+          allCount: 0,
+          activeCount: 0,
+          invitedCount: 0,
+          shortlistedCount: 0,
+        },
+      });
+    }
+
+    // 2. Fetch User profiles for all creators
+    const influencers = await UserModel.find({
+      _id: { $in: allInfluencerIds },
+      role: "influencer",
+    })
+      .select(
+        "name username avatar isVerified rating totalReviews influencerProfile.niche influencerProfile.location influencerProfile.summary influencerProfile.pricing influencerProfile.languages influencerProfile.socialLinks influencerProfile.statsConnection influencerProfile.engagement influencerProfile.followers updatedAt createdAt"
+      )
+      .lean();
+
+    // 3. Process each influencer
+    const networkItems = influencers.map((influencer: any) => {
+      const influencerId = String(influencer._id);
+      const isShortlisted = shortlistedInfluencerIds.has(influencerId);
+      const userInvites = influencerInvitesMap.get(influencerId) || [];
+      const userPromotions = influencerPromotionsMap.get(influencerId) || [];
+      const conversation = influencerConversationMap.get(influencerId);
+
+      // Determine active collaborations vs pending invites vs shortlisted
+      const activePromotions = userPromotions.filter(
+        (p: any) => !["cancelled", "rejected"].includes(p.status)
+      );
+      const pendingInvites = userInvites.filter(
+        (inv: any) => ["pending", "counter_offered"].includes(inv.status)
+      );
+      const acceptedInvites = userInvites.filter(
+        (inv: any) => inv.status === "accepted"
+      );
+
+      const hasActiveCollab = activePromotions.length > 0 || acceptedInvites.length > 0;
+      const hasPendingInvite = pendingInvites.length > 0;
+
+      // Status priority: active > invited > shortlisted
+      let status: "active" | "invited" | "shortlisted" = "shortlisted";
+      if (hasActiveCollab) {
+        status = "active";
+      } else if (hasPendingInvite) {
+        status = "invited";
+      } else if (isShortlisted) {
+        status = "shortlisted";
+      }
+
+      // Social stats calculation
+      const statsMap = normalizeSocialConnectionsRecord(
+        influencer?.influencerProfile?.statsConnection
+      );
+      const instagramStats = statsMap?.instagram;
+      const youtubeStats = statsMap?.youtube;
+      const facebookStats = statsMap?.facebook;
+
+      const instagramFollowers = Number(instagramStats?.metrics?.followers || 0);
+      const youtubeSubscribers = Number(youtubeStats?.metrics?.subscribers || 0);
+      const facebookFollowers = Number(facebookStats?.metrics?.followers || 0);
+      let followers = instagramFollowers + youtubeSubscribers + facebookFollowers;
+      if (followers === 0 && Number(influencer?.influencerProfile?.followers || 0) > 0) {
+        followers = Number(influencer.influencerProfile.followers);
+      }
+
+      const platformRates: number[] = [];
+      if (instagramStats?.metrics) {
+        const rate = calculateEngagementRateForMetrics(
+          "instagram",
+          instagramStats.metrics as any
+        );
+        if (typeof rate === "number" && rate > 0) platformRates.push(rate);
+      }
+      if (youtubeStats?.metrics) {
+        const rate = calculateEngagementRateForMetrics(
+          "youtube",
+          youtubeStats.metrics as any
+        );
+        if (typeof rate === "number" && rate > 0) platformRates.push(rate);
+      }
+      if (facebookStats?.metrics) {
+        const rate = calculateEngagementRateForMetrics(
+          "facebook",
+          facebookStats.metrics as any
+        );
+        if (typeof rate === "number" && rate > 0) platformRates.push(rate);
+      }
+
+      let engagement = 0;
+      if (platformRates.length > 0) {
+        engagement = Number(
+          (
+            platformRates.reduce((acc, curr) => acc + curr, 0) /
+            platformRates.length
+          ).toFixed(1)
+        );
+      } else if (Number(influencer?.influencerProfile?.engagement || 0) > 0) {
+        engagement = Number(Number(influencer.influencerProfile.engagement).toFixed(1));
+      }
+
+      // Associated campaign
+      const latestPromo = userPromotions[0];
+      const latestInvite = userInvites[0];
+      const campaignName =
+        latestPromo?.campaignTitle || latestInvite?.campaignTitle || undefined;
+      const campaignId =
+        latestPromo?.campaignId || latestInvite?.campaignId || undefined;
+
+      // Last active timestamp calculation
+      const dates = [
+        influencer.updatedAt ? new Date(influencer.updatedAt).getTime() : 0,
+        latestPromo?.updatedAt ? new Date(latestPromo.updatedAt).getTime() : 0,
+        latestInvite?.updatedAt ? new Date(latestInvite.updatedAt).getTime() : 0,
+        conversation?.lastMessageAt
+          ? new Date(conversation.lastMessageAt).getTime()
+          : 0,
+      ];
+      const latestTimestamp = Math.max(...dates);
+      const lastActive =
+        latestTimestamp > 0
+          ? new Date(latestTimestamp).toISOString()
+          : new Date(influencer.createdAt || Date.now()).toISOString();
+
+      // Performance Label (Top Performer, High ROI, High Engagement)
+      let performanceLabel: string | undefined = undefined;
+      const userRating = Number(influencer.rating || 0);
+      const hasCompletedPromo = userPromotions.some(
+        (p: any) => p.status === "completed" || p.status === "posted"
+      );
+
+      if (
+        userRating >= 4.5 ||
+        (userPromotions.length > 0 &&
+          userPromotions.some((p: any) => Number(p.brandRating?.score || 0) >= 4))
+      ) {
+        performanceLabel = "Top Performer";
+      } else if (engagement >= 5.0) {
+        performanceLabel = "High Engagement";
+      } else if (
+        hasCompletedPromo ||
+        (latestPromo?.performance?.conversions &&
+          latestPromo.performance.conversions > 0)
+      ) {
+        performanceLabel = "High ROI";
+      }
+
+      return {
+        id: influencerId,
+        name: influencer.name || influencer.username || "Creator",
+        handle: influencer.username ? `@${influencer.username}` : "",
+        avatar: influencer.avatar || "",
+        niche: influencer?.influencerProfile?.niche || "Lifestyle",
+        location: influencer?.influencerProfile?.location || "Global",
+        followers,
+        engagement,
+        rating: userRating,
+        totalReviews: Number(influencer.totalReviews || 0),
+        status,
+        isShortlisted,
+        hasActiveCollab,
+        hasPendingInvite,
+        campaignName,
+        campaignId,
+        promotionId: latestPromo?._id ? String(latestPromo._id) : undefined,
+        inviteId: latestInvite?._id ? String(latestInvite._id) : undefined,
+        conversationId: conversation?._id ? String(conversation._id) : undefined,
+        lastActive,
+        performanceLabel,
+        totalCollaborations: userPromotions.length,
+      };
+    });
+
+    // Summary counts
+    const summary = {
+      allCount: networkItems.length,
+      activeCount: networkItems.filter((i) => i.hasActiveCollab).length,
+      invitedCount: networkItems.filter((i) => i.hasPendingInvite).length,
+      shortlistedCount: networkItems.filter((i) => i.isShortlisted).length,
+    };
+
+    return res.status(200).json({
+      items: networkItems,
+      summary,
+    });
+  } catch (error) {
+    console.error("Error fetching brand network:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+

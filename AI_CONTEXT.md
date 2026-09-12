@@ -23,7 +23,7 @@
 * **backend**: Node.js, Express
 * **database**: MongoDB (accessed via Mongoose)
 * **authentication**: JWT stored in HTTP-only cookies, BcryptJS for passwords
-* **APIs**: REST for internal backend communication; integrating with Meta/Google for social metrics.
+* **APIs**: REST for internal backend communication; integrating directly with Meta (Direct Instagram Business Login) and Google (YouTube) for social metrics. Facebook Auth is temporarily disabled.
 * **hosting/deployment**: UNKNOWN/Not configured yet.
 * **package manager**: npm
 * **build tools**: Next.js built-in bundler
@@ -50,7 +50,7 @@
 * **authentication flow**: Client submits login -> Server hashes/verifies via Bcrypt -> Server generates JWT -> Server sets `Set-Cookie` header -> Client `auth-context.tsx` fetches `/api/auth/me` to hydrate the user state globally.
 * **important services**: Redis is used for real-time socket message brokering and session management.
 * **important state management**: Primarily React Context (`useAuth`) and local state (`useState`, `useMemo`).
-* **external integrations**: Google APIs (YouTube), Meta (Instagram), Cloudinary.
+* **external integrations**: Google APIs (YouTube), Meta (Direct Instagram Connect, Cloudinary). Facebook graph logic was removed in favor of direct Instagram login.
 
 ## 6. Database
 
@@ -62,8 +62,8 @@
 
 ## 7. Authentication & Authorization
 
-* **how users authenticate**: Email/password exchange for JWT.
-* **sessions/tokens**: JWT stored securely in an HTTP-only cookie to prevent XSS.
+* **how users authenticate**: Email/password exchange for JWT. OAuth (Google) is supported; Facebook login is currently disabled from the UI.
+* **sessions/tokens**: JWT stored securely in an HTTP-only cookie to prevent XSS. Cookie domain (`COOKIE_DOMAIN`) and samesite policies (`COOKIE_SAMESITE`) are environment-driven to support staging/production cross-domain API requests.
 * **roles**: Defined at the User level (`brand`, `influencer`).
 * **permissions**: Protected routes on the frontend (redirect non-brands away from `/brand/*`). Backend uses a `requireRole` middleware to enforce endpoint access.
 * **important security assumptions**: The frontend UI alone does not secure data; all sensitive actions (payments, campaign creation) rely on backend JWT validation.
@@ -86,14 +86,15 @@
 
 * **current objective**: Simplify collaboration timelines (removed multi-date flow `postingStartDate`, `postingEndDate`, `draftDueDate`, `responseDeadline` in favor of a single `targetDate` and `postAt`) and clean up schema consistency.
 * **what was already completed**: 
-  - Redesign of Finance page (`/brand/payments/page.tsx`) and Create Invite Modal (`CreateInviteModal.tsx`).
-  - Codebase standardization of `influencerDetails` -> `influencerProfile` sub-schema.
+  - Redesign of Finance page (`/brand/payments/page.tsx`), Create Invite Modal (`CreateInviteModal.tsx`), and Brand Profile/Dashboard.
   - Simplified timeline schema in `DiscoverInvite.ts` and `Promotion.ts`.
-  - Updated `collaborationInvite.controller.ts` and `promotion.controller.ts` to use simplified `targetDate` / `postAt`.
-  - Updated frontend forms and dashboards (`CreateInviteModal.tsx`, `promotion-workspace.tsx`, `messages-hub.tsx`, `brand/dashboard/page.tsx`, `influencer/dashboard/page.tsx`).
-  - Verified backend compilation (`tsc --noEmit` clean with 0 errors).
-* **what remains**: Verify any runtime behaviors or further profile renames requested by user.
-* **files modified**: `DiscoverInvite.ts`, `Promotion.ts`, `collaborationInvite.controller.ts`, `promotion.controller.ts`, `CreateInviteModal.tsx`, `promotion-workspace.tsx`, `messages-hub.tsx`, `messages-hub-content.tsx`, `app/brand/dashboard/page.tsx`, `app/influencer/dashboard/page.tsx`.
+  - Replaced Facebook Graph API for Instagram with Meta's new **Direct Instagram Business Login**.
+  - Temporarily disabled Facebook login/signup UI elements to prioritize IG Connect.
+  - Updated Auth controller cookies to use `process.env.COOKIE_DOMAIN` & `process.env.COOKIE_SAMESITE` for proper cross-domain handling (Staging/Production).
+  - Backend profile logic automatically calculates an aggregate `engagement` score and `engagementBreakdown` from all connected social platforms.
+  - Moved array-based counter fields (`activeCampaigns`, `totalCollaborations`) to integer increments using MongoDB `$inc` for better performance.
+* **what remains**: Verify any runtime behaviors, complete remaining UI/UX overhauls, and complete deployment pipelines.
+* **files modified recently**: `social.controller.ts`, `profile.controller.ts`, `auth.controller.ts`, `auth.route.ts`, `brand/profile/page.tsx`, `brand/dashboard/page.tsx`, and various Auth UI components (`signin/page.tsx`, `signup/details/page.tsx`, `signup/welcome/page.tsx`).
 
 ## 11. Bugs & Known Problems
 

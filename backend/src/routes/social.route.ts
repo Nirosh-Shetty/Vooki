@@ -25,6 +25,5 @@ socialRouter.get("/connect/instagram/callback", handleInstagramCallback);
 socialRouter.delete("/connect/instagram", authMiddleware, requireRole("influencer"), handleInstagramDisconnect);
 socialRouter.patch("/metrics", authMiddleware, requireRole("influencer"), updateSocialMetrics);
 socialRouter.get("/connections", authMiddleware, requireRole("influencer"), getSocialConnections);
-socialRouter.get("/connections", authMiddleware, getConnectedAccounts);
 
 export default socialRouter;

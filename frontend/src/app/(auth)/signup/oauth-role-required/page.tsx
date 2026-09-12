@@ -60,7 +60,7 @@ export default function OauthRoleRequiredPage() {
       userObj.role = role;
       sessionStorage.setItem("socialUserData", JSON.stringify(userObj));
       sessionStorage.removeItem("oauthUser");
-      
+
       // Call complete-social-auth endpoint
       completeOAuthSignup(userObj, role);
     }
@@ -134,7 +134,9 @@ export default function OauthRoleRequiredPage() {
         <Card className="border border-[color:var(--vooki-app-border)] bg-[color:var(--vooki-app-surface-card)] shadow-[var(--vooki-shadow-app)] rounded-3xl">
           <CardContent className="p-8 flex flex-col items-center justify-center min-h-[300px]">
             <h1 className="text-xl font-bold text-[color:var(--vooki-app-text-strong)] mb-4">Select Your Role</h1>
-            <p className="text-[color:var(--vooki-app-text-soft)] text-center mb-6">Choose how you&apos;ll use Vooki to finish signing up with Google or Facebook.</p>
+            <p className="text-[color:var(--vooki-app-text-soft)] text-center mb-6">Choose how you&apos;ll use Vooki to finish signing up with Google or
+              {/* Facebook. */}
+            </p>
             <div className="w-full space-y-3">
               {roles.map((role) => (
                 <Button
